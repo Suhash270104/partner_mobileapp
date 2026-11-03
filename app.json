@@ -1,0 +1,80 @@
+{
+  "expo": {
+    "name": "Kraftnex Partner",
+    "slug": "kraftnex-partner",
+    "scheme": "kraftnex-partner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "com.kraftnex.partner",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.kraftnex.partner",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5babbe98-5433-427a-a262-a05ce86743d8"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "partner-updates",
+          "color": "#07523e"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/kraftnex-logo-transparent.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "image": "./assets/kraftnex-logo-transparent.png",
+            "backgroundColor": "#ffffff"
+          }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Kraftnex Partner to set your technician dispatch base."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Kraftnex Partner to select technician credential and work photos.",
+          "cameraPermission": "Allow Kraftnex Partner to take technician credential and work photos.",
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "5babbe98-5433-427a-a262-a05ce86743d8"
+      }
+    }
+  }
+}
