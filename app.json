@@ -13,6 +13,7 @@
     },
     "android": {
       "package": "com.kraftnex.partner",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,6 +26,11 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
       "eas": {
         "projectId": "5babbe98-5433-427a-a262-a05ce86743d8"
       }
@@ -64,17 +70,10 @@
           "cameraPermission": "Allow Kraftnex Partner to take technician credential and work photos.",
           "microphonePermission": false
         }
-      ]
-    ],
-    "extra": {
-      "router": {
-        "asyncRoutes": {
-          "web": true
-        }
-      },
-      "eas": {
-        "projectId": "5babbe98-5433-427a-a262-a05ce86743d8"
-      }
-    }
+      ],
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-font"
+    ]
   }
 }

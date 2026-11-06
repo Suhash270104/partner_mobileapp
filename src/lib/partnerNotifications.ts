@@ -1,12 +1,13 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
+import { isExpoGo } from './runtime';
 
 const CHANNEL_ID = 'partner-updates';
 
 export async function getPartnerExpoPushToken(): Promise<string | null> {
   try {
-    if (Platform.OS === 'web') return null;
+    if (Platform.OS === 'web' || isExpoGo()) return null;
+    const Notifications = await import('expo-notifications');
     const projectId = Constants.expoConfig?.extra?.eas?.projectId
       || Constants.easConfig?.projectId;
     if (!projectId) return null;
@@ -33,6 +34,8 @@ export async function getPartnerExpoPushToken(): Promise<string | null> {
 
 export async function showPartnerNotification(title: string, body: string): Promise<boolean> {
   try {
+    if (Platform.OS === 'web' || isExpoGo()) return false;
+    const Notifications = await import('expo-notifications');
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
         name: 'Partner updates',

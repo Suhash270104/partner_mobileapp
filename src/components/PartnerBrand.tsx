@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 
 export function PartnerBrand({ compact = false }: { compact?: boolean }) {
   return (

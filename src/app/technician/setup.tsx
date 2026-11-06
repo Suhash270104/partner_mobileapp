@@ -1,21 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { router } from 'expo-router';
-import MapView, { Circle, Marker, Region } from 'react-native-maps';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../../components/AppText';
+import type { ScrollViewInstance } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import type { Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system/legacy';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PartnerBrand } from '../../components/PartnerBrand';
 import { partnerApi, PartnerApiError, TechnicianProfileRecord, TechnicianServiceCategory } from '../../lib/partnerApi';
 import { getEquipmentForCategories } from '../../lib/technicianEquipment';
 import { getPartnerExpoPushToken, showPartnerNotification } from '../../lib/partnerNotifications';
+import { isExpoGo } from '../../lib/runtime';
 
 type Tier = 'KN_CERTIFIED' | 'INDEPENDENT';
+type MapsModule = typeof import('react-native-maps');
 type Place = { title: string; subtitle: string; lat: number; lng: number; city: string };
 type ProofItem = { data?: string; url?: string; label?: string };
 type AddressProofType = 'UTILITY_BILL' | 'BANK_PASSBOOK' | 'RENT_AGREEMENT' | 'VOTER_ID' | 'PASSPORT' | 'DRIVING_LICENSE' | 'RATION_CARD' | 'AADHAAR' | 'OTHER';
+type BankField = 'accountNumber' | 'accountNumberConfirm' | 'ifscCode' | 'upiId';
+type DocumentKind = 'address' | 'certificate';
 const addressProofTypes: { value: AddressProofType; label: string }[] = [
   { value: 'AADHAAR', label: 'Aadhaar Card' },
   { value: 'DRIVING_LICENSE', label: 'Driving License' },
@@ -40,6 +45,9 @@ function passwordProblem(password: string): string | null {
 }
 
 export default function TechnicianSetupScreen() {
+  // "Add proof" on the dashboard re-opens the wizard at the expertise step, as on desktop (?step=expertise).
+  const { resume } = useLocalSearchParams<{ resume?: string }>();
+  const resumeExpertise = resume === 'expertise';
   const [step, setStep] = useState(1);
   const [tier, setTier] = useState<Tier | null>(null);
   const [phone, setPhone] = useState('');
@@ -56,6 +64,7 @@ export default function TechnicianSetupScreen() {
   const [query, setQuery] = useState('');
   const [places, setPlaces] = useState<Place[]>([]);
   const [place, setPlace] = useState<Place | null>(null);
+  const [maps, setMaps] = useState<MapsModule | null>(null);
   const [radiusKm, setRadiusKm] = useState(10);
   const [experienceLevel, setExperienceLevel] = useState('');
   const [busy, setBusy] = useState(false);
@@ -66,20 +75,36 @@ export default function TechnicianSetupScreen() {
   const [expertiseProofs, setExpertiseProofs] = useState<Record<string, ProofItem[]>>({});
   const [expertiseStatuses, setExpertiseStatuses] = useState<Record<string, string>>({});
   const [bank, setBank] = useState({ accountNumber: '', accountNumberConfirm: '', ifscCode: '', upiId: '' });
+  const [bankErrors, setBankErrors] = useState<Partial<Record<BankField, string>>>({});
+  const [bankSaveError, setBankSaveError] = useState('');
   const [addressProofType, setAddressProofType] = useState<AddressProofType | null>(null);
   const [addressProofNumber, setAddressProofNumber] = useState('');
-  const [addressProofFile, setAddressProofFile] = useState<{ data: string; name: string } | null>(null);
-  const [skillCertificateFile, setSkillCertificateFile] = useState<{ data: string; name: string } | null>(null);
+  const [addressProofFile, setAddressProofFile] = useState<{ uri: string; name: string; mimeType: string } | null>(null);
+  const [skillCertificateFile, setSkillCertificateFile] = useState<{ uri: string; name: string; mimeType: string } | null>(null);
+  const [documentBusy, setDocumentBusy] = useState<DocumentKind | null>(null);
+  const [documentError, setDocumentError] = useState<{ kind: DocumentKind; message: string } | null>(null);
+  const [documentStatus, setDocumentStatus] = useState<{ kind: DocumentKind; message: string } | null>(null);
   const [legalDeclarations, setLegalDeclarations] = useState([false, false, false]);
   const [savedTechnician, setSavedTechnician] = useState<TechnicianProfileRecord | null>(null);
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const formScrollRef = useRef<ScrollViewInstance | null>(null);
+  const focusScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedCategories = useMemo(() => categories.filter(category => category.sections.some(section => section.items.some(item => selected.has(item._id)))), [categories, selected]);
   const availableEquipment = useMemo(() => getEquipmentForCategories(selectedCategories.map(category => category.key)), [selectedCategories]);
   const requiredEquipment = useMemo(() => availableEquipment.filter(item => item.required), [availableEquipment]);
   const equipmentReadyCount = useMemo(() => equipmentChecklist.filter(id => requiredEquipment.some(item => item.id === id)).length, [equipmentChecklist, requiredEquipment]);
+
+  useEffect(() => {
+    if (isExpoGo()) return;
+    let active = true;
+    void import('react-native-maps')
+      .then(module => { if (active) setMaps(module); })
+      .catch(error => console.warn('Could not load the native map preview.', error));
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -97,6 +122,10 @@ export default function TechnicianSetupScreen() {
       if (!active) return;
       setSavedTechnician(technician);
       setSubmitted(true);
+      if (technician.onboardingSubmittedAt && !resumeExpertise) {
+        router.replace('/technician/dashboard');
+        return;
+      }
       setTier(technician.type);
       setPhone(technician.phone || '');
       setProfile(current => ({ ...current, name: technician.name || '', email: technician.email || '' }));
@@ -113,13 +142,14 @@ export default function TechnicianSetupScreen() {
       const proof = technician.documents?.addressProof;
       if (proof?.type && addressProofTypes.some(item => item.value === proof.type)) setAddressProofType(proof.type as AddressProofType);
       setAddressProofNumber(proof?.documentNumber || '');
-      if (proof?.documentUrl) setAddressProofFile({ data: proof.documentUrl, name: 'Address proof uploaded' });
-      if (technician.documents?.skillCertificationUrl) setSkillCertificateFile({ data: technician.documents.skillCertificationUrl, name: 'Certificate uploaded' });
+      if (proof?.documentUrl) setAddressProofFile({ uri: proof.documentUrl, name: 'Address proof uploaded', mimeType: proof.documentUrl.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/*' });
+      if (technician.documents?.skillCertificationUrl) setSkillCertificateFile({ uri: technician.documents.skillCertificationUrl, name: 'Certificate uploaded', mimeType: technician.documents.skillCertificationUrl.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/*' });
       if (technician.coordinates?.lat != null && technician.coordinates.lng != null) {
         setPlace({ title: technician.baseAddress?.split(',')[0] || technician.city, subtitle: technician.baseAddress || technician.city, lat: technician.coordinates.lat, lng: technician.coordinates.lng, city: technician.city });
       }
       setRadiusKm(technician.serviceRadiusKm || 10);
-      if (proof?.documentUrl) setStep(11);
+      if (resumeExpertise) setStep(8);
+      else if (proof?.documentUrl) setStep(11);
       else if (technician.bankDetails?.accountNumber || technician.bankDetails?.ifscCode) setStep(10);
       else if ((technician.equipmentChecklist || []).length) setStep(8);
       else setStep(7);
@@ -129,7 +159,7 @@ export default function TechnicianSetupScreen() {
       if (status !== 401 && status !== 403 && status !== 404) setError(error instanceof Error ? error.message : 'Could not restore your technician setup.');
     });
     return () => { active = false; };
-  }, []);
+  }, [resumeExpertise]);
 
   useEffect(() => {
     const normalized = query.trim();
@@ -240,35 +270,60 @@ export default function TechnicianSetupScreen() {
     finally { setBusy(false); }
   }
 
+  function updateBankField(field: BankField, value: string) {
+    setBank(current => ({ ...current, [field]: value }));
+    setBankErrors(current => ({ ...current, [field]: undefined }));
+    setBankSaveError('');
+  }
+
   async function saveBankAndContinue() {
     const accountNumber = bank.accountNumber.replace(/\s/g, '');
+    const accountNumberConfirm = bank.accountNumberConfirm.replace(/\s/g, '');
     const ifscCode = bank.ifscCode.trim().toUpperCase();
-    if (!/^\d{9,18}$/.test(accountNumber)) { setError('Enter a valid bank account number.'); return; }
-    if (accountNumber !== bank.accountNumberConfirm.replace(/\s/g, '')) { setError('The account numbers do not match.'); return; }
-    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode)) { setError('Enter a valid IFSC code.'); return; }
+    const upiId = bank.upiId.trim();
+    const nextErrors: Partial<Record<BankField, string>> = {};
+    if (!/^\d{9,18}$/.test(accountNumber)) nextErrors.accountNumber = 'Enter an account number containing 9–18 digits.';
+    if (accountNumber !== accountNumberConfirm) nextErrors.accountNumberConfirm = 'The account numbers do not match.';
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode)) nextErrors.ifscCode = 'Enter a valid 11-character IFSC, for example HDFC0000123.';
+    if (upiId && !/^[A-Za-z0-9._-]{2,}@[A-Za-z][A-Za-z0-9.-]{1,}$/.test(upiId)) {
+      nextErrors.upiId = 'Enter a valid UPI ID, for example name@bank.';
+    }
+    setBankErrors(nextErrors);
+    setBankSaveError('');
+    if (Object.keys(nextErrors).length) return;
     setBusy(true); setError('');
     try {
-      const result = await partnerApi.updateTechnicianProfile({ bankDetails: { accountNumber, ifscCode, upiId: bank.upiId.trim() } });
+      const result = await partnerApi.updateTechnicianProfile({ bankDetails: { accountNumber, ifscCode, upiId } });
       setSavedTechnician(result.technician); setBank(current => ({ ...current, accountNumber, accountNumberConfirm: accountNumber, ifscCode })); setStep(10);
-    } catch (error) { setError(error instanceof Error ? error.message : 'Could not save your payout details.'); }
+    } catch (error) { setBankSaveError(error instanceof Error ? error.message : 'Could not save your payout details.'); }
     finally { setBusy(false); }
   }
 
-  async function chooseDocument(kind: 'address' | 'certificate') {
-    setError('');
+  async function chooseDocument(kind: DocumentKind) {
+    setDocumentBusy(kind);
+    setDocumentError(null);
+    setDocumentStatus(null);
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true, multiple: false });
-      if (result.canceled) return;
+      if (result.canceled) {
+        setDocumentStatus({ kind, message: 'No document selected.' });
+        return;
+      }
       const file = result.assets[0];
       if (file.size != null && file.size > 10 * 1024 * 1024) throw new Error('Choose a document smaller than 10 MB.');
-      const contents = await FileSystem.readAsStringAsync(file.uri, { encoding: FileSystem.EncodingType.Base64 });
       const extension = file.name.toLowerCase().split('.').pop();
       const mimeType = file.mimeType || (extension === 'pdf' ? 'application/pdf' : extension === 'png' ? 'image/png' : ['jpg', 'jpeg'].includes(extension || '') ? 'image/jpeg' : '');
       if (!mimeType || (!mimeType.startsWith('image/') && mimeType !== 'application/pdf')) throw new Error('Choose a JPG, PNG, or PDF document.');
-      const picked = { data: `data:${mimeType};base64,${contents}`, name: file.name };
+      const picked = { uri: file.uri, name: file.name, mimeType };
       if (kind === 'address') setAddressProofFile(picked);
       else setSkillCertificateFile(picked);
-    } catch (error) { setError(error instanceof Error ? error.message : 'Could not read this document.'); }
+      setDocumentStatus(null);
+    } catch (error) {
+      setDocumentStatus(null);
+      setDocumentError({ kind, message: error instanceof Error ? error.message : 'Could not open or read this document.' });
+    } finally {
+      setDocumentBusy(null);
+    }
   }
 
   async function addExpertisePhoto(categoryKey: string) {
@@ -293,8 +348,17 @@ export default function TechnicianSetupScreen() {
     setBusy(true); setError('');
     try {
       const payload: Record<string, unknown> = {};
-      if (addressProofFile && addressProofType) payload.addressProof = { type: addressProofType, documentNumber: addressProofNumber.trim(), documentUrl: addressProofFile.data };
-      if (skillCertificateFile) payload.skillCertificationUrl = skillCertificateFile.data;
+      if (addressProofFile && addressProofType) {
+        const documentUrl = addressProofFile.uri.startsWith('http')
+          ? addressProofFile.uri
+          : (await partnerApi.uploadTechnicianDocument(addressProofFile)).url;
+        payload.addressProof = { type: addressProofType, documentNumber: addressProofNumber.trim(), documentUrl };
+      }
+      if (skillCertificateFile) {
+        payload.skillCertificationUrl = skillCertificateFile.uri.startsWith('http')
+          ? skillCertificateFile.uri
+          : (await partnerApi.uploadTechnicianDocument(skillCertificateFile)).url;
+      }
       if (!Object.keys(payload).length) {
         if (tier === 'KN_CERTIFIED') throw new Error('Add the required address proof before continuing.');
         setStep(11);
@@ -333,9 +397,13 @@ export default function TechnicianSetupScreen() {
           `Your onboarding details were submitted. Identity verification: ${technician.kycStatus || 'pending'}.`,
         );
       }
-      Alert.alert('Details submitted', technician.kycStatus === 'APPROVED'
-        ? 'Your technician setup details are saved.'
-        : 'Your setup details are saved. Identity verification is still pending before you can receive work.');
+      Alert.alert(
+        'Details submitted',
+        technician.kycStatus === 'APPROVED'
+          ? 'Your technician setup details are saved.'
+          : 'Your setup details are saved. Identity verification is still pending before you can receive work.',
+        [{ text: 'Open dashboard', onPress: () => router.replace('/technician/dashboard') }],
+      );
     } catch (error) { setError(error instanceof Error ? error.message : 'Could not submit your technician setup.'); }
     finally { setBusy(false); }
   }
@@ -388,6 +456,9 @@ export default function TechnicianSetupScreen() {
 
   const progress = Math.round((step / 11) * 100);
   const region: Region | undefined = place ? { latitude: place.lat, longitude: place.lng, latitudeDelta: 0.07, longitudeDelta: 0.07 } : undefined;
+  const MapView = maps?.default;
+  const MapMarker = maps?.Marker;
+  const MapCircle = maps?.Circle;
   const stepTitles: Record<number, string> = { 1: 'Basic Information', 2: 'Basic Information', 3: 'Basic Information', 4: 'Trade & Services', 5: 'Profile Details', 6: 'Service Area & Radius', 7: 'Equipment Checklist', 8: 'Expertise & Certificates', 9: 'Bank & Payout Details', 10: 'Address Proof', 11: 'Review & Submit' };
 
   return (
@@ -397,8 +468,22 @@ export default function TechnicianSetupScreen() {
         <View style={styles.brand}><PartnerBrand compact /><Text style={styles.headerTitle}>{stepTitles[step]}</Text></View>
         <View style={styles.headerActions}><Text style={styles.help}>◉</Text><View style={styles.account}><Text style={styles.accountText}>{profile.name ? profile.name[0].toUpperCase() : '•'}</Text></View></View>
       </View>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          ref={formScrollRef}
+          contentContainerStyle={styles.page}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+          onFocusCapture={event => {
+            const target = event.nativeEvent.target;
+            if (focusScrollTimer.current) clearTimeout(focusScrollTimer.current);
+            focusScrollTimer.current = setTimeout(() => {
+              formScrollRef.current?.scrollResponderScrollNativeHandleToKeyboard(target, 120, true);
+              focusScrollTimer.current = null;
+            }, 250);
+          }}
+        >
           <View style={styles.progressRow}><Text style={styles.progressLabel}>STEP {step} OF 11 • {step >= 9 ? 'FINANCIAL & IDENTITY ACCREDITATION' : 'PARTNER ACCREDITATION'}</Text><Text style={styles.progressPercent}>{progress}% Complete</Text></View>
           <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View>
 
@@ -473,7 +558,7 @@ export default function TechnicianSetupScreen() {
             <View style={styles.statusCard}><Text style={styles.stepKicker}>•  SERVICE AREA & RADIUS</Text><Text style={styles.heading}>Set Your Dispatch Area</Text><Text style={styles.small}>Set a precise base location. Only dispatch jobs within your selected radius.</Text></View>
             <TextInput value={query} onChangeText={value => { setQuery(value); if (value.trim().length < 2) setPlaces([]); }} placeholder="⌕  Search your area or landmark" placeholderTextColor="#8d9a95" style={styles.searchInput} />
             {places.map(result => <Pressable key={`${result.lat}-${result.lng}`} onPress={() => { setQuery(result.subtitle); setPlaces([]); void selectCoordinates(result.lat, result.lng); }} style={styles.suggestion}><Text style={styles.cardTitle}>{result.title}</Text><Text style={styles.small}>{result.subtitle}</Text></Pressable>)}
-            {place && region ? <View style={styles.mapWrap}><MapView style={styles.map} region={region} onPress={event => void selectCoordinates(event.nativeEvent.coordinate.latitude, event.nativeEvent.coordinate.longitude)}><Marker coordinate={{ latitude: place.lat, longitude: place.lng }} draggable onDragEnd={event => void selectCoordinates(event.nativeEvent.coordinate.latitude, event.nativeEvent.coordinate.longitude)} /><Circle center={{ latitude: place.lat, longitude: place.lng }} radius={radiusKm * 1000} fillColor="rgba(16,185,129,0.14)" strokeColor="#0f382c" /></MapView></View> : <View style={styles.mapPlaceholder}><Text style={styles.mapPlaceholderTitle}>Choose a real location</Text><Text style={styles.small}>Search for an area or use your device location to show the map and service radius.</Text></View>}
+            {place && region && MapView && MapMarker && MapCircle ? <View style={styles.mapWrap}><MapView style={styles.map} region={region} onPress={event => void selectCoordinates(event.nativeEvent.coordinate.latitude, event.nativeEvent.coordinate.longitude)}><MapMarker coordinate={{ latitude: place.lat, longitude: place.lng }} draggable onDragEnd={event => void selectCoordinates(event.nativeEvent.coordinate.latitude, event.nativeEvent.coordinate.longitude)} /><MapCircle center={{ latitude: place.lat, longitude: place.lng }} radius={radiusKm * 1000} fillColor="rgba(16,185,129,0.14)" strokeColor="#0f382c" /></MapView></View> : <View style={styles.mapPlaceholder}><Text style={styles.mapPlaceholderTitle}>{place ? 'Map preview unavailable' : 'Choose a real location'}</Text><Text style={styles.small}>{place ? 'Your location is selected. In Expo Go, search for an area or use your device location; the map preview is available in a development build.' : 'Search for an area or use your device location to show the map and service radius.'}</Text></View>}
             <Pressable style={styles.locationButton} disabled={busy} onPress={() => void handleUseMyLocation()}>{busy ? <ActivityIndicator color="#07523e" /> : <Text style={styles.locationButtonText}>◎  Use my current location</Text>}</Pressable>
             {!!place && <View style={styles.locationCard}><Text style={styles.stepKicker}>⌖  SELECTED BASE</Text><Text style={styles.cardTitle}>{place.title}</Text><Text style={styles.small}>{place.subtitle}</Text><Text style={styles.hint}>Coordinates: {place.lat.toFixed(5)}, {place.lng.toFixed(5)}</Text></View>}
             <Text style={styles.sectionHeading}>Service Radius  ·  {radiusKm} km</Text><Text style={styles.small}>Choose how far you can travel from your base.</Text>
@@ -523,11 +608,28 @@ export default function TechnicianSetupScreen() {
             <View style={styles.statusCard}><Text style={styles.stepKicker}>•  STEP 9 OF 11  •  FINANCIAL ACCREDITATION</Text><Text style={styles.heading}>Bank & Direct Payout Details</Text><Text style={styles.small}>Enter the account where your technician earnings should be paid. Your account holder name should match your legal name.</Text></View>
             <View style={styles.noticeCard}><Text style={styles.noticeTitle}>◈  Payout account</Text><Text style={styles.small}>Use an account you own. Review your account number and IFSC before saving.</Text></View>
             <View style={styles.formCard}><View style={styles.formHeader}><Text style={styles.inputLabel}>ACCOUNT HOLDER LEGAL NAME</Text><Text style={styles.formBadge}>FROM PROFILE</Text></View><View style={styles.readOnlyInput}><Text style={styles.readOnlyText}>{profile.name || savedTechnician?.name || 'Name not available'}</Text></View></View>
-            <View style={styles.formCard}><View style={styles.formHeader}><Text style={styles.inputLabel}>BANK ACCOUNT NUMBER *</Text><Text style={styles.formBadge}>PRIVATE</Text></View><TextInput value={bank.accountNumber} onChangeText={value => setBank(current => ({ ...current, accountNumber: value.replace(/\D/g, '').slice(0, 18) }))} keyboardType="number-pad" secureTextEntry placeholder="Enter account number" placeholderTextColor="#8b9691" style={styles.formInput} /></View>
-            <View style={styles.formCard}><View style={styles.formHeader}><Text style={styles.inputLabel}>RE-ENTER ACCOUNT NUMBER *</Text></View><TextInput value={bank.accountNumberConfirm} onChangeText={value => setBank(current => ({ ...current, accountNumberConfirm: value.replace(/\D/g, '').slice(0, 18) }))} keyboardType="number-pad" secureTextEntry placeholder="Confirm account number" placeholderTextColor="#8b9691" style={styles.formInput} /></View>
-            <View style={styles.formCard}><View style={styles.formHeader}><Text style={styles.inputLabel}>IFSC CODE *</Text></View><TextInput value={bank.ifscCode} onChangeText={value => setBank(current => ({ ...current, ifscCode: value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11) }))} autoCapitalize="characters" autoCorrect={false} placeholder="e.g. HDFC0000123" placeholderTextColor="#8b9691" style={styles.formInput} /></View>
-            <View style={styles.formCard}><View style={styles.formHeader}><Text style={styles.inputLabel}>UPI ID</Text><Text style={styles.formBadge}>OPTIONAL</Text></View><TextInput value={bank.upiId} onChangeText={value => setBank(current => ({ ...current, upiId: value.trim() }))} autoCapitalize="none" autoCorrect={false} placeholder="name@bank" placeholderTextColor="#8b9691" style={styles.formInput} /></View>
+            <View style={styles.formCard}>
+              <View style={styles.formHeader}><Text style={styles.inputLabel}>BANK ACCOUNT NUMBER *</Text><Text style={styles.formBadge}>PRIVATE</Text></View>
+              <TextInput value={bank.accountNumber} onChangeText={value => updateBankField('accountNumber', value.replace(/\D/g, '').slice(0, 18))} keyboardType="number-pad" secureTextEntry placeholder="Enter account number" placeholderTextColor="#8b9691" style={[styles.formInput, bankErrors.accountNumber && styles.formInputInvalid]} />
+              {!!bankErrors.accountNumber && <Text style={styles.fieldError}>{bankErrors.accountNumber}</Text>}
+            </View>
+            <View style={styles.formCard}>
+              <View style={styles.formHeader}><Text style={styles.inputLabel}>RE-ENTER ACCOUNT NUMBER *</Text></View>
+              <TextInput value={bank.accountNumberConfirm} onChangeText={value => updateBankField('accountNumberConfirm', value.replace(/\D/g, '').slice(0, 18))} keyboardType="number-pad" secureTextEntry placeholder="Confirm account number" placeholderTextColor="#8b9691" style={[styles.formInput, bankErrors.accountNumberConfirm && styles.formInputInvalid]} />
+              {!!bankErrors.accountNumberConfirm && <Text style={styles.fieldError}>{bankErrors.accountNumberConfirm}</Text>}
+            </View>
+            <View style={styles.formCard}>
+              <View style={styles.formHeader}><Text style={styles.inputLabel}>IFSC CODE *</Text></View>
+              <TextInput value={bank.ifscCode} onChangeText={value => updateBankField('ifscCode', value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11))} autoCapitalize="characters" autoCorrect={false} placeholder="e.g. HDFC0000123" placeholderTextColor="#8b9691" style={[styles.formInput, bankErrors.ifscCode && styles.formInputInvalid]} />
+              {!!bankErrors.ifscCode && <Text style={styles.fieldError}>{bankErrors.ifscCode}</Text>}
+            </View>
+            <View style={styles.formCard}>
+              <View style={styles.formHeader}><Text style={styles.inputLabel}>UPI ID</Text><Text style={styles.formBadge}>OPTIONAL</Text></View>
+              <TextInput value={bank.upiId} onChangeText={value => updateBankField('upiId', value.trim())} autoCapitalize="none" autoCorrect={false} placeholder="name@bank" placeholderTextColor="#8b9691" style={[styles.formInput, bankErrors.upiId && styles.formInputInvalid]} />
+              {!!bankErrors.upiId && <Text style={styles.fieldError}>{bankErrors.upiId}</Text>}
+            </View>
             <Button label="Continue to Address Proof (Step 10)  →" onPress={() => void saveBankAndContinue()} busy={busy} />
+            {!!bankSaveError && <Text style={styles.fieldError}>{bankSaveError}</Text>}
             <Pressable onPress={() => setStep(8)}><Text style={styles.centerLink}>‹  Back to Expertise & Certificates (Step 8)</Text></Pressable>
           </>}
 
@@ -537,8 +639,20 @@ export default function TechnicianSetupScreen() {
             <Text style={styles.inputLabel}>SELECT DOCUMENT TYPE {tier === 'KN_CERTIFIED' ? '*' : ''}</Text>
             <View style={styles.documentTypes}>{addressProofTypes.map(option => <Pressable key={option.value} style={[styles.documentType, addressProofType === option.value && styles.documentTypeSelected]} onPress={() => setAddressProofType(option.value)}><View style={styles.documentTypeIcon}><Text>▧</Text></View><Text style={styles.documentTypeLabel}>{option.label}</Text><View style={[styles.radio, addressProofType === option.value && styles.radioSelected]} /></Pressable>)}</View>
             {!!addressProofType && <View style={styles.formCard}><Text style={styles.inputLabel}>DOCUMENT NUMBER</Text><TextInput value={addressProofNumber} onChangeText={setAddressProofNumber} autoCapitalize="characters" autoCorrect={false} placeholder="Enter document number" placeholderTextColor="#8b9691" style={styles.formInput} /></View>}
-            <View style={styles.uploadCard}><Text style={styles.cardTitle}>Address Proof File {tier === 'KN_CERTIFIED' ? '*' : ''}</Text><Text style={styles.small}>Select a clear image or PDF (up to 10 MB).</Text>{addressProofFile ? <View style={styles.fileSelected}><Text style={styles.fileIcon}>▤</Text><Text numberOfLines={1} style={styles.fileName}>{addressProofFile.name}</Text><Pressable onPress={() => setAddressProofFile(null)}><Text style={styles.removeFile}>Remove</Text></Pressable></View> : <Pressable style={styles.uploadButton} onPress={() => void chooseDocument('address')}><Text style={styles.uploadIcon}>↑</Text><Text style={styles.uploadText}>Choose address document</Text></Pressable>}</View>
-            <View style={styles.uploadCard}><Text style={styles.cardTitle}>Trade Certificate</Text><Text style={styles.small}>Optional: ITI, apprenticeship, or another relevant trade certificate.</Text>{skillCertificateFile ? <View style={styles.fileSelected}><Text style={styles.fileIcon}>▤</Text><Text numberOfLines={1} style={styles.fileName}>{skillCertificateFile.name}</Text><Pressable onPress={() => setSkillCertificateFile(null)}><Text style={styles.removeFile}>Remove</Text></Pressable></View> : <Pressable style={styles.uploadButton} onPress={() => void chooseDocument('certificate')}><Text style={styles.uploadIcon}>↑</Text><Text style={styles.uploadText}>Choose certificate</Text></Pressable>}</View>
+            <View style={styles.uploadCard}>
+              <Text style={styles.cardTitle}>Address Proof File {tier === 'KN_CERTIFIED' ? '*' : ''}</Text>
+              <Text style={styles.small}>Select a clear image or PDF (up to 10 MB).</Text>
+              {addressProofFile ? <View style={styles.fileSelected}><Text style={styles.fileIcon}>▤</Text><Text numberOfLines={1} style={styles.fileName}>{addressProofFile.name}</Text><Pressable onPress={() => setAddressProofFile(null)}><Text style={styles.removeFile}>Remove</Text></Pressable></View> : <Pressable disabled={documentBusy !== null} style={[styles.uploadButton, documentBusy !== null && styles.buttonDisabled]} onPress={() => void chooseDocument('address')}>{documentBusy === 'address' ? <ActivityIndicator color="#07523e" /> : <Text style={styles.uploadIcon}>↑</Text>}<Text style={styles.uploadText}>{documentBusy === 'address' ? documentStatus?.kind === 'address' ? documentStatus.message : 'Opening files…' : 'Choose address document'}</Text></Pressable>}
+              {documentError?.kind === 'address' && <Text style={styles.fieldError}>{documentError.message}</Text>}
+              {documentStatus?.kind === 'address' && documentBusy !== 'address' && <Text style={styles.small}>{documentStatus.message}</Text>}
+            </View>
+            <View style={styles.uploadCard}>
+              <Text style={styles.cardTitle}>Trade Certificate</Text>
+              <Text style={styles.small}>Optional: ITI, apprenticeship, or another relevant trade certificate.</Text>
+              {skillCertificateFile ? <View style={styles.fileSelected}><Text style={styles.fileIcon}>▤</Text><Text numberOfLines={1} style={styles.fileName}>{skillCertificateFile.name}</Text><Pressable onPress={() => setSkillCertificateFile(null)}><Text style={styles.removeFile}>Remove</Text></Pressable></View> : <Pressable disabled={documentBusy !== null} style={[styles.uploadButton, documentBusy !== null && styles.buttonDisabled]} onPress={() => void chooseDocument('certificate')}>{documentBusy === 'certificate' ? <ActivityIndicator color="#07523e" /> : <Text style={styles.uploadIcon}>↑</Text>}<Text style={styles.uploadText}>{documentBusy === 'certificate' ? documentStatus?.kind === 'certificate' ? documentStatus.message : 'Opening files…' : 'Choose certificate'}</Text></Pressable>}
+              {documentError?.kind === 'certificate' && <Text style={styles.fieldError}>{documentError.message}</Text>}
+              {documentStatus?.kind === 'certificate' && documentBusy !== 'certificate' && <Text style={styles.small}>{documentStatus.message}</Text>}
+            </View>
             <Button label="Continue to Final Review (Step 11)  →" onPress={() => void saveDocumentsAndContinue()} busy={busy} />
             <Pressable onPress={() => setStep(9)}><Text style={styles.centerLink}>‹  Back to Bank & Payout Details (Step 9)</Text></Pressable>
           </>}
@@ -588,5 +702,5 @@ const styles = StyleSheet.create({
   page: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 30 }, progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, progressLabel: { color: '#55766b', fontSize: 8, fontWeight: '800', letterSpacing: 0.4 }, progressPercent: { color: '#52665f', fontSize: 8, fontWeight: '700' }, progressTrack: { height: 5, backgroundColor: '#e3e6ef', borderRadius: 4, marginTop: 7, marginBottom: 12, overflow: 'hidden' }, progressFill: { height: 4, backgroundColor: '#0e7455', borderRadius: 4 }, eyebrow: { alignSelf: 'flex-start', backgroundColor: '#e9efff', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 10, marginBottom: 8 }, eyebrowText: { color: '#526c9a', fontSize: 7, fontWeight: '800', letterSpacing: 0.3 }, heading: { color: '#102e29', fontSize: 22, lineHeight: 28, fontWeight: '900', letterSpacing: -0.45 }, subheading: { color: '#71817b', fontSize: 11, lineHeight: 17, marginTop: 4, marginBottom: 10 }, promo: { height: 104, justifyContent: 'flex-end', borderRadius: 16, backgroundColor: '#173d32', marginBottom: 9, overflow: 'hidden' }, promoImage: { borderRadius: 12 }, promoShade: { flex: 1, justifyContent: 'flex-end', padding: 10, backgroundColor: 'rgba(6, 30, 23, 0.48)' }, promoTag: { color: '#d1ebd9', fontSize: 7, fontWeight: '800' }, promoTitle: { color: '#fff', fontSize: 12, fontWeight: '900', marginTop: 2 }, promoFoot: { color: '#dbe9e1', fontSize: 8, marginTop: 2 }, tierCard: { backgroundColor: '#fff', borderRadius: 17, borderWidth: 1, borderColor: '#edf0f2', padding: 15, marginBottom: 11, shadowColor: '#173d32', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, tierCardSelected: { borderColor: '#0c5b44', borderWidth: 1.5 }, tierHeader: { flexDirection: 'row', alignItems: 'center', gap: 7 }, tierIcon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#eaf0ff' }, tierIconText: { color: '#07523e', fontSize: 15 }, cardTitle: { color: '#173d32', fontSize: 12, fontWeight: '800' }, small: { color: '#71817b', fontSize: 9, lineHeight: 14, marginTop: 2 }, radio: { width: 9, height: 9, borderRadius: 6, borderWidth: 1, borderColor: '#8d9b96' }, radioSelected: { borderColor: '#0a6a4c', backgroundColor: '#0a6a4c' }, tierBadge: { alignSelf: 'flex-end', backgroundColor: '#e3f4ea', color: '#176447', fontSize: 6, fontWeight: '900', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 3, marginTop: 5 }, benefit: { color: '#61766e', fontSize: 7, lineHeight: 11, marginTop: 5 }, matrix: { backgroundColor: '#f0f1ff', borderRadius: 15, padding: 12, marginTop: 4, marginBottom: 10 }, matrixTitle: { color: '#415779', fontSize: 9, fontWeight: '800', marginBottom: 4 }, matrixRow: { backgroundColor: '#fff', borderRadius: 5, flexDirection: 'row', marginTop: 3, paddingVertical: 5, paddingHorizontal: 4 }, matrixCell: { flex: 1, color: '#53645f', fontSize: 7, textAlign: 'center' }, matrixLabel: { textAlign: 'left', fontWeight: '700' }, note: { color: '#74817b', fontSize: 8, lineHeight: 12, marginVertical: 8 },
   inputLabel: { color: '#718079', fontSize: 8, fontWeight: '800', letterSpacing: 0.4, marginBottom: 5 }, phoneInput: { minHeight: 43, borderRadius: 10, borderWidth: 1, borderColor: '#e1e7e4', backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10 }, countryCode: { color: '#51665f', fontSize: 11, fontWeight: '700', borderRightWidth: 1, borderRightColor: '#e2e8e5', paddingRight: 9 }, phoneField: { flex: 1, paddingHorizontal: 9, color: '#223a33', fontSize: 13 }, hint: { color: '#86918c', fontSize: 7, marginTop: 5 }, infoCard: { backgroundColor: '#fff', borderRadius: 15, padding: 14, marginTop: 11, borderColor: '#edf0f2', borderWidth: 1, shadowColor: '#173d32', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 }, infoTitle: { color: '#304a41', fontSize: 9, fontWeight: '800' }, infoRow: { color: '#71817a', fontSize: 8, lineHeight: 13, marginTop: 6 }, spacer: { height: 16 }, button: { minHeight: 48, borderRadius: 13, backgroundColor: '#074b37', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 10, marginTop: 9 }, buttonDisabled: { opacity: 0.6 }, buttonText: { color: '#fff', fontSize: 10, fontWeight: '800', textAlign: 'center' }, support: { textAlign: 'center', color: '#75817c', fontSize: 7, marginTop: 8 }, otpField: { height: 50, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e3e8e6', textAlign: 'center', letterSpacing: 8, color: '#173d32', fontSize: 21, fontWeight: '800', marginTop: 4 }, centerLink: { color: '#38685a', fontSize: 9, fontWeight: '700', textAlign: 'center', marginTop: 9 },
   statusCard: { backgroundColor: '#fff', borderRadius: 17, padding: 15, marginBottom: 11, borderWidth: 1, borderColor: '#edf0f2', shadowColor: '#173d32', shadowOpacity: 0.055, shadowRadius: 9, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, stepKicker: { color: '#477263', fontSize: 7, letterSpacing: 0.45, fontWeight: '800' }, statusLine: { color: '#18382e', fontSize: 15, fontWeight: '900', marginTop: 5 }, sectionHeading: { color: '#203a32', fontSize: 12, fontWeight: '800', marginTop: 10 }, experienceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 7 }, experienceCard: { width: '48%', borderWidth: 1, borderColor: '#e7e9f0', backgroundColor: '#fff', borderRadius: 14, padding: 12, minHeight: 76, shadowColor: '#173d32', shadowOpacity: 0.04, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 1 }, experienceSelected: { borderColor: '#0b6249', backgroundColor: '#eff8f3' }, experienceFoot: { color: '#547668', fontSize: 7, marginTop: 5 }, categoryCard: { backgroundColor: '#fff', borderRadius: 15, padding: 12, marginTop: 10, borderWidth: 1, borderColor: '#edf0f2', shadowColor: '#173d32', shadowOpacity: 0.045, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 }, categoryHeader: { flexDirection: 'row', alignItems: 'center', gap: 7 }, categoryIcon: { width: 27, height: 27, borderRadius: 8, backgroundColor: '#e2f4ea', alignItems: 'center', justifyContent: 'center' }, chevron: { color: '#56776a', fontSize: 16 }, serviceRow: { borderTopWidth: 1, borderColor: '#f0f2f5', marginTop: 6, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }, checkbox: { width: 13, height: 13, borderWidth: 1, borderColor: '#a9b4af', borderRadius: 3 }, checked: { backgroundColor: '#07523e', borderColor: '#07523e' }, checkmark: { color: '#fff', fontSize: 9, fontWeight: '900', textAlign: 'center', lineHeight: 12 }, serviceName: { color: '#51655d', fontSize: 8, flex: 1 }, loader: { margin: 24 }, experienceInput: { color: '#203c34' },
-  formCard: { backgroundColor: '#fff', borderRadius: 15, padding: 13, marginTop: 10, borderWidth: 1, borderColor: '#f0f1f3', shadowColor: '#173d32', shadowOpacity: 0.045, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 }, formHeader: { flexDirection: 'row', justifyContent: 'space-between' }, formBadge: { color: '#27654f', backgroundColor: '#dff3e8', borderRadius: 7, overflow: 'hidden', fontSize: 6, paddingHorizontal: 5, paddingVertical: 3, alignSelf: 'flex-start' }, formInput: { minHeight: 36, backgroundColor: '#f8f9fb', borderRadius: 8, paddingHorizontal: 9, color: '#2b4039', fontSize: 10 }, searchInput: { backgroundColor: '#fff', borderColor: '#e1e7e4', borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, height: 48, color: '#183b30', fontSize: 10 }, suggestion: { backgroundColor: '#fff', padding: 9, borderBottomWidth: 1, borderColor: '#edf0f0' }, mapWrap: { height: 250, borderRadius: 16, overflow: 'hidden', marginTop: 8 }, map: { flex: 1 }, mapPlaceholder: { height: 190, borderRadius: 16, backgroundColor: '#e6eaf0', alignItems: 'center', justifyContent: 'center', padding: 20, marginTop: 8 }, mapPlaceholderTitle: { color: '#28463b', fontWeight: '800', fontSize: 11 }, locationButton: { minHeight: 35, backgroundColor: '#e7f3ec', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginTop: 8 }, locationButtonText: { color: '#176048', fontSize: 9, fontWeight: '800' }, locationCard: { backgroundColor: '#fff', borderRadius: 15, padding: 13, marginTop: 10, borderWidth: 1, borderColor: '#edf0f2', shadowColor: '#173d32', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 }, radiusRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }, radiusOption: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e4e8e9' }, radiusSelected: { backgroundColor: '#0b4635', borderColor: '#0b4635' }, radiusText: { color: '#64756e', fontSize: 9, fontWeight: '700' }, radiusTextSelected: { color: '#fff' }, notice: { color: '#8d681b', backgroundColor: '#fff8e5', borderRadius: 8, padding: 8, fontSize: 8, marginTop: 8 }, errorBox: { backgroundColor: '#fff0ef', padding: 9, borderRadius: 8, marginTop: 9 }, errorText: { color: '#a54842', fontSize: 9 }, retry: { color: '#07523e', fontSize: 9, fontWeight: '800', marginTop: 5 }, footer: { color: '#82908a', fontSize: 7, marginTop: 18, textAlign: 'center' },
+  formCard: { backgroundColor: '#fff', borderRadius: 15, padding: 13, marginTop: 10, borderWidth: 1, borderColor: '#f0f1f3', shadowColor: '#173d32', shadowOpacity: 0.045, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 }, formHeader: { flexDirection: 'row', justifyContent: 'space-between' }, formBadge: { color: '#27654f', backgroundColor: '#dff3e8', borderRadius: 7, overflow: 'hidden', fontSize: 6, paddingHorizontal: 5, paddingVertical: 3, alignSelf: 'flex-start' }, formInput: { minHeight: 36, backgroundColor: '#f8f9fb', borderRadius: 8, paddingHorizontal: 9, color: '#2b4039', fontSize: 10 }, formInputInvalid: { borderWidth: 1, borderColor: '#c83e3e' }, fieldError: { color: '#b42318', fontSize: 8, lineHeight: 12, marginTop: 5 }, searchInput: { backgroundColor: '#fff', borderColor: '#e1e7e4', borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, height: 48, color: '#183b30', fontSize: 10 }, suggestion: { backgroundColor: '#fff', padding: 9, borderBottomWidth: 1, borderColor: '#edf0f0' }, mapWrap: { height: 250, borderRadius: 16, overflow: 'hidden', marginTop: 8 }, map: { flex: 1 }, mapPlaceholder: { height: 190, borderRadius: 16, backgroundColor: '#e6eaf0', alignItems: 'center', justifyContent: 'center', padding: 20, marginTop: 8 }, mapPlaceholderTitle: { color: '#28463b', fontWeight: '800', fontSize: 11 }, locationButton: { minHeight: 35, backgroundColor: '#e7f3ec', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginTop: 8 }, locationButtonText: { color: '#176048', fontSize: 9, fontWeight: '800' }, locationCard: { backgroundColor: '#fff', borderRadius: 15, padding: 13, marginTop: 10, borderWidth: 1, borderColor: '#edf0f2', shadowColor: '#173d32', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 }, radiusRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }, radiusOption: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e4e8e9' }, radiusSelected: { backgroundColor: '#0b4635', borderColor: '#0b4635' }, radiusText: { color: '#64756e', fontSize: 9, fontWeight: '700' }, radiusTextSelected: { color: '#fff' }, notice: { color: '#8d681b', backgroundColor: '#fff8e5', borderRadius: 8, padding: 8, fontSize: 8, marginTop: 8 }, errorBox: { backgroundColor: '#fff0ef', padding: 9, borderRadius: 8, marginTop: 9 }, errorText: { color: '#a54842', fontSize: 9 }, retry: { color: '#07523e', fontSize: 9, fontWeight: '800', marginTop: 5 }, footer: { color: '#82908a', fontSize: 7, marginTop: 18, textAlign: 'center' },
 });

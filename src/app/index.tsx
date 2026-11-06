@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Animated, AppState, Linking, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, AppState, Linking, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { PartnerBrand } from '../components/PartnerBrand';
 import { firstNameOf, partnerApi, PartnerApiError, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
 
-const publicSite = process.env.EXPO_PUBLIC_PUBLIC_SITE_URL?.trim().replace(/\/+$/, '');
+// Used only by the hidden website links below; re-enable together with them.
+// const publicSite = process.env.EXPO_PUBLIC_PUBLIC_SITE_URL?.trim().replace(/\/+$/, '');
 const partnerSite = process.env.EXPO_PUBLIC_PARTNER_SITE_URL?.trim().replace(/\/+$/, '');
 
 type Workspace = { type: Exclude<PartnerRoleType, 'customer'>; title: string; category: string; description: string; benefit: string; icon: string; route: string; setupRoute: string };
@@ -94,7 +96,12 @@ export default function PartnerHomeScreen() {
       router.push('/technician/setup');
       return;
     }
-    if (!user) { setModalOpen(true); setLoginError('Sign in to continue to your partner workspace.'); return; }
+    if (!user) { router.push('/login' as never); return; }
+    if (item.type === 'designer') {
+      const designerRole = user.roles?.find(entry => entry.type === 'designer');
+      router.push(designerRole ? '/professional/dashboard' : '/professional/onboarding');
+      return;
+    }
     const role = user.roles?.find(entry => entry.type === item.type);
     if (item.type === 'merchant' && !merchant) { setApiError('Seller access could not be verified. Refresh and try again.'); return; }
     const route = item.type === 'merchant'
@@ -125,12 +132,14 @@ export default function PartnerHomeScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <PartnerBrand compact />
-        <Pressable onPress={() => void openConfigured(publicSite, '', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to open Kraftnex.com.')} accessibilityRole="link"><Text style={styles.siteLink}>KraftNex.com ↗</Text></Pressable>
-        <Pressable style={styles.avatar} onPress={() => { setLoginError(''); setModalOpen(true); }} accessibilityLabel={user ? 'Open account' : 'Sign in'}><Text style={styles.avatarText}>{user ? initials : '↗'}</Text></Pressable>
+        {/* Website link hidden for now:
+        <Pressable onPress={() => void openConfigured(publicSite, '', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to open Kraftnex.com.')} accessibilityRole="link"><Text style={styles.siteLink}>KraftNex.com ↗</Text></Pressable> */}
+        <Pressable style={user ? styles.avatar : styles.signInButton} onPress={() => { if (user) { setLoginError(''); setModalOpen(true); } else router.push('/login' as never); }} accessibilityLabel={user ? 'Open account' : 'Sign in'}><Text style={user ? styles.avatarText : styles.signInText}>{user ? initials : 'Sign in'}</Text></Pressable>
       </View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadSession(true)} tintColor="#07523e" />}>
         <View style={styles.hero}>
-          <View style={styles.banner}><Text style={styles.bannerIcon}>⌁</Text><Text style={styles.bannerText}>{loading ? 'CONNECTING TO KRAFTNEX' : apiError ? 'CONNECTION NEEDS ATTENTION' : 'WORKSPACE ACTIVATION'}</Text><View style={[styles.dot, apiError ? styles.dotError : loading ? styles.dotLoading : styles.dotOk]} /></View>
+          {/* Connection status banner hidden:
+          <View style={styles.banner}><Text style={styles.bannerIcon}>⌁</Text><Text style={styles.bannerText}>{loading ? 'CONNECTING TO KRAFTNEX' : apiError ? 'CONNECTION NEEDS ATTENTION' : 'WORKSPACE ACTIVATION'}</Text><View style={[styles.dot, apiError ? styles.dotError : loading ? styles.dotLoading : styles.dotOk]} /></View> */}
           <Text style={styles.title}>{welcomeName ? `Welcome, ${welcomeName}` : 'Welcome, Partner'}</Text>
           <Text style={styles.intro}>Set up your first workspace to start receiving jobs, leads, enquiries and orders. You can add more later from the account menu.</Text>
           <Text style={styles.sectionTitle}>Choose Your Workspace</Text>
@@ -151,7 +160,8 @@ export default function PartnerHomeScreen() {
           </View>;
         })}
         <View style={styles.securityCard}><Text style={styles.securityIcon}>◉</Text><View style={styles.securityCopy}><Text style={styles.securityTitle}>Bespoke Multi-Tenant Architecture</Text><Text style={styles.securityText}>Your data and commercial telemetry remain encrypted and strictly isolated within your organization’s perimeter.</Text></View></View>
-        <View style={styles.portalCard}><Text style={styles.portalEyebrow}>⌁  Looking for your client dashboard?</Text><View style={styles.portalRow}><Pressable style={styles.portalButton} onPress={() => void openConfigured(publicSite, '/client/dashboard', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to open the client dashboard.')}><Text style={styles.portalButtonText}>Open it on KraftNex.com</Text></Pressable><Pressable onPress={() => void openConfigured(publicSite, '/client/dashboard', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to switch portals.')}><Text style={styles.switchText}>SWITCH PORTAL ↗</Text></Pressable></View></View>
+        {/* Client-dashboard website card hidden for now:
+        <View style={styles.portalCard}><Text style={styles.portalEyebrow}>⌁  Looking for your client dashboard?</Text><View style={styles.portalRow}><Pressable style={styles.portalButton} onPress={() => void openConfigured(publicSite, '/client/dashboard', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to open the client dashboard.')}><Text style={styles.portalButtonText}>Open it on KraftNex.com</Text></Pressable><Pressable onPress={() => void openConfigured(publicSite, '/client/dashboard', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to switch portals.')}><Text style={styles.switchText}>SWITCH PORTAL ↗</Text></Pressable></View></View> */}
         {!!apiError && <View style={styles.errorCard}><Text style={styles.errorTitle}>Partner connection unavailable</Text><Text style={styles.errorText}>{apiError}</Text><Pressable onPress={() => void loadSession(true)}><Text style={styles.retry}>Try again</Text></Pressable></View>}
         {!!configError && <View style={styles.configError}><Text style={styles.configErrorText}>{configError}</Text></View>}
         <View style={styles.footer}><Text style={styles.footerText}>♧  Encrypted Gateway</Text><Text style={styles.footerText}>KRAFTNEX V2.4</Text></View>
@@ -166,7 +176,7 @@ export default function PartnerHomeScreen() {
             <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#84938d" value={password} onChangeText={setPassword} secureTextEntry onSubmitEditing={() => void signIn()} />
             {!!loginError && <Text style={styles.loginError}>{loginError}</Text>}
             <Pressable style={[styles.primaryButton, loginBusy && styles.disabled]} onPress={() => void signIn()} disabled={loginBusy || !emailOrPhone.trim() || !password}>{loginBusy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>Sign in</Text>}</Pressable>
-            <Pressable onPress={() => void openConfigured(partnerSite, '/register', 'Set EXPO_PUBLIC_PARTNER_SITE_URL to open partner registration.')}><Text style={styles.register}>Create a Kraftnex account ↗</Text></Pressable>
+            <Pressable onPress={() => { setModalOpen(false); router.push('/signup'); }}><Text style={styles.register}>Create a Kraftnex account →</Text></Pressable>
           </>}
         </View></View>
       </Modal>
@@ -178,6 +188,8 @@ export default function PartnerHomeScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f7f6fc' },
   header: { height: 62, paddingHorizontal: 18, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e8ecea' },
+  signInButton: { height: 32, paddingHorizontal: 16, borderRadius: 16, backgroundColor: '#064a38', alignItems: 'center', justifyContent: 'center' },
+  signInText: { color: '#fff', fontWeight: '800', fontSize: 12.5 },
   siteLink: { color: '#73808b', fontSize: 11, fontWeight: '600' },
   avatar: { width: 29, height: 29, borderRadius: 16, backgroundColor: '#064a38', alignItems: 'center', justifyContent: 'center' }, avatarText: { color: '#fff', fontWeight: '800', fontSize: 12 },
   scroll: { flex: 1 }, content: { paddingBottom: 20 },
