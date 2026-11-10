@@ -2,6 +2,7 @@
   "expo": {
     "name": "Kraftnex Partner",
     "slug": "kraftnex-partner",
+    "owner": "adityavardhanmss-team",
     "scheme": "kraftnex-partner",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -30,9 +31,6 @@
         "asyncRoutes": {
           "web": true
         }
-      },
-      "eas": {
-        "projectId": "5babbe98-5433-427a-a262-a05ce86743d8"
       }
     },
     "plugins": [
