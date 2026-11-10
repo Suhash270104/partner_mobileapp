@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/AppText';
+import { Icon } from '../../../components/Icon';
 import { router } from 'expo-router';
 import { partnerApi, StudioAvailableLead, StudioLead } from '../../../lib/partnerApi';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
@@ -139,11 +140,11 @@ export default function ClientsScreen() {
           <View style={{ flex: 1 }}>
             <Text style={s.title}>Clients & Leads</Text>
           </View>
-          <Pressable style={s.buy} onPress={() => setPlansOpen(true)}><Text style={s.buyText}>＋ Buy Credits</Text></Pressable>
+          <Pressable style={s.buy} onPress={() => router.navigate('/professional/credits' as never)}><Text style={s.buyText}>＋ Buy Credits</Text></Pressable>
         </View>
 
         <View style={s.creditCard}>
-          <View style={s.creditIcon}><Text style={s.creditGlyph}>⚡</Text></View>
+          <View style={s.creditIcon}><Icon name="zap" size={18} color="#fff" /></View>
           <View style={{ flex: 1 }}>
             <Text style={s.creditValue}>{credits === null ? '—' : credits} Credits Left</Text>
             <Text style={s.creditSub}>{creditsLine}</Text>
@@ -206,7 +207,7 @@ export default function ClientsScreen() {
                   <Text style={s.leadProject} numberOfLines={1}>{project.title || 'Interior Project'}</Text>
                 </View>
                 <View style={[s.badge, { backgroundColor: badge.bg }]}><Text style={[s.badgeText, { color: badge.fg }]}>{badge.label}</Text></View>
-                <Text style={s.chevron}>{open ? '⌄' : '›'}</Text>
+                <Icon name={open ? 'chevronDown' : 'chevronRight'} size={18} color={c.body} />
               </Pressable>
               <View style={s.metaRow}>
                 <Text style={s.meta} numberOfLines={1}>{project.location || project.city || '—'}</Text>
@@ -277,7 +278,7 @@ export default function ClientsScreen() {
                 <Text style={s.emptyCopy} numberOfLines={2}>{meta || 'Details unlock instantly'}</Text>
               </View>
               <Pressable style={s.unlock} onPress={() => setUnlockTarget({ id: String(project.id), title: project.title, location: project.location || project.city, budgetRange: project.budgetRange, areaSqFt: project.areaSqFt, timeline: project.timeline, proposalsReceived: project.proposalsReceived, maxProposals: project.maxProposals })}>
-                <Text style={s.unlockText}>🔒 Unlock · {credits && credits >= 1 ? '1 credit' : 'pay once'}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Icon name="lock" size={13} color={c.green} /><Text style={s.unlockText}>Unlock · {credits && credits >= 1 ? '1 credit' : 'pay once'}</Text></View>
               </Pressable>
             </View>
           );

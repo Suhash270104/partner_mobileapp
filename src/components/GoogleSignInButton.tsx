@@ -14,6 +14,7 @@ type Props = {
 // configured with that same web client. The Android OAuth client (package + SHA-1) only has to exist
 // in Google Cloud so Google trusts this app - it is never referenced here.
 const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
+const GOOGLE_NATIVE_BUILD_MESSAGE = 'Google sign in needs the Kraftnex Partner Android build with Google Sign-In included. Expo Go and older app builds do not contain this native module. Install a newly built app to use Google sign in.';
 
 export default function GoogleSignInButton({ clientId, disabled = false, onIdToken, onError }: Props) {
   if (Platform.OS === 'web') {
@@ -29,15 +30,25 @@ function NativeGoogleButton({ disabled, onIdToken, onError }: Omit<Props, 'clien
       onError('Google sign in is not configured. Add EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID to partner_mobileapp/.env and rebuild the app.');
       return;
     }
-    let GoogleSigninModule: typeof import('@react-native-google-signin/google-signin');
+    let GoogleSigninModule: typeof import('@react-native-google-signin/google-signin') | undefined;
     try {
-      // Loaded on demand so Expo Go (which lacks the native module) can still open the screen.
+      // Load on demand so unsupported shells can still open the screen and receive a clear message.
       GoogleSigninModule = require('@react-native-google-signin/google-signin');
     } catch {
-      onError('Google sign in needs a development build of the app. It is not available in Expo Go.');
+      onError(GOOGLE_NATIVE_BUILD_MESSAGE);
       return;
     }
-    const { GoogleSignin, statusCodes } = GoogleSigninModule;
+    const GoogleSignin = GoogleSigninModule?.GoogleSignin;
+    const statusCodes = GoogleSigninModule?.statusCodes;
+    if (
+      !GoogleSignin
+      || typeof GoogleSignin.configure !== 'function'
+      || typeof GoogleSignin.hasPlayServices !== 'function'
+      || typeof GoogleSignin.signIn !== 'function'
+    ) {
+      onError(GOOGLE_NATIVE_BUILD_MESSAGE);
+      return;
+    }
     try {
       GoogleSignin.configure({ webClientId: WEB_CLIENT_ID, scopes: ['email', 'profile'] });
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
@@ -48,9 +59,13 @@ function NativeGoogleButton({ disabled, onIdToken, onError }: Omit<Props, 'clien
       await onIdToken(idToken);
     } catch (cause) {
       const code = (cause as { code?: string })?.code;
-      if (code === statusCodes.SIGN_IN_CANCELLED || code === statusCodes.IN_PROGRESS) return;
-      if (code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) { onError('Google Play Services is missing or out of date on this device.'); return; }
       const message = cause instanceof Error ? cause.message : 'Google sign in could not be started.';
+      if (/RNGoogleSignin|TurboModuleRegistry|native module.*(not|could not).*found|not registered in the native binary/i.test(message)) {
+        onError(GOOGLE_NATIVE_BUILD_MESSAGE);
+        return;
+      }
+      if (code === statusCodes?.SIGN_IN_CANCELLED || code === statusCodes?.IN_PROGRESS) return;
+      if (code === statusCodes?.PLAY_SERVICES_NOT_AVAILABLE) { onError('Google Play Services is missing or out of date on this device.'); return; }
       // DEVELOPER_ERROR means the Android OAuth client (package name + SHA-1) does not match this build.
       onError(/DEVELOPER_ERROR|10:/i.test(message) ? 'Google rejected this build. Check the Android OAuth client package name and SHA-1 in Google Cloud.' : message);
     }

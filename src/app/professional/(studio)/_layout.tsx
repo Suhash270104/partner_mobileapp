@@ -3,8 +3,8 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-nat
 import { Text } from '../../../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Slot, usePathname } from 'expo-router';
-import { partnerApi, PartnerApiError } from '../../../lib/partnerApi';
-import { isProfileComplete } from '../../../lib/professionalOnboarding';
+import { Icon } from '../../../components/Icon';
+import { partnerApi, PartnerApiError } from '../../../lib/partnerApi';import { isProfileComplete } from '../../../lib/professionalOnboarding';
 import { c } from '../../../components/professional/onboardingUi';
 import { StudioContext, StudioProfile } from '../../../components/studio/StudioContext';
 import { activeTabKey, TAB_BAR } from '../../../components/studio/studioNav';
@@ -106,7 +106,7 @@ export default function StudioLayout() {
             const active = tab.key === activeKey;
             return (
               <Pressable key={tab.key} style={s.tab} onPress={() => router.navigate(tab.path as never)} accessibilityRole="tab" accessibilityState={{ selected: active }}>
-                <Text style={[s.glyph, active && s.glyphOn]}>{tab.glyph}</Text>
+                <Icon name={tab.glyph} size={22} color={active ? c.green : '#9aa8a1'} />
                 <Text style={[s.tabLabel, active && s.tabLabelOn]}>{tab.label}</Text>
               </Pressable>
             );

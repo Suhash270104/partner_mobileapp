@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useNavigation } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import GoogleSignInButton from '../components/GoogleSignInButton';
-import { authApi } from '../lib/auth';
+import { AuthApiError, authApi } from '../lib/auth';
 
 const GREEN = '#06291f';
 const LOGO = require('../../assets/kraftnex-logo-transparent.png');
@@ -48,6 +48,7 @@ export default function SignupScreen() {
   const [resendIn, setResendIn] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [duplicateEmail, setDuplicateEmail] = useState(false);
 
   const googleClientId = Platform.select({
     android: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
@@ -76,13 +77,20 @@ export default function SignupScreen() {
   async function requestOtp() {
     setBusy(true);
     setError('');
+    setDuplicateEmail(false);
     try {
       const result = await authApi.registerSendOtp(phone, email.trim());
       setResendIn(result.resendAfterSeconds);
       setOtpDigits(Array(6).fill(''));
       setStep('otp');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not send the verification code.');
+      const isDuplicateEmail = cause instanceof AuthApiError
+        && cause.status === 409
+        && cause.field === 'email';
+      setDuplicateEmail(isDuplicateEmail);
+      setError(isDuplicateEmail
+        ? 'This email already has an account. If you signed up with Google, choose Continue with Google below, or reset your password.'
+        : cause instanceof Error ? cause.message : 'Could not send the verification code.');
     } finally {
       setBusy(false);
     }
@@ -229,7 +237,7 @@ export default function SignupScreen() {
                 <View style={styles.field}><View style={styles.nameIcon}><View style={styles.nameHead} /><View style={styles.nameBody} /></View><TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Enter your full name" placeholderTextColor="#9aa6b4" autoCapitalize="words" returnKeyType="next" accessibilityLabel="Full name" /></View>
 
                 <Text style={styles.label}>Email address</Text>
-                <View style={styles.field}><Text style={styles.fieldIcon}>✉</Text><TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor="#9aa6b4" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} returnKeyType="next" accessibilityLabel="Email address" /></View>
+                <View style={styles.field}><Text style={styles.fieldIcon}>✉</Text><TextInput style={styles.input} value={email} onChangeText={(value) => { setEmail(value); setDuplicateEmail(false); setError(''); }} placeholder="you@example.com" placeholderTextColor="#9aa6b4" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} returnKeyType="next" accessibilityLabel="Email address" /></View>
 
                 <Text style={styles.label}>Mobile number</Text>
                 <View style={styles.phoneRow}>
@@ -264,6 +272,7 @@ export default function SignupScreen() {
                 </View>
 
                 {!!error && <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>}
+                {duplicateEmail ? <Pressable style={styles.recoverAccount} onPress={() => router.push({ pathname: '/forgot-password', params: { email: email.trim() } } as never)}><Text style={styles.signinLink}>Reset password for this email</Text></Pressable> : null}
                 <Pressable style={[styles.continue, (busy || !acceptedTerms) && styles.disabled]} disabled={busy || !acceptedTerms} onPress={() => void continueRegistration()}>
                   {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.continueText}>Continue  →</Text>}
                 </Pressable>
@@ -414,6 +423,7 @@ const styles = StyleSheet.create({
   verifyButton: { width: '100%', height: 44, borderRadius: 9, backgroundColor: GREEN, alignItems: 'center', justifyContent: 'center', marginTop: 20 },
   verifyButtonText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   existingAccount: { marginTop: 10 },
+  recoverAccount: { alignSelf: 'flex-start', marginTop: -3, marginBottom: 8 },
   securityNote: { marginTop: 10, width: '100%', minHeight: 34, borderRadius: 8, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 8 },
   securityNoteText: { color: '#344251', fontSize: 8 },
   securityLock: { width: 11, alignItems: 'center', justifyContent: 'center' },

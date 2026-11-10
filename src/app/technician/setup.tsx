@@ -13,7 +13,6 @@ import { partnerApi, PartnerApiError, TechnicianProfileRecord, TechnicianService
 import { getEquipmentForCategories } from '../../lib/technicianEquipment';
 import { getPartnerExpoPushToken, showPartnerNotification } from '../../lib/partnerNotifications';
 import { isExpoGo } from '../../lib/runtime';
-
 type Tier = 'KN_CERTIFIED' | 'INDEPENDENT';
 type MapsModule = typeof import('react-native-maps');
 type Place = { title: string; subtitle: string; lat: number; lng: number; city: string };

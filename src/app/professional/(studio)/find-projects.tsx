@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/AppText';
+import { Icon } from '../../../components/Icon';
 import { router } from 'expo-router';
 import { OpenClientProject, partnerApi } from '../../../lib/partnerApi';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
@@ -149,12 +150,12 @@ export default function FindProjectsScreen() {
         {prefsReady && (
           <View style={s.match}>
             <View style={s.matchHead}>
-              <Text style={s.matchTitle}>◎  KAI SMART MATCH · YOUR CRITERIA</Text>
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}><Icon name="zap" size={13} color="#456557" /><Text style={s.matchTitle}>KAI SMART MATCH · YOUR CRITERIA</Text></View>
               <Pressable style={s.matchEdit} onPress={() => setWizardOpen(true)}><Text style={s.matchEditText}>{prefs ? 'Edit' : 'Set up'}</Text></Pressable>
             </View>
             {prefs ? (
               <>
-                <Text style={s.matchPlace}>📍 {prefsLocation}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Icon name="mapPin" size={14} color={c.ink} /><Text style={s.matchPlace}>{prefsLocation}</Text></View>
                 {prefsChips.length > 0 && <View style={s.matchChips}>{prefsChips.map(chip => <Text key={chip} style={s.matchChip}>{chip}</Text>)}</View>}
               </>
             ) : <Text style={s.matchCopy}>Tell KAI the projects you want and we&apos;ll match briefs by budget, city and type.</Text>}
@@ -164,7 +165,7 @@ export default function FindProjectsScreen() {
 
         {!!prefs && (
           <View style={s.tabs}>
-            {([[true, '✦ Recommended', tabCounts.recommended], [false, 'All Projects', tabCounts.all]] as [boolean, string, number][]).map(([on, label, count]) => (
+            {([[true, 'Recommended', tabCounts.recommended], [false, 'All Projects', tabCounts.all]] as [boolean, string, number][]).map(([on, label, count]) => (
               <Pressable key={label} style={[s.tab, recommendedOnly === on && s.tabOn]} onPress={() => setRecommendedOnly(on)}>
                 <Text style={[s.tabText, recommendedOnly === on && { color: c.greenText }]}>{label}  {count}</Text>
               </Pressable>
@@ -203,8 +204,8 @@ export default function FindProjectsScreen() {
                   if (!criteria.length) return null;
                   return (
                     <View style={s.criteria}>
-                      {criteria.every(item => item.ok) && <Text style={s.matchBadge}>✦ KAI match</Text>}
-                      {criteria.map(item => <Text key={item.label} style={[s.crit, item.ok ? s.critOk : s.critNo]}>{item.ok ? '✓' : '✕'} {item.label}</Text>)}
+                      {criteria.every(item => item.ok) && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.mint, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}><Icon name="zap" size={11} color={c.greenText} /><Text style={[s.matchBadge, { backgroundColor: 'transparent', paddingHorizontal: 0, paddingVertical: 0 }]}>KAI match</Text></View>}
+                      {criteria.map(item => <View key={item.label} style={[{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }, item.ok ? { backgroundColor: c.greenSoft } : { backgroundColor: '#f8eded' }]}><Icon name={item.ok ? 'check' : 'x'} size={11} color={item.ok ? c.greenText : c.red} strokeWidth={2.4} /><Text style={[s.crit, { paddingHorizontal: 0, paddingVertical: 0 }, item.ok ? s.critOk : s.critNo, { backgroundColor: 'transparent' }]}>{item.label}</Text></View>)}
                     </View>
                   );
                 })()}
@@ -221,7 +222,7 @@ export default function FindProjectsScreen() {
                   </Pressable>
                 ) : (
                   <Pressable style={s.primary} onPress={() => setUnlockTarget(asLead(project))}>
-                    <Text style={s.primaryText}>🔒 Unlock Contact · {credits && credits >= 1 ? '1 credit' : 'pay once'}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="lock" size={15} color="#fff" /><Text style={s.primaryText}>Unlock Contact · {credits && credits >= 1 ? '1 credit' : 'pay once'}</Text></View>
                   </Pressable>
                 )}
               </View>

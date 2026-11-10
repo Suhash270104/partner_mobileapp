@@ -10,14 +10,16 @@ import {
 } from 'react-native';
 import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { authApi } from '../lib/auth';
 
 const GREEN = '#06291f';
 
 export default function ForgotPasswordScreen() {
-  const [email, setEmail] = useState('');
+  const params = useLocalSearchParams<{ email?: string | string[] }>();
+  const initialEmail = Array.isArray(params.email) ? params.email[0] : params.email;
+  const [email, setEmail] = useState(initialEmail ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

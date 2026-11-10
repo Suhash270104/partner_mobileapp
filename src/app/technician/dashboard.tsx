@@ -11,8 +11,7 @@ import {
   TechnicianEarningsRecord,
   TechnicianKycState,
   TechnicianProfileRecord,
-} from '../../lib/partnerApi';
-import { useLiveLocationSharing } from '../../lib/technicianLiveLocation';
+} from '../../lib/partnerApi';import { useLiveLocationSharing } from '../../lib/technicianLiveLocation';
 import { getEquipmentLabel } from '../../lib/technicianEquipment';
 
 type DashboardTab = 'jobs' | 'earnings' | 'history' | 'profile';

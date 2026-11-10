@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/AppText';
+import { Icon } from '../../../components/Icon';
 import { partnerApi } from '../../../lib/partnerApi';
 import { c, ErrorText, Field } from '../../../components/professional/onboardingUi';
 import { Sheet } from '../../../components/studio/Sheet';
@@ -58,7 +59,7 @@ export default function ServicesScreen() {
         </View>
       ) : services.map(service => (
         <View key={service} style={s.card}>
-          <View style={s.glyph}><Text style={s.glyphText}>✦</Text></View>
+          <View style={s.glyph}><Icon name="award" size={18} color={c.green} /></View>
           <Text style={s.name}>{service}</Text>
           <Pressable disabled={saving} onPress={() => remove(service)} hitSlop={8}><Text style={s.delete}>Remove</Text></Pressable>
         </View>

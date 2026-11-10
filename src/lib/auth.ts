@@ -1,7 +1,7 @@
 const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
 
 export class AuthApiError extends Error {
-  constructor(message: string, readonly status: number, readonly code?: string) {
+  constructor(message: string, readonly status: number, readonly code?: string, readonly field?: string) {
     super(message);
     this.name = 'AuthApiError';
   }
@@ -30,14 +30,14 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...init.headers },
   });
-  let body: { message?: string; code?: string } = {};
+  let body: { message?: string; code?: string; field?: string } = {};
   try {
     body = await response.json();
   } catch {
     // The server may return an empty response for a failed request.
   }
   if (!response.ok) {
-    throw new AuthApiError(body.message ?? `Request failed (${response.status}).`, response.status, body.code);
+    throw new AuthApiError(body.message ?? `Request failed (${response.status}).`, response.status, body.code, body.field);
   }
   return body as T;
 }

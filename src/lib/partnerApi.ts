@@ -561,6 +561,11 @@ export interface PublicPlan {
   isPopular?: boolean;
   monthlyPrice?: number;
   projectLeadUnlocksPerMonth?: number;
+  leadUnlocksPerMonth?: number;
+  subtitle?: string;
+  credits?: number;
+  creditTiers?: { credits: number; renders?: number; monthlyPrice: number; yearlyPrice?: number }[];
+  featureSections?: { title?: string; items?: (string | { text?: string; label?: string })[]; features?: (string | { text?: string })[] }[];
   promo?: { isLive?: boolean; label?: string; monthlyPrice?: number };
 }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/AppText';
+import { Icon } from '../../../components/Icon';
 import { router } from 'expo-router';
 import { partnerApi } from '../../../lib/partnerApi';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
@@ -46,7 +47,7 @@ export default function StudioHubScreen() {
                 style={[s.row, index > 0 && s.rowBorder, !item.built && { opacity: 0.45 }]}
                 onPress={() => router.navigate(item.path as never)}
               >
-                <View style={s.glyphBox}><Text style={s.glyph}>{item.glyph}</Text></View>
+                <View style={s.glyphBox}><Icon name={item.glyph} size={19} color={c.green} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.label}>{item.label}</Text>
                   <Text style={s.hint}>{item.hint}</Text>

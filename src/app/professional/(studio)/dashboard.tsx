@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/AppText';
+import { Icon } from '../../../components/Icon';
 import { router } from 'expo-router';
 import { partnerApi, StudioDashboardResponse, StudioProposalRecord } from '../../../lib/partnerApi';
 import { c, Card, ErrorText } from '../../../components/professional/onboardingUi';
@@ -95,12 +96,12 @@ export default function DashboardScreen() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   const kpis = [
-    { label: 'Profile views', value: Number(data?.professional?.profileViews || 0).toLocaleString('en-IN'), foot: 'Times recommended to clients', glyph: '◉' },
-    { label: 'Project invitations', value: String(Number(stats.leads || 0)), foot: 'Clients unlocked you', glyph: '➤' },
-    { label: 'Proposals submitted', value: String(submitted), foot: 'Total sent', glyph: '▤' },
-    { label: 'Shortlisted', value: String(Number(stats.shortlisted || 0)), foot: 'From client shortlists', glyph: '★' },
-    { label: 'Projects won', value: String(won), foot: 'Awarded to you', glyph: '✦' },
-    { label: 'Revenue earned', value: revenue, foot: 'From won projects', glyph: '₹' },
+    { label: 'Profile views', value: Number(data?.professional?.profileViews || 0).toLocaleString('en-IN'), foot: 'Times recommended to clients', glyph: 'eye' },
+    { label: 'Project invitations', value: String(Number(stats.leads || 0)), foot: 'Clients unlocked you', glyph: 'send' },
+    { label: 'Proposals submitted', value: String(submitted), foot: 'Total sent', glyph: 'fileText' },
+    { label: 'Shortlisted', value: String(Number(stats.shortlisted || 0)), foot: 'From client shortlists', glyph: 'star' },
+    { label: 'Projects won', value: String(won), foot: 'Awarded to you', glyph: 'award' },
+    { label: 'Revenue earned', value: revenue, foot: 'From won projects', glyph: 'rupee' },
   ];
 
   return (
@@ -137,7 +138,7 @@ export default function DashboardScreen() {
       <View style={s.kpiGrid}>
         {kpis.map(kpi => (
           <View key={kpi.label} style={s.kpi}>
-            <View style={s.kpiIcon}><Text style={s.kpiGlyph}>{kpi.glyph}</Text></View>
+            <View style={s.kpiIcon}><Icon name={kpi.glyph} size={18} color={c.green} /></View>
             <Text style={s.kpiValue}>{kpi.value}</Text>
             <Text style={s.kpiLabel}>{kpi.label}</Text>
             <Text style={s.kpiFoot}>{kpi.foot}</Text>
