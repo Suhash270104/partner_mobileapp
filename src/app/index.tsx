@@ -164,6 +164,13 @@ export default function PartnerHomeScreen() {
             <View style={styles.cardBottom}><Text style={styles.benefit}>{state === 'Deployment ready' ? item.benefit : state}</Text><Pressable style={styles.setupButton} onPress={() => void openWorkspace(item)} disabled={loading}><Text style={styles.setupText}>{role?.status === 'active' || (item.type === 'merchant' && merchant?.canAccessDashboard) ? 'Open' : 'Set up'}  →</Text></Pressable></View>
           </View>;
         })}
+        {!!user && !loading && !user.roles?.some(entry => entry.type === 'designer') && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Already have a Kraftnex account?</Text>
+            <Text style={styles.description}>Add a studio workspace to this same login in a minute — no new account needed.</Text>
+            <View style={styles.cardBottom}><Text style={styles.benefit}>Interior professional</Text><Pressable style={styles.setupButton} onPress={() => router.push('/professional/become' as never)}><Text style={styles.setupText}>Add studio  →</Text></Pressable></View>
+          </View>
+        )}
         <View style={styles.securityCard}><Text style={styles.securityIcon}>◉</Text><View style={styles.securityCopy}><Text style={styles.securityTitle}>Bespoke Multi-Tenant Architecture</Text><Text style={styles.securityText}>Your data and commercial telemetry remain encrypted and strictly isolated within your organization’s perimeter.</Text></View></View>
         {/* Client-dashboard website card hidden for now:
         <View style={styles.portalCard}><Text style={styles.portalEyebrow}>⌁  Looking for your client dashboard?</Text><View style={styles.portalRow}><Pressable style={styles.portalButton} onPress={() => void openConfigured(publicSite, '/client/dashboard', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to open the client dashboard.')}><Text style={styles.portalButtonText}>Open it on KraftNex.com</Text></Pressable><Pressable onPress={() => void openConfigured(publicSite, '/client/dashboard', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to switch portals.')}><Text style={styles.switchText}>SWITCH PORTAL ↗</Text></Pressable></View></View> */}

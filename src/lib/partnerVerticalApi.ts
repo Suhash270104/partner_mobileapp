@@ -33,6 +33,11 @@ export const realtorApi = {
   notifications: () => partnerApi.call<Record<string, unknown>>(realtorPath('/notifications')),
   markNotificationRead: (id: string) => partnerApi.call<Record<string, unknown>>(`${realtorPath('/notifications')}/${encodeURIComponent(id)}/read`, 'POST', {}),
   markAllNotificationsRead: () => partnerApi.call<Record<string, unknown>>(realtorPath('/notifications/read-all'), 'POST', {}),
+  media: {
+    list: (resourceType: string, resourceId: string) => partnerApi.call<Record<string, unknown>>(realtorPath(`/media?resourceType=${encodeURIComponent(resourceType)}&resourceId=${encodeURIComponent(resourceId)}`)),
+    remove: (id: string) => partnerApi.call<Record<string, unknown>>(`${realtorPath('/media')}/${encodeURIComponent(id)}`, 'DELETE'),
+    setPrimary: (id: string) => partnerApi.call<Record<string, unknown>>(`${realtorPath('/media')}/${encodeURIComponent(id)}/primary`, 'POST', {}),
+  },
   uploadMedia: (file: { uri: string; name: string; mimeType: string }, target: { resourceType: string; resourceId: string; type: string }) => {
     const base = process.env.EXPO_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, '');
     if (!base) return Promise.reject(new PartnerApiError('Set EXPO_PUBLIC_API_BASE_URL to upload realtor media.', 0, 'API_URL_MISSING'));
@@ -41,10 +46,17 @@ export const realtorApi = {
     form.append('resourceType', target.resourceType);
     form.append('resourceId', target.resourceId);
     form.append('type', target.type);
-    return fetch(`${base}/realestate/realtor/media`, { method: 'POST', body: form, credentials: 'include', headers: { Accept: 'application/json' } }).then(async response => {
+    const send = () => fetch(`${base}/realestate/realtor/media`, { method: 'POST', body: form, credentials: 'include', headers: { Accept: 'application/json' } });
+    const parse = async (response: Response) => {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new PartnerApiError(body?.message || `Media upload failed (${response.status}).`, response.status, body?.code);
       return body as Record<string, unknown>;
+    };
+    // A 401 means the access cookie expired: renew the session once (partnerApi.session refreshes) and retry once.
+    return send().then(async response => {
+      if (response.status !== 401) return parse(response);
+      await partnerApi.session();
+      return parse(await send());
     });
   },
 };
@@ -94,6 +106,12 @@ export const merchantApi = {
   storeOffers: () => merchantRequest<Record<string, unknown>>('/offers'),
   saveStoreOffer: (input: Record<string, unknown>, id?: string) => merchantRequest<Record<string, unknown>>(id ? `/offers/${encodeURIComponent(id)}` : '/offers', id ? 'PUT' : 'POST', input),
   setStoreOfferActive: (id: string, isActive: boolean) => merchantRequest<Record<string, unknown>>(`/offers/${encodeURIComponent(id)}/switch`, 'PATCH', { isActive }),
+  deleteStoreOffer: (id: string) => merchantRequest<Record<string, unknown>>(`/offers/${encodeURIComponent(id)}`, 'DELETE'),
+  switchStoreOffer: (id: string, input: { displayOnMarketplace?: boolean; status?: 'active' | 'paused' | 'expired' }) => merchantRequest<Record<string, unknown>>(`/offers/${encodeURIComponent(id)}/switch`, 'PATCH', input),
+  publishFlashSale: (id: string) => merchantRequest<Record<string, unknown>>(`/flash-sales/${encodeURIComponent(id)}/publish`, 'PATCH', {}),
+  addFlashSaleProducts: (id: string, products: { productId: string; discountPercentage?: number; stockLimit?: number }[]) => merchantRequest<Record<string, unknown>>(`/flash-sales/${encodeURIComponent(id)}/products`, 'POST', { products }),
+  removeFlashSaleProduct: (id: string, productId: string) => merchantRequest<Record<string, unknown>>(`/flash-sales/${encodeURIComponent(id)}/products/${encodeURIComponent(productId)}`, 'DELETE'),
+  returnById: (id: string) => merchantRequest<Record<string, unknown>>(`/returns/${encodeURIComponent(id)}`),
   enquiryQuestions: () => merchantRequest<Record<string, unknown>>('/enquiry-questions'),
   saveEnquiryQuestions: (questions: Record<string, unknown>[]) => merchantRequest<Record<string, unknown>>('/enquiry-questions', 'PUT', { questions }),
   leads: (params: Record<string, string | number | undefined> = {}) => merchantRequest<Record<string, unknown>>(`/leads${queryString(params)}`),

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { DataRow, Field, PageHeading, Panel, PrimaryButton, SelectChips, StatePanel, VerticalFrame, palette } from '../../../components/vertical/VerticalUi';
+import { DataRow, Field, PageHeading, Panel, PrimaryButton, SecondaryButton, SelectChips, StatePanel, VerticalFrame, palette } from '../../../components/vertical/VerticalUi';
 import { ListingCreditsSheet } from '../../../components/realtor/ListingCreditsSheet';
 import { Text } from '../../../components/AppText';
 import { PartnerApiError } from '../../../lib/partnerApi';
@@ -91,6 +91,7 @@ export default function NewRealtorListingScreen() {
     <PageHeading title="Existing listings" subtitle="Draft, review and published listings" />
     {!loading && listings.length === 0 ? <StatePanel title="No listings yet" message="Create a listing from a saved property or developer project." /> : listings.map(row => <Panel key={id(row)}>
       <DataRow title={title(row)} detail={[String(row.listingPurpose || ''), String(row.transactionType || '')].filter(Boolean).join(' · ')} status={String(row.status || 'draft')} />
+      <SecondaryButton title="View / edit" onPress={() => router.push(`/realtor/listing/${id(row)}` as never)} />
       {['draft', 'changes_requested'].includes(String(row.status)) ? <PrimaryButton title="Submit for review" onPress={() => void submitListing(row)} loading={busy} /> : null}
     </Panel>)}
     <ListingCreditsSheet visible={creditsOpen} title="Buy listing credits to post" onClose={() => setCreditsOpen(false)} onPurchased={() => void load()} />

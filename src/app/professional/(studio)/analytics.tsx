@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/AppText';
+import { router } from 'expo-router';
 import { partnerApi, StudioDashboardResponse, StudioProposalRecord } from '../../../lib/partnerApi';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
 import { useStudio } from '../../../components/studio/StudioContext';
@@ -157,6 +158,9 @@ export default function AnalyticsScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.ranges}>
         {RANGES.map(([key, label]) => <Pressable key={key} style={[s.range, range === key && s.rangeOn]} onPress={() => setRange(key)}><Text style={[s.rangeText, range === key && { color: '#fff' }]}>{label}</Text></Pressable>)}
       </ScrollView>
+      <Pressable style={s.insightsLink} onPress={() => router.navigate('/professional/insights' as never)}>
+        <Text style={s.insightsLinkText}>AI Insights — KAI score, profile strength & trust  ›</Text>
+      </Pressable>
       {!!error && <ErrorText>{error}</ErrorText>}
       {!loaded && <ActivityIndicator color={c.green} style={{ marginTop: 20 }} />}
 
@@ -219,6 +223,8 @@ const s = StyleSheet.create({
   range: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#fff', borderWidth: 1, borderColor: c.line },
   rangeOn: { backgroundColor: c.green, borderColor: c.green },
   rangeText: { color: c.body, fontSize: 12.5, fontWeight: '700' },
+  insightsLink: { backgroundColor: c.greenSoft, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  insightsLinkText: { color: c.green, fontSize: 13, fontWeight: '800' },
   kpis: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   kpi: { width: '48%', backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: c.line, padding: 14, gap: 2 },
   kpiLabel: { color: c.muted, fontSize: 12, fontWeight: '600' },

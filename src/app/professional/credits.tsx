@@ -146,6 +146,7 @@ export default function BuyCreditsScreen() {
           <Text style={st.curEyebrow}>YOUR CREDITS</Text>
           <Text style={st.curName}>{credits === null ? '—' : credits.toLocaleString('en-IN')}</Text>
           <Text style={st.curCopy}>{creditsLine}</Text>
+          <Pressable onPress={() => router.push('/professional/credit-history' as never)} hitSlop={8} accessibilityRole="link"><Text style={st.historyLink}>View credit history  ›</Text></Pressable>
         </View>
 
         {!!notice && <View style={[st.notice, notice.ok ? st.noticeOk : st.noticeBad]}><Text style={st.noticeText}>{notice.text}</Text></View>}
@@ -253,6 +254,7 @@ const st = StyleSheet.create({
   curEyebrow: { fontSize: 9, fontWeight: '800', color: '#9cc9b6', letterSpacing: 0.6 },
   curName: { fontSize: 30, fontWeight: '800', color: '#fff', marginTop: 6 },
   curCopy: { fontSize: 12, color: '#c3dccf', marginTop: 6 },
+  historyLink: { fontSize: 12.5, fontWeight: '800', color: '#fff', marginTop: 12 },
   notice: { borderRadius: 14, padding: 12 },
   noticeOk: { backgroundColor: c.greenSoft },
   noticeBad: { backgroundColor: c.redSoft },

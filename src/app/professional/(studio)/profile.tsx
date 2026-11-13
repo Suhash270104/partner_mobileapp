@@ -203,7 +203,11 @@ export default function ProfileScreen() {
 }
 
 // Designer-submitted showcase projects, hidden from the public profile until an admin approves them.
-interface Submission { _id: string; title: string; rejectionReason?: string; status: 'PENDING' | 'APPROVED' | 'REJECTED' }
+interface Submission {
+  _id: string; title: string; rejectionReason?: string; status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  description?: string; projectCity?: string; images?: string[]; propertyType?: string; areaSqFt?: string | number; budget?: string; style?: string; timeline?: string;
+  spaces?: string[]; materials?: string[]; servicesDelivered?: string[];
+}
 const SUBMISSION_STYLE = { PENDING: { bg: c.amberSoft, fg: c.amber, icon: '◷' }, APPROVED: { bg: c.mint, fg: c.greenText, icon: '✓' }, REJECTED: { bg: c.redSoft, fg: c.red, icon: '✕' } };
 const emptyForm = { title: '', description: '', projectCity: '', propertyType: '', areaSqFt: '', budget: '', style: '', timeline: '', spaces: '', materials: '', services: '' };
 
@@ -216,6 +220,7 @@ function SubmissionsPanel() {
   const [images, setImages] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [editingId, setEditingId] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -257,17 +262,31 @@ function SubmissionsPanel() {
     }
   }
 
+  function openEdit(item: Submission) {
+    setError('');
+    setEditingId(item._id);
+    setForm({
+      title: item.title || '', description: item.description || '', projectCity: item.projectCity || '', propertyType: item.propertyType || '',
+      areaSqFt: item.areaSqFt != null ? String(item.areaSqFt) : '', budget: item.budget || '', style: item.style || '', timeline: item.timeline || '',
+      spaces: (item.spaces || []).join(', '), materials: (item.materials || []).join(', '), services: (item.servicesDelivered || []).join(', '),
+    });
+    setImages(item.images || []);
+    setOpen(true);
+  }
+
   async function submit() {
     if (!form.title.trim()) { setError('Enter a project title.'); return; }
     setBusy(true);
     setError('');
     try {
-      await partnerApi.call('/professional/portfolio-projects', 'POST', {
+      const payload = {
         title: form.title.trim(), description: form.description, projectCity: form.projectCity, images,
         propertyType: form.propertyType, areaSqFt: form.areaSqFt, budget: form.budget, style: form.style, timeline: form.timeline,
         spaces: list(form.spaces), materials: list(form.materials), servicesDelivered: list(form.services),
-      });
-      setForm(emptyForm); setImages([]); setOpen(false);
+      };
+      if (editingId) await partnerApi.call(`/professional/portfolio-projects/${editingId}`, 'PUT', payload);
+      else await partnerApi.call('/professional/portfolio-projects', 'POST', payload);
+      setForm(emptyForm); setImages([]); setEditingId(''); setOpen(false);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to submit project');
@@ -296,7 +315,7 @@ function SubmissionsPanel() {
     <View style={s.card}>
       <View style={s.head}>
         <Text style={s.cardTitle}>Portfolio Project Submissions</Text>
-        <Pressable style={s.addSmall} onPress={() => { setError(''); setOpen(true); }}><Text style={s.addSmallText}>＋ Submit</Text></Pressable>
+        <Pressable style={s.addSmall} onPress={() => { setError(''); setEditingId(''); setForm(emptyForm); setImages([]); setOpen(true); }}><Text style={s.addSmallText}>＋ Submit</Text></Pressable>
       </View>
       <Text style={s.hint}>Showcase projects go live on your public profile only after admin approval.</Text>
       {loading && <ActivityIndicator color={c.green} />}
@@ -310,12 +329,13 @@ function SubmissionsPanel() {
               <Text style={[s.submissionTitle, { color: tone.fg }]}>{tone.icon}  {item.title}</Text>
               {item.status === 'REJECTED' && !!item.rejectionReason && <Text style={s.hint}>Reason: {item.rejectionReason}</Text>}
             </View>
+            {item.status !== 'APPROVED' && <Pressable onPress={() => openEdit(item)} hitSlop={8}><Text style={s.link}>Edit</Text></Pressable>}
             <Pressable onPress={() => remove(item)} hitSlop={8}><Text style={s.delete}>Remove</Text></Pressable>
           </View>
         );
       })}
 
-      <Sheet visible={open} title="Submit a portfolio project" eyebrow="FOR ADMIN REVIEW" onClose={() => setOpen(false)} locked={busy}>
+      <Sheet visible={open} title={editingId ? 'Edit portfolio project' : 'Submit a portfolio project'} eyebrow={editingId ? 'RE-QUEUED FOR REVIEW ON SAVE' : 'FOR ADMIN REVIEW'} onClose={() => setOpen(false)} locked={busy}>
         <Field label="PROJECT TITLE *" value={form.title} onChangeText={set('title')} placeholder="Project title" />
         <Field label="SHORT DESCRIPTION" value={form.description} onChangeText={set('description')} placeholder="Short description" multiline style={{ minHeight: 70, textAlignVertical: 'top', paddingTop: 12 }} />
         <Field label="CITY" value={form.projectCity} onChangeText={set('projectCity')} placeholder="City" />
@@ -331,7 +351,7 @@ function SubmissionsPanel() {
         <View style={s.grid}>{images.map((uri, index) => <View key={`${uri}-${index}`} style={s.thumb}><Image source={{ uri }} style={s.thumbImg} /><Pressable style={s.thumbRemove} onPress={() => setImages(previous => previous.filter((_, position) => position !== index))}><Text style={s.thumbRemoveText}>×</Text></Pressable></View>)}</View>
         <Pressable style={s.outline} disabled={busy} onPress={() => void pick()}><Text style={s.outlineText}>＋ Add images</Text></Pressable>
         {!!error && <ErrorText>{error}</ErrorText>}
-        <Pressable style={[s.solid, { marginTop: 12 }, (busy || !form.title.trim()) && { opacity: 0.6 }]} disabled={busy || !form.title.trim()} onPress={() => void submit()}>{busy ? <ActivityIndicator color="#fff" /> : <Text style={s.solidText}>Submit for Review</Text>}</Pressable>
+        <Pressable style={[s.solid, { marginTop: 12 }, (busy || !form.title.trim()) && { opacity: 0.6 }]} disabled={busy || !form.title.trim()} onPress={() => void submit()}>{busy ? <ActivityIndicator color="#fff" /> : <Text style={s.solidText}>{editingId ? 'Save & Resubmit' : 'Submit for Review'}</Text>}</Pressable>
       </Sheet>
     </View>
   );

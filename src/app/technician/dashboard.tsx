@@ -13,6 +13,7 @@ import {
   TechnicianProfileRecord,
 } from '../../lib/partnerApi';import { useLiveLocationSharing } from '../../lib/technicianLiveLocation';
 import { getEquipmentLabel } from '../../lib/technicianEquipment';
+import { registerPartnerDevicePush } from '../../lib/partnerPush';
 
 type DashboardTab = 'jobs' | 'earnings' | 'history' | 'profile';
 type JobFilter = 'all' | 'incoming' | 'active';
@@ -80,6 +81,10 @@ export default function TechnicianDashboardScreen() {
   const [coreLoaded, setCoreLoaded] = useState(false);
   const [kycPromptDismissed, setKycPromptDismissed] = useState(false);
   const [kycError, setKycError] = useState('');
+
+  // Offer pushes must work even if the setup screen was skipped: register this phone every time the
+  // dashboard opens (a no-op once registered, and it never blocks or throws).
+  useEffect(() => { void registerPartnerDevicePush(); }, []);
 
   const loadCore = useCallback(async (includeEarnings = false, pullToRefresh = false) => {
     if (pullToRefresh) setRefreshing(true);

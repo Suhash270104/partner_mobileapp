@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/AppText';
+import { router } from 'expo-router';
 import { partnerApi } from '../../../lib/partnerApi';
 import { c } from '../../../components/professional/onboardingUi';
 
@@ -85,6 +86,10 @@ export default function PaymentsScreen() {
         <View style={[s.tile, { backgroundColor: c.greenSoft }]}><Text style={s.tileValue}>{unlocked}</Text><Text style={s.tileLabel}>Leads Unlocked</Text><Text style={s.tileFoot}>{credits > 0 ? `${credits} credits granted to date` : 'From prepaid credits'}</Text></View>
       </View>
 
+      <Pressable style={s.creditLink} onPress={() => router.push('/professional/credit-history' as never)}>
+        <Text style={s.creditLinkText}>Lead credit balance & history  ›</Text>
+      </Pressable>
+
       <View style={s.card}>
         <View style={s.head}><Text style={s.cardTitle}>Transaction History</Text><Text style={s.meta}>Billed via Cashfree</Text></View>
         {loading && <ActivityIndicator color={c.green} style={{ marginVertical: 20 }} />}
@@ -119,6 +124,8 @@ const s = StyleSheet.create({
   tileValue: { color: c.ink, fontSize: 16, fontWeight: '800' },
   tileLabel: { color: c.body, fontSize: 11, fontWeight: '700' },
   tileFoot: { color: c.muted, fontSize: 10 },
+  creditLink: { backgroundColor: c.greenSoft, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  creditLinkText: { color: c.green, fontSize: 13, fontWeight: '800' },
   card: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: c.line, padding: 14 },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   cardTitle: { color: c.ink, fontSize: 15, fontWeight: '800' },

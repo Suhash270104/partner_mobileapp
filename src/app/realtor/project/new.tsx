@@ -165,7 +165,7 @@ export default function RealtorProjectsScreen() {
     <PageHeading title="Saved projects" subtitle={loading ? 'Loading projects…' : `${projects.length} projects`} />
     {!loading && !error && projects.length === 0 ? <StatePanel title="No projects yet" message="Your project drafts and published projects will appear here." /> : projects.map(project => <Panel key={getId(project)}>
       <DataRow title={String(project.name || 'Project')} detail={[String(project.projectType || ''), String((project.location as Data | undefined)?.city || '')].filter(Boolean).join(' · ')} status={String(project.status || 'draft')} />
-      <View style={s.actions}><View style={{ flex: 1 }}><SecondaryButton title="Configurations" onPress={() => void openConfigurations(project)} /></View>{['draft', 'changes_requested'].includes(String(project.status)) ? <View style={{ flex: 1 }}><PrimaryButton title="Submit" onPress={() => void submitProject(project)} loading={busy} /></View> : null}</View>
+      <View style={s.actions}><View style={{ flex: 1 }}><SecondaryButton title="Edit" onPress={() => router.push(`/realtor/project/${getId(project)}` as never)} /></View><View style={{ flex: 1 }}><SecondaryButton title="Configurations" onPress={() => void openConfigurations(project)} /></View>{['draft', 'changes_requested'].includes(String(project.status)) ? <View style={{ flex: 1 }}><PrimaryButton title="Submit" onPress={() => void submitProject(project)} loading={busy} /></View> : null}</View>
     </Panel>)}
     <Modal visible={!!selectedProject} animationType="slide" transparent onRequestClose={() => setSelectedProject(null)}>
       <View style={s.backdrop}><View style={s.modal}>

@@ -488,6 +488,9 @@ export const partnerApi = {
   openProfessionalChatRoom: (projectId: string) => request<{ room?: { roomId?: string } }>('/chat/room/professional', { method: 'POST', body: JSON.stringify({ projectId }) }),
   createCashfreeOrder: (payload: Record<string, unknown>) => request<CashfreeOrder>('/payments/cashfree/order', { method: 'POST', body: JSON.stringify(payload) }),
   verifyCashfreeOrder: (orderId: string, buyerType: 'designer') => request<{ success: boolean; status: 'PAID' | 'PENDING' | 'FAILED' | 'USER_DROPPED' }>('/payments/cashfree/verify', { method: 'POST', body: JSON.stringify({ orderId, buyerType }) }),
+  leadCreditHistory: () => request<{ success?: boolean; entries?: LeadCreditEntry[] }>('/professional/lead-credits/history'),
+  becomeProfessional: (payload: Record<string, unknown>) => request<{ message?: string }>('/identity/become-professional', { method: 'POST', body: JSON.stringify(payload) }),
+  executionProjectReport: (projectId: string) => request<{ success?: boolean; report?: ExecutionProjectReport }>(`/execution/projects/${encodeURIComponent(projectId)}/report`),
   publicPricing: () => request<{ subscriptions?: PublicPlan[] }>('/pricing/public'),
   professionalProfile: () => request<ProfessionalProfileRecord>('/professional/profile'),
   saveProfessionalOnboarding: (payload: { stage: number; businessName: string; companyName: string; data: Record<string, unknown>; isComplete: boolean }) => request<{
@@ -588,7 +591,29 @@ export interface StudioDashboardResponse {
   proposals?: StudioProposalRecord[];
   recentMessages?: { id?: string | number; clientName?: string; text?: string; time?: string }[];
   revenueEarned?: number;
-  kaiMetrics?: { score?: number };
+  kaiMetrics?: { score?: number; responseRate?: number; proposalQuality?: number; clientSatisfaction?: number; onTimeDelivery?: number; ratingLabel?: string; stars?: number; betterThanPercentile?: number };
+}
+
+export interface LeadCreditEntry {
+  _id?: string;
+  type: 'GRANT' | 'DEBIT';
+  source: 'LEAD_PACK_PURCHASE' | 'LEAD_UNLOCK' | 'SUBSCRIPTION' | 'WELCOME_BONUS' | 'LEAD_REFUND' | string;
+  wallet?: 'PLAN' | 'BONUS';
+  amount: number;
+  balanceAfter: number;
+  orderId?: string;
+  projectId?: string;
+  createdAt?: string;
+}
+
+export interface ExecutionProjectReport {
+  projectId?: string;
+  tasksTotal: number;
+  tasksDone: number;
+  progressEntries: number;
+  visitsScheduled: number;
+  visitsCompleted: number;
+  onTimeCheckInRate: number | null;
 }
 
 export interface CashfreeOrder { success: boolean; orderId: string; paymentSessionId: string; environment: 'production' | 'sandbox'; amount?: number; message?: string }

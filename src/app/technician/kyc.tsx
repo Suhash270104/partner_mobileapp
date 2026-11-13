@@ -68,16 +68,20 @@ export default function TechnicianKycScreen() {
     const appStateSubscription = AppState.addEventListener('change', state => {
       if (state !== 'active') {
         wasBackgrounded.current = true;
-      } else if (wasBackgrounded.current) {
+      } else if (wasBackgrounded.current || sessionIdRef.current) {
+        // Back from the Didit browser (or any time away while a session is open): pull the result.
         wasBackgrounded.current = false;
         void loadStatus(true);
       }
     });
+    // A deep link back into the app (kraftnex-partner://...) also means the browser step is over.
+    const linkSubscription = Linking.addEventListener('url', () => { void loadStatus(true); });
     const timer = setInterval(() => {
-      if (AppState.currentState === 'active') void loadStatus();
+      if (AppState.currentState === 'active') void loadStatus(Boolean(sessionIdRef.current));
     }, 30000);
     return () => {
       appStateSubscription.remove();
+      linkSubscription.remove();
       clearInterval(timer);
     };
   }, [loadStatus]));

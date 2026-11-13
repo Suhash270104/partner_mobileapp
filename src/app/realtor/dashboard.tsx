@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { DataRow, Field, PageHeading, Panel, PrimaryButton, SecondaryButton, SectionTitle, StatePanel, StatusPill, VerticalFrame, palette } from '../../components/vertical/VerticalUi';
 import { Text } from '../../components/AppText';
+import { ListingCreditsSheet } from '../../components/realtor/ListingCreditsSheet';
+import { SummaryHeader, formatPrice } from '../../components/realtor/RealtorShared';
 import { PartnerApiError } from '../../lib/partnerApi';
 import { realtorApi } from '../../lib/partnerVerticalApi';
 
@@ -31,6 +33,8 @@ export default function RealtorDashboardScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState('');
+  const [creditsOpen, setCreditsOpen] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -81,6 +85,13 @@ export default function RealtorDashboardScreen() {
   const company = firstString(profile?.companyName, profile?.fullName, 'Realty workspace')!;
   const chooseTab = (key: string) => { setError(''); setTab(key as Tab); };
   const status = String(profile?.approvalStatus || profile?.onboardingStatus || 'pending');
+  const unread = useMemo(() => tab === 'more' ? rows.filter(item => !item.read && !item.readAt).length : 0, [rows, tab]);
+  async function markAllRead() {
+    setMarkingAll(true); setError('');
+    try { await realtorApi.markAllNotificationsRead(); await loadTab('more'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not mark notifications as read.'); }
+    finally { setMarkingAll(false); }
+  }
   const filteredRows = useMemo(() => rows.filter(item => !filter || tab !== 'leads' || String(item.status || '').toLowerCase() === filter.toLowerCase()), [rows, filter, tab]);
 
   return <VerticalFrame title={company} subtitle="KRAFTNEX REALTY" tabs={TABS} activeTab={tab} onTab={chooseTab} onBack={() => router.replace('/')}>
@@ -106,6 +117,10 @@ export default function RealtorDashboardScreen() {
           <Kpi label="Profile completion" value={profile?.profileCompleteness} suffix={profile?.profileCompleteness != null ? '%' : ''} />
           <Kpi label="Buyer leads" value={(profile?.stats as Data | undefined)?.leadsReceived} />
         </View>
+        <Pressable onPress={() => setCreditsOpen(true)}><Panel style={s.creditCard}>
+          <View style={{ flex: 1 }}><Text style={s.statusLabel}>LISTING CREDITS</Text><Text style={s.creditValue}>{profile?.listingQuota == null ? '—' : String(profile.listingQuota)} available</Text><Text style={s.creditHint}>Each property or project post uses one credit.</Text></View>
+          <Text style={s.creditBuy}>Buy credits ›</Text>
+        </Panel></Pressable>
         <SectionTitle title="Quick actions" />
         <Panel>
           <ActionRow title="Add a property" detail="Create a property draft with details and photos" onPress={() => router.push('/realtor/property/new')} />
@@ -141,10 +156,15 @@ export default function RealtorDashboardScreen() {
           <ActionRow title="Verification & profile" detail="Credentials and service areas" onPress={() => router.push('/realtor/onboarding')} />
           <ActionRow title="Sign out" detail="Return to partner workspaces" onPress={() => { void realtorApi.logout().catch(() => undefined).finally(() => router.replace('/')); }} />
         </Panel>
-        {rows.map(item => <Pressable key={idOf(item)} onPress={async () => { const id = idOf(item); if (id) await realtorApi.markNotificationRead(id); await loadTab('more'); }}><Panel><DataRow title={firstString(item.title, item.message, item.type, 'Kraftnex update')!} detail={firstString(item.body, item.createdAt)} status={item.readAt ? 'read' : 'new'} /></Panel></Pressable>)}
+        <Panel><View style={s.notifHeader}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}><Text style={s.notifTitle}>Notifications</Text>{unread > 0 ? <View style={s.badge}><Text style={s.badgeText}>{unread > 99 ? '99+' : unread}</Text></View> : null}</View>
+          {unread > 0 ? <View style={{ width: 130 }}><SecondaryButton title={markingAll ? 'Marking…' : 'Mark all read'} onPress={() => void markAllRead()} /></View> : <Text style={s.notifHint}>All caught up</Text>}
+        </View></Panel>
+        {rows.map(item => <Pressable key={idOf(item)} onPress={async () => { const id = idOf(item); if (id) await realtorApi.markNotificationRead(id); await loadTab('more'); }}><Panel><DataRow title={firstString(item.title, item.message, item.type, 'Kraftnex update')!} detail={firstString(item.body, item.createdAt)} status={item.readAt || item.read ? 'read' : 'new'} /></Panel></Pressable>)}
       </> : null}
       {error && tab !== 'overview' ? <StatePanel title="Couldn’t load this section" message={error} retry={() => void loadTab(tab, filter)} /> : null}
     </ScrollView> : null}
+    <ListingCreditsSheet visible={creditsOpen} title="Buy listing credits" onClose={() => setCreditsOpen(false)} onPurchased={() => void loadProfile()} />
     <Modal visible={!!selected} animationType="slide" transparent onRequestClose={() => setSelected(null)}>
       <View style={s.modalBackdrop}><ScrollView style={s.modalCard} contentContainerStyle={s.modalContent}>
         <View style={s.modalHeader}><Text style={s.modalTitle}>{firstString(selected?.title, selected?.buyerName, selected?.projectName, 'Details')!}</Text><Pressable onPress={() => setSelected(null)}><Text style={s.close}>×</Text></Pressable></View>
@@ -159,6 +179,17 @@ function Kpi({ label, value, suffix = '' }: { label: string; value: unknown; suf
 }
 function ActionRow({ title, detail, onPress }: { title: string; detail: string; onPress: () => void }) {
   return <Pressable onPress={onPress} style={s.actionRow}><View style={{ flex: 1 }}><Text style={s.actionTitle}>{title}</Text><Text style={s.actionDetail}>{detail}</Text></View><Text style={s.chevron}>›</Text></Pressable>;
+}
+const leadPhone = (item: Data) => firstString(item.customerPhone, item.phone, (item.customerId as Data | undefined)?.phone) || '';
+const whatsappNumber = (phone: string) => { const digits = phone.replace(/\D/g, ''); return digits.length === 10 ? `91${digits}` : digits; };
+function DetailSummary({ item, tab }: { item: Data; tab: Tab }) {
+  if (tab === 'properties') return <SummaryHeader title={firstString(item.title, item.propertyType, 'Property')!} location={locOf(item)} price={formatPrice(item.price ?? item.monthlyRent)} status={String(item.status || 'draft')} extra={[item.propertyType, item.listingPurpose, item.bhk ? `${String(item.bhk)} BHK` : ''].filter(Boolean).map(value => String(value).replaceAll('_', ' ')).join(' · ')} />;
+  if (tab === 'listings') return <SummaryHeader title={firstString(item.title, item.propertyTitle, item.projectName, 'Listing')!} location={locOf(item)} price={formatPrice(item.price)} status={String(item.status || 'draft')} extra={[item.listingPurpose, item.transactionType].filter(Boolean).map(value => String(value).replaceAll('_', ' ')).join(' · ')} />;
+  if (tab === 'leads') {
+    const customer = (item.customerId && typeof item.customerId === 'object' ? item.customerId : {}) as Data;
+    return <SummaryHeader title={firstString(item.customerName, item.buyerName, customer.name, item.name, 'Buyer enquiry')!} location={firstString(item.propertyTitle, item.projectName, item.developerName)} status={String(item.status || 'new')} extra={[leadPhone(item), firstString(item.customerEmail, customer.email)].filter(Boolean).join(' · ')} />;
+  }
+  return null;
 }
 function DetailContent({ item, tab, onRefresh, onClose }: { item: Data; tab: Tab; onRefresh: () => void; onClose: () => void }) {
   const [status, setStatus] = useState(String(item.status || ''));
@@ -181,6 +212,11 @@ function DetailContent({ item, tab, onRefresh, onClose }: { item: Data; tab: Tab
   }
   return <>
     {error ? <Text style={s.error}>{error}</Text> : null}
+    <DetailSummary item={item} tab={tab} />
+    {tab === 'leads' && leadPhone(item) ? <View style={s.contactRow}>
+      <View style={{ flex: 1 }}><PrimaryButton title="Call" onPress={() => void Linking.openURL(`tel:${leadPhone(item)}`).catch(() => setError('Could not open the phone dialer.'))} /></View>
+      <View style={{ flex: 1 }}><SecondaryButton title="WhatsApp" onPress={() => void Linking.openURL(`https://wa.me/${whatsappNumber(leadPhone(item))}`).catch(() => setError('Could not open WhatsApp.'))} /></View>
+    </View> : null}
     {Object.entries(item).filter(([key, value]) => !['_id', 'id', '__v'].includes(key) && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')).slice(0, 16).map(([key, value]) => <DataRow key={key} title={key.replaceAll(/([A-Z])/g, ' $1').replaceAll('_', ' ')} detail={String(value)} />)}
     {tab === 'leads' ? <>
       <Field label="Follow-up note" value={note} onChangeText={setNote} multiline />
@@ -189,6 +225,7 @@ function DetailContent({ item, tab, onRefresh, onClose }: { item: Data; tab: Tab
       <PrimaryButton title="Save lead update" onPress={() => void act(status)} loading={busy} />
     </> : null}
     {tab === 'listings' && ['draft', 'changes_requested'].includes(String(item.status)) ? <PrimaryButton title="Submit for review" onPress={() => void act('submit')} loading={busy} /> : null}
+    {(tab === 'properties' || tab === 'listings') ? <SecondaryButton title="Edit" onPress={() => { onClose(); router.push((tab === 'properties' ? `/realtor/property/${id}` : `/realtor/listing/${id}`) as never); }} /> : null}
     {(tab === 'properties' || tab === 'listings') ? <SecondaryButton title="Delete" onPress={() => void act('delete')} /> : null}
     {tab === 'more' && !item.readAt ? <PrimaryButton title="Mark as read" onPress={() => void act('read')} loading={busy} /> : null}
   </>;
@@ -198,5 +235,7 @@ const s = StyleSheet.create({
   content: { padding: 16, paddingBottom: 26, gap: 12 }, error: { color: palette.red, fontSize: 12, lineHeight: 18 }, statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8 }, statusLabel: { color: palette.greenText, fontSize: 9, fontWeight: '800', letterSpacing: 0.7 }, statusValue: { color: palette.green, fontSize: 17, fontWeight: '800', marginTop: 3 }, note: { color: palette.body, fontSize: 12 },
   kpis: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 }, kpi: { width: '48%', minHeight: 86, justifyContent: 'center' }, kpiValue: { color: palette.ink, fontSize: 22, fontWeight: '800' }, kpiLabel: { color: palette.muted, fontSize: 11, marginTop: 3 },
   count: { color: palette.greenText, backgroundColor: palette.greenSoft, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, fontSize: 11, fontWeight: '800' }, actionRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line }, actionTitle: { color: palette.ink, fontSize: 13, fontWeight: '800' }, actionDetail: { color: palette.muted, fontSize: 11, lineHeight: 16, marginTop: 3 }, chevron: { color: palette.greenText, fontSize: 26 },
+  creditCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: palette.amberSoft, borderColor: '#f0dcae' }, creditValue: { color: palette.ink, fontSize: 18, fontWeight: '800', marginTop: 3 }, creditHint: { color: palette.body, fontSize: 11, marginTop: 2 }, creditBuy: { color: palette.green, fontSize: 12, fontWeight: '800' },
+  notifHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 }, notifTitle: { color: palette.ink, fontSize: 15, fontWeight: '800' }, notifHint: { color: palette.muted, fontSize: 11 }, badge: { minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, backgroundColor: palette.red, alignItems: 'center', justifyContent: 'center' }, badgeText: { color: '#fff', fontSize: 11, fontWeight: '800' }, contactRow: { flexDirection: 'row', gap: 9 },
   filters: { gap: 8, paddingVertical: 4 }, filter: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line }, filterOn: { backgroundColor: palette.green, borderColor: palette.green }, filterText: { color: palette.body, fontSize: 11, fontWeight: '700', textTransform: 'capitalize' }, filterTextOn: { color: '#fff' }, modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(16,35,28,0.45)' }, modalCard: { maxHeight: '90%', borderTopLeftRadius: 22, borderTopRightRadius: 22, backgroundColor: palette.bg }, modalContent: { padding: 18, paddingBottom: 30, gap: 8 }, modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }, modalTitle: { color: palette.ink, fontSize: 18, fontWeight: '800', flex: 1 }, close: { color: palette.muted, fontSize: 28 }, smallLabel: { color: palette.ink, fontWeight: '800', fontSize: 12 },
 });

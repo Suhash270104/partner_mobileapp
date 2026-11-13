@@ -8,8 +8,9 @@ import { useStudio } from '../../../components/studio/StudioContext';
 import { ExecutionTab } from '../../../components/studio/pms/ExecutionTab';
 import { ProcurementTab } from '../../../components/studio/pms/ProcurementTab';
 import { QuotationTab } from '../../../components/studio/pms/QuotationTab';
+import { ReportTab } from '../../../components/studio/pms/ReportTab';
 
-type PmsTab = 'tasks' | 'quotations' | 'procurement' | 'client';
+type PmsTab = 'tasks' | 'quotations' | 'procurement' | 'report' | 'client';
 
 interface PmsProject {
   id: string;
@@ -46,7 +47,7 @@ function isAwarded(p: PmsProject, designerId?: string): boolean {
   return ['awarded', 'inprogress', 'completed', 'execution'].includes(status);
 }
 
-const TABS: [PmsTab, string][] = [['tasks', 'Tasks & Milestones'], ['quotations', 'Quotations & Estimates'], ['procurement', 'Procurement & POs'], ['client', 'Client & Details']];
+const TABS: [PmsTab, string][] = [['tasks', 'Tasks & Milestones'], ['quotations', 'Quotations & Estimates'], ['procurement', 'Procurement & POs'], ['report', 'Project Report'], ['client', 'Client & Details']];
 
 export default function ProjectManagementScreen() {
   const { profile } = useStudio();
@@ -156,6 +157,7 @@ export default function ProjectManagementScreen() {
       {tab === 'tasks' && <ExecutionTab key={`${selectedId}-${version}`} projectId={selectedId} />}
       {tab === 'quotations' && <QuotationTab key={`${selectedId}-${version}`} projectId={selectedId} />}
       {tab === 'procurement' && <ProcurementTab key={`${selectedId}-${version}`} projectId={selectedId} />}
+      {tab === 'report' && <ReportTab key={`${selectedId}-${version}`} projectId={selectedId} />}
       {tab === 'client' && (
         <View style={{ gap: 12 }}>
           <View style={s.card}>
