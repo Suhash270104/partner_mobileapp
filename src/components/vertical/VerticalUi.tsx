@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Icon } from '../Icon';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
@@ -9,6 +10,11 @@ export const palette = {
   green: '#0b3b2d', greenSoft: '#e3f2ea', greenText: '#17684b', amber: '#b7791f', amberSoft: '#fdf3dc',
   red: '#b3392f', redSoft: '#fdecea', blue: '#2a5ba8', blueSoft: '#e8f0fb', violet: '#5b3fa0', violetSoft: '#efeafa',
 };
+
+const TAB_GLYPHS: Record<string, string> = { overview: 'dashboard', dashboard: 'dashboard', properties: 'layers', listings: 'fileText', projects: 'briefcase', leads: 'users', more: 'settings', products: 'layers', orders: 'clipboard', settings: 'settings' };
+const TAB_NAMES: Record<string, string> = { Overview: 'Home', Realty: 'More', Enquiries: 'Enquiries' };
+const tabGlyph = (tab: { key: string }) => TAB_GLYPHS[tab.key] || 'dashboard';
+const tabName = (tab: { label: string }) => TAB_NAMES[tab.label] || tab.label;
 
 export function VerticalFrame({ title, subtitle, children, tabs, activeTab, onTab, onBack }: {
   title: string; subtitle?: string; children: ReactNode; tabs: { key: string; label: string; icon: string }[];
@@ -21,9 +27,13 @@ export function VerticalFrame({ title, subtitle, children, tabs, activeTab, onTa
       <View style={s.avatar}><Text style={s.avatarText}>{title.trim().charAt(0).toUpperCase()}</Text></View>
     </View>
     <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">{children}</ScrollView>
-    <View style={s.tabs}>{tabs.map(tab => <Pressable key={tab.key} onPress={() => onTab(tab.key)} style={s.tab} accessibilityRole="tab" accessibilityState={{ selected: activeTab === tab.key }}>
-      <Text style={[s.tabIcon, activeTab === tab.key && s.tabIconOn]}>{tab.icon}</Text><Text numberOfLines={1} style={[s.tabLabel, activeTab === tab.key && s.tabLabelOn]}>{tab.label}</Text>
-    </Pressable>)}</View>
+    <View style={s.tabs}>{tabs.map(tab => {
+      const on = activeTab === tab.key;
+      return <Pressable key={tab.key} onPress={() => onTab(tab.key)} style={s.tab} accessibilityRole="tab" accessibilityLabel={tabName(tab)} accessibilityState={{ selected: on }}>
+        <View style={[s.tabPill, on && s.tabPillOn]}><Icon name={tabGlyph(tab)} size={21} color={on ? palette.green : '#8a9a92'} /></View>
+        <Text numberOfLines={1} style={[s.tabLabel, on && s.tabLabelOn]}>{tabName(tab)}</Text>
+      </Pressable>;
+    })}</View>
   </SafeAreaView>;
 }
 
@@ -98,8 +108,9 @@ const s = StyleSheet.create({
   headerTitle: { flex: 1 }, headerName: { color: palette.ink, fontSize: 14, fontWeight: '800' }, headerSub: { color: palette.muted, fontSize: 10, marginTop: 1 },
   avatar: { width: 34, height: 34, borderRadius: 17, backgroundColor: palette.green, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   scroll: { flex: 1 }, content: { padding: 16, paddingBottom: 26, gap: 12 },
-  tabs: { flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.line, paddingTop: 5, paddingBottom: 4 },
-  tab: { flex: 1, minWidth: 0, alignItems: 'center', gap: 2, paddingHorizontal: 2, paddingVertical: 4 }, tabIcon: { fontSize: 17, color: '#9aa8a1' }, tabIconOn: { color: palette.green }, tabLabel: { color: '#9aa8a1', fontSize: 9, fontWeight: '700' }, tabLabelOn: { color: palette.green },
+  tabs: { flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.line, paddingTop: 6, paddingBottom: 6 },
+  tabPill: { width: 50, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, tabPillOn: { backgroundColor: palette.greenSoft },
+  tab: { flex: 1, minWidth: 0, alignItems: 'center', gap: 2, paddingHorizontal: 2, paddingVertical: 4 }, tabIcon: { fontSize: 17, color: '#9aa8a1' }, tabIconOn: { color: palette.green }, tabLabel: { color: '#8a9a92', fontSize: 11, fontWeight: '700' }, tabLabelOn: { color: palette.green },
   heading: { gap: 4, marginBottom: 2 }, eyebrow: { color: palette.muted, fontSize: 10, fontWeight: '800', letterSpacing: 1 }, headingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 }, headingText: { flex: 1 }, pageTitle: { color: palette.ink, fontSize: 25, lineHeight: 31, fontWeight: '800' }, pageSub: { color: palette.body, fontSize: 13, lineHeight: 19, marginTop: 4 },
   panel: { backgroundColor: palette.card, borderColor: palette.line, borderWidth: 1, borderRadius: 16, padding: 14, gap: 9 }, panelTint: { backgroundColor: palette.greenSoft, borderColor: '#bfe0cf' },
   section: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8 }, sectionTitle: { color: palette.ink, fontSize: 16, fontWeight: '800' },
