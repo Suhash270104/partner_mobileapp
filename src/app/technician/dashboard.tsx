@@ -4,6 +4,7 @@ import { Text } from '../../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { PartnerBrand } from '../../components/PartnerBrand';
+import { Icon } from '../../components/Icon';
 import {
   partnerApi,
   PartnerApiError,
@@ -633,10 +634,10 @@ export default function TechnicianDashboardScreen() {
       </Modal>
 
       <View style={styles.bottomNav}>
-        <NavItem label="Jobs" icon="⌂" active={tab === 'jobs'} onPress={() => selectTab('jobs')} />
-        <NavItem label="Earnings" icon="₹" active={tab === 'earnings'} onPress={() => selectTab('earnings')} />
-        <NavItem label="History" icon="◷" active={tab === 'history'} onPress={() => selectTab('history')} />
-        <NavItem label="Profile" icon="♙" active={tab === 'profile'} onPress={() => selectTab('profile')} />
+        <NavItem label="My Jobs" icon="briefcase" active={tab === 'jobs'} onPress={() => selectTab('jobs')} />
+        <NavItem label="Earnings" icon="rupee" active={tab === 'earnings'} onPress={() => selectTab('earnings')} />
+        <NavItem label="Past Jobs" icon="clock" active={tab === 'history'} onPress={() => selectTab('history')} />
+        <NavItem label="Account" icon="user" active={tab === 'profile'} onPress={() => selectTab('profile')} />
       </View>
     </SafeAreaView>
   );
@@ -846,7 +847,7 @@ function EmptyCard({ title, detail }: { title: string; detail: string }) {
 
 function NavItem({ label, icon, active, onPress }: { label: string; icon: string; active: boolean; onPress: () => void }) {
   return <Pressable style={styles.navItem} onPress={onPress} accessibilityRole="tab" accessibilityState={{ selected: active }}>
-    <Text style={[styles.navIcon, active && styles.navActive]}>{icon}</Text>
+    <Icon name={icon} size={22} color={active ? '#07523e' : '#84928c'} />
     <Text style={[styles.navLabel, active && styles.navActive]}>{label}</Text>
   </Pressable>;
 }
@@ -1029,9 +1030,9 @@ const styles = StyleSheet.create({
   signOutButton: { height: 42, borderRadius: 11, borderWidth: 1, borderColor: '#e6c6c2', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   signOutText: { color: '#b3261e', fontSize: 10, fontWeight: '900' },
   footer: { color: '#89958f', fontSize: 8, textAlign: 'center', marginTop: 18, marginBottom: 4 },
-  bottomNav: { minHeight: 54, flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e7ece9', paddingHorizontal: 5, paddingTop: 5 },
-  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  bottomNav: { minHeight: 62, flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e7ece9', paddingHorizontal: 5, paddingTop: 5 },
+  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 4 },
   navIcon: { color: '#84928c', fontSize: 14, fontWeight: '700' },
-  navLabel: { color: '#84928c', fontSize: 7, fontWeight: '700' },
+  navLabel: { color: '#84928c', fontSize: 11, fontWeight: '700' },
   navActive: { color: '#07523e', fontWeight: '900' },
 });
