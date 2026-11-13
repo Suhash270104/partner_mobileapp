@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { StyleSheet } from 'react-native';
-import { DataRow, Field, PageHeading, Panel, PrimaryButton, SelectChips, StatePanel, VerticalFrame, palette } from '../../components/vertical/VerticalUi';
+import { DataRow, Field, Panel, PrimaryButton, SelectChips, StatePanel, palette } from '../../components/vertical/VerticalUi';
+import { StepShell } from '../../components/vertical/StepShell';
 import { Text } from '../../components/AppText';
 import { PartnerApiError } from '../../lib/partnerApi';
 import { realtorApi } from '../../lib/partnerVerticalApi';
@@ -95,12 +96,32 @@ export default function RealtorOnboardingScreen() {
   const current = sequence[Math.min(step, sequence.length - 1)];
   const submitted = profile?.onboardingStatus === 'submitted' || profile?.isOnboarded === true;
 
-  return <VerticalFrame title="Kraftnex Realty" subtitle={String(profile?.companyName || profile?.fullName || 'REAL ESTATE PARTNER')} tabs={TABS} activeTab="more" onTab={key => key === 'dashboard' && router.push('/realtor/dashboard')} onBack={() => router.back()}>
+  const TAGS: Record<string, string> = { profile: 'PROFILE', credentials: 'CREDENTIALS', areas: 'SERVICE AREA', ready: 'REVIEW' };
+  const stepTitle = submitted ? 'Submitted · under review' : current === 'profile' ? (business ? 'Company profile' : isOwner ? 'Owner profile' : 'Agent profile') : current === 'credentials' ? (isOwner ? 'Identity & ownership proof' : business ? 'Developer credentials' : 'RERA credentials') : current === 'areas' ? (business ? 'Operating areas' : 'Service area') : 'Ready to submit';
+  const gstBlocked = current === 'ready' && business && !((profile?.gstDetails as Record<string, unknown> | undefined)?.isVerified);
+  return <StepShell
+    step={Math.min(step, sequence.length - 1)}
+    steps={sequence.map(key => TAGS[key])}
+    brand="REALTY"
+    initial={String(profile?.companyName || profile?.fullName || 'R').trim().charAt(0).toUpperCase() || 'R'}
+    title={stepTitle}
+    subtitle={submitted ? 'Your documents are with the Kraftnex verification team.' : 'Complete each section to submit your profile for review.'}
+    onBack={() => router.back()}
+    onJump={index => setStep(index)}
+    statusLabel={submitted ? 'APPLICATION STATUS' : undefined}
+    hideFooter={loading || !profile || submitted}
+    error={profile && !submitted ? error : undefined}
+    hint={gstBlocked ? 'Verify your GSTIN before submitting a builder or developer profile.' : undefined}
+    nextLabel={current === 'ready' ? 'Submit for review' : 'Save and continue'}
+    onNext={() => void saveStep()}
+    nextDisabled={gstBlocked}
+    busy={busy}
+    onStepBack={step > 0 ? () => setStep(index => Math.max(0, index - 1)) : undefined}
+    note="Progress is saved to your realtor profile."
+  >
     {loading ? <StatePanel title="Loading your profile" message="Connecting to your realtor account…" /> : null}
     {!loading && error && !profile ? <StatePanel title="Realtor account required" message={error} retry={() => router.replace('/realtor/register')} /> : null}
     {!loading && profile ? <>
-      <PageHeading eyebrow={submitted ? 'APPLICATION STATUS' : `STEP ${step + 1} OF ${sequence.length}`} title={submitted ? 'Submitted · under review' : current === 'profile' ? (business ? 'Company profile' : isOwner ? 'Owner profile' : 'Agent profile') : current === 'credentials' ? (isOwner ? 'Identity & ownership proof' : business ? 'Developer credentials' : 'RERA credentials') : current === 'areas' ? (business ? 'Operating areas' : 'Service area') : 'Ready to submit'} subtitle={submitted ? 'Your documents are with the Kraftnex verification team.' : 'Complete each section to submit your profile for review.'} />
-      {error ? <StatePanel title="Couldn’t save this step" message={error} /> : null}
       {submitted ? <>
         <Panel tint><Text style={s.approvalTitle}>Account pending verification</Text><Text style={s.copy}>Kraftnex will review your identity and credentials. Your workspace will show the current approval status here.</Text><DataRow title="Verification status" detail={String(profile.approvalStatus || profile.onboardingStatus || 'submitted')} status={String(profile.approvalStatus || 'pending')} /></Panel>
         <PrimaryButton title="Open realtor dashboard" onPress={() => router.replace('/realtor/dashboard')} />
@@ -143,11 +164,8 @@ export default function RealtorOnboardingScreen() {
         {!isOwner ? <DataRow title="Service areas" detail={form.serviceCities || 'No cities selected'} /> : null}
         {business && !((profile.gstDetails as Record<string, unknown> | undefined)?.isVerified) ? <Text style={s.gstNotice}>Verify your GSTIN before submitting a builder or developer profile.</Text> : null}
       </Panel> : null}
-      {!submitted ? <PrimaryButton title={current === 'ready' ? 'Submit for review' : 'Save and continue'} onPress={() => void saveStep()} loading={busy} disabled={current === 'ready' && business && !((profile.gstDetails as Record<string, unknown> | undefined)?.isVerified)} /> : null}
-      {!submitted && step > 0 ? <PrimaryButton title="Previous step" onPress={() => setStep(index => Math.max(0, index - 1))} /> : null}
-      {!submitted ? <Text style={s.stepFoot}>{step + 1} / {sequence.length} · Progress is saved to your realtor profile.</Text> : null}
     </> : null}
-  </VerticalFrame>;
+  </StepShell>;
 }
 
 const s = StyleSheet.create({ approvalTitle: { color: palette.green, fontSize: 17, fontWeight: '800' }, copy: { color: palette.body, fontSize: 12, lineHeight: 18 }, gstNotice: { color: '#865c12', fontSize: 12, lineHeight: 18 }, stepFoot: { color: palette.muted, fontSize: 11, textAlign: 'center', paddingVertical: 4 } });

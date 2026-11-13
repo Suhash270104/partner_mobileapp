@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
-import { BooleanField, Field, PageHeading, Panel, PrimaryButton, SelectChips, StatePanel, VerticalFrame } from '../../components/vertical/VerticalUi';
+import { BooleanField, Field, Panel, PrimaryButton, SelectChips, StatePanel } from '../../components/vertical/VerticalUi';
+import { StepShell } from '../../components/vertical/StepShell';
 import { Text } from '../../components/AppText';
 import { merchantApi } from '../../lib/partnerVerticalApi';
 import { partnerApi } from '../../lib/partnerApi';
@@ -60,9 +61,24 @@ export default function StoreRegister() {
     } catch (e) { setError(e instanceof Error ? e.message : 'The server could not create the store.'); }
     finally { setBusy(false); }
   };
-  return <VerticalFrame title="Open your store" subtitle={`Step ${step + 1} of 4`} tabs={tabs} activeTab="settings" onTab={() => {}} onBack={step > 0 ? () => setStep(step - 1) : undefined}>
-    <PageHeading eyebrow="MARKETPLACE SELLER" title={['Store & business', 'Address & contact', 'Categories & operations', 'Bank & payout'][step]} subtitle="Store setup uses your verified Kraftnex account and marketplace catalogue." />
-    {error && blocked ? <><StatePanel title={error.includes('awaiting') ? 'Store under review' : 'Store setup unavailable'} message={error} />{error.includes('Verify') ? <PrimaryButton title="Sign in or verify mobile" onPress={() => router.push('/signup' as never)} /> : null}</> : error ? <StatePanel title="Store setup" message={error} /> : null}
+  const stepTitles = ['Store & business', 'Address & contact', 'Categories & operations', 'Bank & payout'];
+  return <StepShell
+    step={step}
+    steps={['BUSINESS', 'CONTACT', 'CATEGORIES', 'PAYOUT']}
+    brand="SELLER"
+    initial={(form.storeName.trim()[0] || 'S').toUpperCase()}
+    title={stepTitles[step]}
+    subtitle="Store setup uses your verified Kraftnex account and marketplace catalogue."
+    onBack={step > 0 ? () => setStep(step - 1) : () => router.back()}
+    onJump={index => { setError(''); setStep(index); }}
+    error={!blocked ? error : undefined}
+    nextLabel={step < 3 ? 'Continue' : 'Create store'}
+    onNext={step < 3 ? () => { setError(''); setStep(step + 1); } : () => void submit()}
+    busy={busy}
+    onStepBack={step > 0 ? () => setStep(step - 1) : undefined}
+    hideFooter={blocked}
+  >
+    {error && blocked ? <><StatePanel title={error.includes('awaiting') ? 'Store under review' : 'Store setup unavailable'} message={error} />{error.includes('Verify') ? <PrimaryButton title="Sign in or verify mobile" onPress={() => router.push('/signup' as never)} /> : null}</> : null}
     {!blocked ? <>
     {step === 0 && <Panel>
       <Field label="Store name" value={form.storeName} onChangeText={set('storeName')} />
@@ -101,8 +117,6 @@ export default function StoreRegister() {
       <Field label="Bank name" value={form.bankName} onChangeText={set('bankName')} />
       <Text style={{ color: '#7b8a83', fontSize: 12 }}>Your payout information is submitted directly to the store registration endpoint.</Text>
     </Panel>}
-    {step < 3 ? <PrimaryButton title="Continue" onPress={() => { setError(''); setStep(step + 1); }} /> : <PrimaryButton title="Create store" loading={busy} onPress={() => void submit()} />}
-    {step > 0 ? <PrimaryButton title="Previous step" onPress={() => setStep(step - 1)} /> : null}
     </> : null}
-  </VerticalFrame>;
+  </StepShell>;
 }
