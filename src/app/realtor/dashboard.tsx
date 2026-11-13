@@ -29,8 +29,6 @@ export default function RealtorDashboardScreen() {
   const [phase, setPhase] = useState<'loading' | 'ready' | 'signedOut' | 'error'>('loading');
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState('');
   const [creditsOpen, setCreditsOpen] = useState(false);
@@ -75,12 +73,6 @@ export default function RealtorDashboardScreen() {
     setRefreshing(false);
   };
 
-  async function signIn() {
-    setBusy(true); setError('');
-    try { await realtorApi.login({ email: email.trim() || undefined, phone: email.trim() || undefined, password }); await loadProfile(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Sign in failed.'); }
-    finally { setBusy(false); }
-  }
 
   const company = firstString(profile?.companyName, profile?.fullName, 'Realty workspace')!;
   const chooseTab = (key: string) => { setError(''); setTab(key as Tab); };
@@ -98,12 +90,10 @@ export default function RealtorDashboardScreen() {
     {phase === 'loading' ? <StatePanel title="Loading Realty" message="Connecting to the realtor workspace…" /> : null}
     {phase === 'error' ? <StatePanel title="Couldn’t load realtor workspace" message={error} retry={() => void loadProfile()} /> : null}
     {phase === 'signedOut' ? <Panel>
-      <PageHeading title="Sign in to Realty" subtitle="Use your realtor account to load your properties, projects and leads." />
+      <PageHeading title="Open your Realty workspace" subtitle="Realty uses the same Kraftnex partner sign-in as your other workspaces. Sign in once, then pick Realtor from the home screen." />
       {error ? <Text style={s.error}>{error}</Text> : null}
-      <Field label="Email or mobile number" value={email} onChangeText={setEmail} />
-      <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry />
-      <PrimaryButton title="Sign in" onPress={() => void signIn()} loading={busy} disabled={!email.trim() || !password} />
-      <SecondaryButton title="Create realtor account" onPress={() => router.push('/realtor/register')} />
+      <PrimaryButton title="Go to partner home" onPress={() => router.replace('/')} />
+      <SecondaryButton title="Set up realtor workspace" onPress={() => router.push('/realtor/register')} />
     </Panel> : null}
     {phase === 'ready' ? <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />} contentContainerStyle={s.content}>
       {tab === 'overview' ? <>
@@ -154,7 +144,7 @@ export default function RealtorDashboardScreen() {
           <ActionRow title="Developer profile" detail="Public company profile and authorized agents" onPress={() => router.push('/realtor/developer')} />
           <ActionRow title="Notifications" detail="Approvals, leads and listing updates" onPress={() => void loadTab('more')} />
           <ActionRow title="Verification & profile" detail="Credentials and service areas" onPress={() => router.push('/realtor/onboarding')} />
-          <ActionRow title="Sign out" detail="Return to partner workspaces" onPress={() => { void realtorApi.logout().catch(() => undefined).finally(() => router.replace('/')); }} />
+          <ActionRow title="Switch workspace" detail="Back to partner home — you stay signed in" onPress={() => router.replace('/')} />
         </Panel>
         <Panel><View style={s.notifHeader}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}><Text style={s.notifTitle}>Notifications</Text>{unread > 0 ? <View style={s.badge}><Text style={s.badgeText}>{unread > 99 ? '99+' : unread}</Text></View> : null}</View>
