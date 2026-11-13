@@ -24,6 +24,7 @@ export default function StudioLayout() {
     try {
       const session = await partnerApi.session();
       if (!session.user) {
+        if (__DEV__) console.warn('[studio] sent to the home page: the API says nobody is signed in (GET /v1/auth/session returned no user). The session cookie was not accepted.');
         router.replace('/');
         return;
       }
@@ -36,6 +37,7 @@ export default function StudioLayout() {
       setPhase('ready');
     } catch (e) {
       if (e instanceof PartnerApiError && e.status === 401) {
+        if (__DEV__) console.warn('[studio] sent to the home page: the API answered 401 (not signed in).', e.message);
         router.replace('/');
         return;
       }

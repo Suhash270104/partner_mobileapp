@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { PartnerBrand } from '../components/PartnerBrand';
 import { firstNameOf, partnerApi, PartnerApiError, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
+import { registerPartnerDevicePush } from '../lib/partnerPush';
 
 // Used only by the hidden website links below; re-enable together with them.
 // const publicSite = process.env.EXPO_PUBLIC_PUBLIC_SITE_URL?.trim().replace(/\/+$/, '');
@@ -14,7 +15,7 @@ type Workspace = { type: Exclude<PartnerRoleType, 'customer'>; title: string; ca
 const workspaces: Workspace[] = [
   { type: 'technician', title: 'Technician', category: 'FIELD ENGINEERING', description: 'Service jobs, schedule, KYC and earnings', benefit: 'Deployment ready', icon: '⚒', route: '/technician/dashboard', setupRoute: '/become-professional?type=technician' },
   { type: 'designer', title: 'Interior professional', category: 'STUDIO PRO & ATELIER', description: 'Leads, projects, proposals and clients', benefit: 'Client pipeline included', icon: '◉', route: '/professional/dashboard', setupRoute: '/become-professional?type=designer' },
-  { type: 'realtor', title: 'Realtor / Developer', category: 'PRIME REAL ESTATE', description: 'Projects, listings, media and leads', benefit: 'Portfolio verification', icon: '▦', route: '/realtor/dashboard', setupRoute: '/become-professional?type=realtor' },
+  { type: 'realtor', title: 'Realtor / Developer', category: 'PRIME REAL ESTATE', description: 'Projects, listings, media and leads', benefit: 'Portfolio verification', icon: '▦', route: '/realtor/dashboard', setupRoute: '/realtor/register' },
   { type: 'merchant', title: 'Marketplace seller', category: 'CURATED MATERIAL SUPPLY', description: 'Products, enquiries and orders', benefit: 'Multi-currency checkout', icon: '▣', route: '/store/dashboard', setupRoute: '/store/register' },
 ];
 
@@ -42,6 +43,8 @@ export default function PartnerHomeScreen() {
       const nextSession = await partnerApi.session();
       setSession(nextSession);
       if (nextSession.user) {
+        // Whichever workspace they use, this phone should receive their alerts. Never awaited.
+        void registerPartnerDevicePush();
         try {
           const result = await partnerApi.merchantStatus();
           setMerchant({ isMerchant: result.isMerchant, canAccessDashboard: result.canAccessDashboard });
@@ -107,6 +110,8 @@ export default function PartnerHomeScreen() {
     const route = item.type === 'merchant'
       ? merchant?.canAccessDashboard ? item.route : item.setupRoute
       : role?.status === 'active' ? item.route : item.setupRoute;
+    if (item.type === 'realtor') { router.push((role?.status === 'active' ? '/realtor/dashboard' : '/realtor/register') as never); return; }
+    if (item.type === 'merchant') { router.push((merchant?.canAccessDashboard ? '/store/dashboard' : '/store/register') as never); return; }
     await openConfigured(partnerSite, route, 'Set EXPO_PUBLIC_PARTNER_SITE_URL to open partner workspace pages.');
   }
 

@@ -109,6 +109,9 @@ export default function ProfessionalOnboardingScreen() {
     setSaving(true);
     setSaveError('');
     try {
+      // Renews an expired session first. This endpoint never rejects an expired sign-in: it would
+      // quietly save the step as an anonymous draft instead of to this studio.
+      await partnerApi.session().catch(() => undefined);
       await partnerApi.saveProfessionalOnboarding({
         stage: nextStage,
         businessName: data.businessName,

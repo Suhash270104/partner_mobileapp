@@ -220,6 +220,24 @@ export class PartnerApiError extends Error {
   }
 }
 
+// Renews the session. Only ONE refresh runs at a time: the backend rotates the refresh token on every
+// use and revokes the whole session if a token that was already used is presented again, so several
+// requests whose access token expires together must share a single refresh, never each send their own.
+let refreshInFlight: Promise<void> | null = null;
+function refreshSession(): Promise<void> {
+  if (!refreshInFlight) {
+    refreshInFlight = request('/v1/auth/refresh', { method: 'POST', body: '{}' }, true)
+      .then(() => undefined)
+      .catch((error) => {
+        // "Just refreshed by another request": the new cookies are already in place, so carry on.
+        if (error instanceof PartnerApiError && error.status === 409 && error.code === 'AUTH_REFRESH_RACE') return;
+        throw error;
+      })
+      .finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
+}
+
 function uploadFormData<T>(path: string, formData: FormData, skipRefresh: boolean): Promise<T> {
   if (!API_BASE_URL) {
     return Promise.reject(new PartnerApiError('The partner app is not connected. Set EXPO_PUBLIC_API_BASE_URL in its environment.', 0, 'API_URL_MISSING'));
@@ -240,7 +258,7 @@ function uploadFormData<T>(path: string, formData: FormData, skipRefresh: boolea
       }
 
       if (xhr.status === 401 && !skipRefresh) {
-        void request('/v1/auth/refresh', { method: 'POST', body: '{}' }, true)
+        void refreshSession()
           .then(() => uploadFormData<T>(path, formData, true))
           .then(resolve, reject);
         return;
@@ -292,7 +310,7 @@ async function request<T>(path: string, init: RequestInit = {}, skipRefresh = fa
   }
 
   if (response.status === 401 && !skipRefresh && !path.startsWith('/v1/auth/login') && !path.startsWith('/v1/auth/refresh')) {
-    await request('/v1/auth/refresh', { method: 'POST', body: '{}' }, true);
+    await refreshSession();
     return request<T>(path, init, true);
   }
 
@@ -302,7 +320,19 @@ async function request<T>(path: string, init: RequestInit = {}, skipRefresh = fa
 }
 
 export const partnerApi = {
-  session: () => request<PartnerSession>('/v1/auth/session'),
+  session: async () => {
+    const current = await request<PartnerSession>('/v1/auth/session');
+    if (current.user) return current;
+    // The 15-minute access token reads as "nobody is signed in" (HTTP 200, user: null), not a 401, so
+    // the usual refresh-on-401 never runs. Try the refresh cookie once before treating the person as
+    // signed out; with no refresh cookie this fails harmlessly and the answer stays "signed out".
+    try {
+      await refreshSession();
+    } catch {
+      return current;
+    }
+    return request<PartnerSession>('/v1/auth/session');
+  },
   login: (emailOrPhone: string, password: string) => request<PartnerSession>('/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify({ emailOrPhone, password }),
@@ -311,7 +341,11 @@ export const partnerApi = {
     method: 'POST',
     body: JSON.stringify({ email }),
   }, true),
-  logout: () => request<{ message: string }>('/v1/auth/logout', { method: 'POST' }),
+  logout: async () => {
+    // Stop pushes to this phone while the session is still valid; never let it block signing out.
+    try { await (await import('./partnerPush')).unregisterPartnerDevicePush(); } catch { /* best effort */ }
+    return request<{ message: string }>('/v1/auth/logout', { method: 'POST' });
+  },
   merchantStatus: () => request<MerchantStatus>('/marketplace/merchant/auth/status'),
   sendTechnicianOtp: (phone: string) => request<{ message: string }>('/technician/send-otp', {
     method: 'POST', body: JSON.stringify({ phone, intent: 'register' }),
@@ -393,8 +427,13 @@ export const partnerApi = {
   updateTechnicianLocation: (input: { lat: number; lng: number; accuracy?: number }) => request<{ recorded: boolean }>('/technician/location', {
     method: 'PATCH', body: JSON.stringify(input),
   }),
+  // `app` tells the backend which app this phone token belongs to, so a partner-only alert is not also
+  // delivered to the customer app of someone who holds both kinds of account.
   registerPushToken: (token: string, platform: 'android' | 'ios') => request<{ success: boolean }>('/ai/push-token', {
-    method: 'POST', body: JSON.stringify({ token, platform }),
+    method: 'POST', body: JSON.stringify({ token, platform, app: 'partner' }),
+  }),
+  unregisterPushToken: (token: string) => request<{ success: boolean }>('/ai/push-token', {
+    method: 'DELETE', body: JSON.stringify({ token }),
   }),
   submitTechnicianOnboarding: () => request<{ ok: boolean; alreadySubmitted?: boolean; submittedAt?: string }>('/technician/onboarding/submit', {
     method: 'POST', body: '{}',
