@@ -49,7 +49,7 @@ export default function RealtorRegisterScreen() {
     } finally { setBusy(false); }
   }
 
-  return <VerticalFrame title="Kraftnex Realty" subtitle="REAL ESTATE PARTNER" tabs={TABS} activeTab="more" onTab={key => key === 'dashboard' && router.push('/realtor/dashboard')} onBack={() => router.back()}>
+  return <VerticalFrame title="Kraftnex Realty" subtitle="REAL ESTATE PARTNER" tabs={TABS} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow={`STEP ${Math.min(step + 1, 3)} OF 3`} title={loginMode ? 'Sign in to Realty' : step === 0 ? 'Choose your seller role' : step === 1 ? 'Account & contact details' : 'Verify your mobile number'} subtitle={step === 0 ? 'Select the role that best describes your real estate business.' : 'Your information is used to verify and manage your realtor workspace.'} />
     {error ? <StatePanel title="Couldn’t continue" message={error} /> : null}
     {step === 0 && !loginMode ? <>

@@ -78,7 +78,7 @@ export default function ProductEditor() {
     finally { setBusy(false); }
   }
   const category = categories.find(c => c.name === form.category);
-  return <VerticalFrame title={id ? 'Edit product' : 'New product'} subtitle="Marketplace catalogue" tabs={tabs} activeTab="products" onTab={key => key === 'products' ? router.replace('/store/dashboard' as never) : router.replace('/store/dashboard' as never)} onBack={() => router.back()}>
+  return <VerticalFrame title={id ? 'Edit product' : 'New product'} subtitle="Marketplace catalogue" tabs={tabs} activeTab="products" onTab={key => router.replace(`/store/dashboard?tab=${key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="PRODUCT CATALOGUE" title={id ? 'Edit product' : 'Add a product'} subtitle="Product details, pricing, tax, supply and inventory." />
     {error ? <StatePanel title="Could not load or save" message={error} /> : null}
     <Panel><Text style={{ fontWeight: '800' }}>Product details</Text>

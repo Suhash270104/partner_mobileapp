@@ -107,7 +107,7 @@ export default function EditRealtorProjectScreen() {
   }
 
   const priceRange = project?.price ? [formatPrice(project.price.min), formatPrice(project.price.max)].filter(Boolean).join(' – ') : '';
-  return <VerticalFrame title="Edit project" subtitle="REALTY HUB" tabs={REALTOR_TABS} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key}` as never)} onBack={() => router.back()}>
+  return <VerticalFrame title="Edit project" subtitle="REALTY HUB" tabs={REALTOR_TABS} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="EDIT PROJECT" title={toText(project?.name) || 'Project'} subtitle="Update project details, photos and available configurations." />
     {loading ? <StatePanel title="Loading project" message="Fetching the latest saved details…" /> : null}
     {error ? <StatePanel title={project ? 'Project update failed' : 'Could not load project'} message={error} retry={project ? undefined : () => void load()} /> : null}

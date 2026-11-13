@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Image, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { BooleanField, DataRow, Field, PageHeading, Panel, PrimaryButton, SecondaryButton, SelectChips, StatePanel, VerticalFrame, palette } from '../../components/vertical/VerticalUi';
 import { Text } from '../../components/AppText';
 import { merchantApi } from '../../lib/partnerVerticalApi';
@@ -27,7 +27,9 @@ const desc = (x: Row) => [x.sku, x.city, x.status, x.category, x.customer?.name,
 const human = (value: string) => value.replace(/([A-Z])/g, ' $1').replaceAll('_', ' ').replace(/^./, c => c.toUpperCase());
 
 export default function StoreDashboard() {
-  const [section, setSection] = useState<Section>('overview');
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  const [section, setSection] = useState<Section>(['overview', 'products', 'leads', 'orders', 'settings'].includes(String(tabParam)) ? tabParam as Section : 'overview');
+  useEffect(() => { const next = String(tabParam); if (['overview', 'products', 'leads', 'orders', 'settings'].includes(next)) { setLoading(true); setSection(next as Section); } }, [tabParam]);
   const [data, setData] = useState<any>(null);
   const [store, setStore] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);

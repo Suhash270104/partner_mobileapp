@@ -136,7 +136,7 @@ export default function RealtorProjectsScreen() {
     finally { setBusy(false); }
   }
 
-  return <VerticalFrame title="Projects" subtitle="REALTY HUB" tabs={TABS} activeTab="more" onTab={key => key === 'overview' ? router.push('/realtor/dashboard') : router.push('/realtor/dashboard')} onBack={() => router.back()}>
+  return <VerticalFrame title="Projects" subtitle="REALTY HUB" tabs={TABS} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="DEVELOPER WORKSPACE" title="Projects" subtitle="Create a development, add available configurations and submit it for review." action={<Text style={s.creditBadge}>{String(profile?.listingQuota ?? '—')} credits</Text>} />
     {error ? <StatePanel title="Workspace update failed" message={error} retry={() => void load()} /> : null}
     {creditMessage ? <Panel tint><Text style={s.creditCopy}>{creditMessage}</Text></Panel> : null}

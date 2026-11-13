@@ -83,7 +83,7 @@ export default function BulkProducts() {
     }
     finally { setBusy(false); }
   }
-  return <VerticalFrame title="Bulk add products" subtitle="Catalogue import" tabs={tabs} activeTab="products" onTab={() => router.replace('/store/dashboard' as never)} onBack={() => router.back()}>
+  return <VerticalFrame title="Bulk add products" subtitle="Catalogue import" tabs={tabs} activeTab="products" onTab={key => router.replace(`/store/dashboard?tab=${key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="PRODUCT CATALOGUE" title="Import products from CSV" subtitle="Choose a CSV using the marketplace product column names. The backend validates and reports each row." />
     <Panel><Text style={{ color: '#10231c', fontWeight: '800' }}>Import file</Text><Text style={{ color: '#4d5f57', fontSize: 12, lineHeight: 18 }}>Required fields: title, category, subcategory, mrp, sellingPrice, and unit. Other product fields follow the marketplace catalogue API. Rows are validated individually by the server.</Text>
       <PrimaryButton title="Choose CSV file" onPress={() => void chooseCsv()} />{fileName ? <DataRow title={fileName} detail={`${products.length} product rows`} /> : null}

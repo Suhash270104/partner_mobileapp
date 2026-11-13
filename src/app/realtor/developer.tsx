@@ -51,7 +51,7 @@ export default function RealtorDeveloperScreen() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not update authorized agents.'); }
     finally { setBusy(false); }
   }
-  return <VerticalFrame title="Developer profile" subtitle="REALTY HUB" tabs={tabs} activeTab="more" onTab={() => router.push('/realtor/dashboard' as never)} onBack={() => router.back()}>
+  return <VerticalFrame title="Developer profile" subtitle="REALTY HUB" tabs={tabs} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="COMPANY PROFILE" title={developer ? 'Developer profile' : 'Create developer profile'} subtitle="Buyers see these company details on your projects." />
     {error ? <StatePanel title="Developer profile could not be saved" message={error} retry={() => void load()} /> : null}
     {loading ? <Panel><Text>Loading developer profile…</Text></Panel> : <>

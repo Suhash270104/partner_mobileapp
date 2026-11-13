@@ -74,7 +74,7 @@ export default function NewRealtorListingScreen() {
     finally { setBusy(false); }
   }
 
-  return <VerticalFrame title="Listings" subtitle="MARKETPLACE" tabs={TABS} activeTab="listings" onTab={() => router.push('/realtor/dashboard')} onBack={() => router.back()}>
+  return <VerticalFrame title="Listings" subtitle="MARKETPLACE" tabs={TABS} activeTab="listings" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="YOUR MARKETPLACE INVENTORY" title="Published listings" subtitle={loading ? 'Loading your listing data…' : `${listings.length} listings · ${String(profile?.listingQuota ?? '—')} credits`} />
     {error ? <StatePanel title="Listing request failed" message={error} retry={() => void load()} /> : null}
     <Panel>

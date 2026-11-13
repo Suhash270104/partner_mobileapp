@@ -23,6 +23,7 @@ const locOf = (item: Data) => {
 export default function RealtorDashboardScreen() {
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
   const [tab, setTab] = useState<Tab>(['overview', 'properties', 'listings', 'leads', 'more'].includes(String(tabParam)) ? tabParam as Tab : 'overview');
+  useEffect(() => { const next = String(tabParam); if (['overview', 'properties', 'listings', 'leads', 'more'].includes(next)) setTab(next as Tab); }, [tabParam]);
   const [profile, setProfile] = useState<Data | null>(null);
   const [rows, setRows] = useState<Data[]>([]);
   const [selected, setSelected] = useState<Data | null>(null);

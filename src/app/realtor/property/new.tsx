@@ -95,7 +95,7 @@ export default function NewRealtorPropertyScreen() {
     finally { setBusy(false); }
   }
 
-  return <VerticalFrame title="New property" subtitle="REALTY LISTING" tabs={TABS} activeTab="properties" onTab={key => key === 'properties' ? router.replace('/realtor/dashboard') : router.push('/realtor/dashboard')} onBack={() => router.back()}>
+  return <VerticalFrame title="New property" subtitle="REALTY LISTING" tabs={TABS} activeTab="properties" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow={`STEP ${step + 1} OF 5`} title={STEPS[step]} subtitle="Your property details are saved to the Kraftnex marketplace." />
     {error ? <StatePanel title={createdId ? 'Property draft saved; photo upload incomplete' : 'Check your property details'} message={error} /> : null}
     {step === 0 ? <Panel>

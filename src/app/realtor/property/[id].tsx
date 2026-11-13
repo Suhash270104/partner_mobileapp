@@ -88,7 +88,7 @@ export default function EditRealtorPropertyScreen() {
   }
 
   const sale = property?.listingPurpose === 'sale';
-  return <VerticalFrame title="Edit property" subtitle="REALTY LISTING" tabs={REALTOR_TABS} activeTab="properties" onTab={key => router.replace(`/realtor/dashboard?tab=${key}` as never)} onBack={() => router.back()}>
+  return <VerticalFrame title="Edit property" subtitle="REALTY LISTING" tabs={REALTOR_TABS} activeTab="properties" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="EDIT PROPERTY" title={property ? toText(property.title) || 'Property' : 'Property'} subtitle="Changes are saved to your Kraftnex property record." />
     {loading ? <StatePanel title="Loading property" message="Fetching the latest saved details…" /> : null}
     {error ? <StatePanel title={property ? 'Could not save changes' : 'Could not load property'} message={error} retry={property ? undefined : () => void load()} /> : null}

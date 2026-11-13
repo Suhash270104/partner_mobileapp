@@ -79,7 +79,7 @@ export default function EditRealtorListingScreen() {
 
   const name = firstText(resource?.title, resource?.name, listing?.title) || 'Listing';
   const price = resource ? formatPrice(resource.price && typeof resource.price === 'object' ? resource.price.min : resource.price ?? resource.monthlyRent) : '';
-  return <VerticalFrame title="Edit listing" subtitle="MARKETPLACE" tabs={REALTOR_TABS} activeTab="listings" onTab={key => router.replace(`/realtor/dashboard?tab=${key}` as never)} onBack={() => router.back()}>
+  return <VerticalFrame title="Edit listing" subtitle="MARKETPLACE" tabs={REALTOR_TABS} activeTab="listings" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="EDIT LISTING" title={name} subtitle="Update the public contact details and listing purpose." />
     {loading ? <StatePanel title="Loading listing" message="Fetching the latest saved details…" /> : null}
     {error ? <StatePanel title={listing ? 'Listing update failed' : 'Could not load listing'} message={error} retry={listing ? undefined : () => void load()} /> : null}
