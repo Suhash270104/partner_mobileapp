@@ -214,7 +214,7 @@ export const KYC_SUPPORT_REASONS: { value: KycSupportReason; label: string }[] =
 ];
 
 export class PartnerApiError extends Error {
-  constructor(message: string, readonly status: number, readonly code?: string) {
+  constructor(message: string, readonly status: number, readonly code?: string, readonly data?: unknown) {
     super(message);
     this.name = 'PartnerApiError';
   }
@@ -315,7 +315,7 @@ async function request<T>(path: string, init: RequestInit = {}, skipRefresh = fa
   }
 
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new PartnerApiError(body?.message || `Kraftnex request failed (${response.status}).`, response.status, body?.code);
+  if (!response.ok) throw new PartnerApiError(body?.message || `Kraftnex request failed (${response.status}).`, response.status, body?.code, body?.data ?? body);
   return body as T;
 }
 
