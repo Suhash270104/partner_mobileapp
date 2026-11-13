@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { DataRow, Field, PageHeading, Panel, PrimaryButton, SecondaryButton, SectionTitle, StatePanel, StatusPill, VerticalFrame, palette } from '../../components/vertical/VerticalUi';
 import { Text } from '../../components/AppText';
 import { PartnerApiError } from '../../lib/partnerApi';
@@ -19,7 +19,8 @@ const locOf = (item: Data) => {
 };
 
 export default function RealtorDashboardScreen() {
-  const [tab, setTab] = useState<Tab>('overview');
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<Tab>(['overview', 'properties', 'listings', 'leads', 'more'].includes(String(tabParam)) ? tabParam as Tab : 'overview');
   const [profile, setProfile] = useState<Data | null>(null);
   const [rows, setRows] = useState<Data[]>([]);
   const [selected, setSelected] = useState<Data | null>(null);
