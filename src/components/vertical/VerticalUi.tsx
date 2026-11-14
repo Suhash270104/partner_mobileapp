@@ -27,13 +27,13 @@ export function VerticalFrame({ title, subtitle, children, tabs, activeTab, onTa
       <View style={s.avatar}><Text style={s.avatarText}>{title.trim().charAt(0).toUpperCase()}</Text></View>
     </View>
     <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">{children}</ScrollView>
-    <View style={s.tabs}>{tabs.map(tab => {
+    {tabs.length ? <View style={s.tabs}>{tabs.map(tab => {
       const on = activeTab === tab.key;
       return <Pressable key={tab.key} onPress={() => onTab(tab.key)} style={s.tab} accessibilityRole="tab" accessibilityLabel={tabName(tab)} accessibilityState={{ selected: on }}>
         <View style={[s.tabPill, on && s.tabPillOn]}><Icon name={tabGlyph(tab)} size={21} color={on ? palette.green : '#8a9a92'} /></View>
         <Text numberOfLines={1} style={[s.tabLabel, on && s.tabLabelOn]}>{tabName(tab)}</Text>
       </Pressable>;
-    })}</View>
+    })}</View> : null}
   </SafeAreaView>;
 }
 

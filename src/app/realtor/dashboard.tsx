@@ -87,7 +87,7 @@ export default function RealtorDashboardScreen() {
   }
   const filteredRows = useMemo(() => rows.filter(item => !filter || tab !== 'leads' || String(item.status || '').toLowerCase() === filter.toLowerCase()), [rows, filter, tab]);
 
-  return <VerticalFrame title={company} subtitle="KRAFTNEX REALTY" tabs={TABS} activeTab={tab} onTab={chooseTab} onBack={() => router.replace('/')}>
+  return <VerticalFrame title={company} subtitle="KRAFTNEX REALTY" tabs={phase === 'ready' ? TABS : []} activeTab={tab} onTab={chooseTab} onBack={() => router.replace('/')}>
     {phase === 'loading' ? <StatePanel title="Loading Realty" message="Connecting to the realtor workspace…" /> : null}
     {phase === 'error' ? <StatePanel title="Couldn’t load realtor workspace" message={error} retry={() => void loadProfile()} /> : null}
     {phase === 'signedOut' ? <Panel>
