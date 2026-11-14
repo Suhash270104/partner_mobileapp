@@ -1,3 +1,4 @@
+import { REALTOR_TABS } from '../../../components/realtor/RealtorShared';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
@@ -7,7 +8,7 @@ import { Text } from '../../../components/AppText';
 import { PartnerApiError, CashfreeOrder, partnerApi } from '../../../lib/partnerApi';
 import { realtorApi } from '../../../lib/partnerVerticalApi';
 
-const TABS = [{ key: 'overview', label: 'Overview', icon: '⌂' }, { key: 'properties', label: 'Properties', icon: '▦' }, { key: 'listings', label: 'Listings', icon: '▤' }, { key: 'leads', label: 'Leads', icon: '♧' }, { key: 'more', label: 'Realty', icon: '•••' }];
+const TABS = REALTOR_TABS;
 const PROJECT_TYPES = ['apartment', 'villa', 'independent_house', 'plot', 'farmhouse', 'commercial'];
 const empty = { name: '', projectType: 'apartment', city: '', locality: '', description: '', priceMin: '', priceMax: '', minArea: '', maxArea: '', constructionStatus: 'pre_launch', reraNumber: '' };
 type Data = Record<string, unknown>;

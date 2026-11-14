@@ -7,7 +7,7 @@ import { realtorApi } from '../../lib/partnerVerticalApi';
 
 export type Data = Record<string, any>;
 
-export const REALTOR_TABS = [{ key: 'overview', label: 'Overview', icon: '⌂' }, { key: 'properties', label: 'Properties', icon: '▦' }, { key: 'listings', label: 'Listings', icon: '▤' }, { key: 'leads', label: 'Leads', icon: '♧' }, { key: 'more', label: 'Realty', icon: '•••' }];
+export const REALTOR_TABS = [{ key: 'overview', label: 'Dashboard', icon: '' }, { key: 'properties', label: 'My properties', icon: '' }, { key: 'leads', label: 'Buyer leads', icon: '' }, { key: 'notifications', label: 'Notifications', icon: '' }, { key: 'more', label: 'More', icon: '' }];
 
 export const idOf = (item: Data | null | undefined) => String(item?._id || item?.id || '');
 export const asRows = (value: unknown): Data[] => Array.isArray(value) ? value.filter(item => item && typeof item === 'object') as Data[] : [];

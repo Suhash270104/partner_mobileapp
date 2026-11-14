@@ -1,3 +1,4 @@
+import { REALTOR_TABS } from '../../../components/realtor/RealtorShared';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
@@ -7,7 +8,7 @@ import { Text } from '../../../components/AppText';
 import { PartnerApiError } from '../../../lib/partnerApi';
 import { realtorApi } from '../../../lib/partnerVerticalApi';
 
-const TABS = [{ key: 'overview', label: 'Overview', icon: '⌂' }, { key: 'properties', label: 'Properties', icon: '▦' }, { key: 'listings', label: 'Listings', icon: '▤' }, { key: 'leads', label: 'Leads', icon: '♧' }, { key: 'more', label: 'Realty', icon: '•••' }];
+const TABS = REALTOR_TABS;
 type Data = Record<string, unknown>;
 const list = (data: Data, key: string) => Array.isArray(data[key]) ? data[key] as Data[] : [];
 const id = (row: Data) => String(row._id || row.id || '');

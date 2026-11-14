@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Icon } from '../Icon';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
 import { PartnerBrand } from '../PartnerBrand';
@@ -11,26 +11,27 @@ export const palette = {
   red: '#b3392f', redSoft: '#fdecea', blue: '#2a5ba8', blueSoft: '#e8f0fb', violet: '#5b3fa0', violetSoft: '#efeafa',
 };
 
-const TAB_GLYPHS: Record<string, string> = { overview: 'dashboard', dashboard: 'dashboard', properties: 'layers', listings: 'fileText', projects: 'briefcase', leads: 'users', more: 'settings', products: 'layers', orders: 'clipboard', settings: 'settings' };
+const TAB_GLYPHS: Record<string, string> = { overview: 'dashboard', dashboard: 'dashboard', properties: 'home', listings: 'tag', notifications: 'bell', projects: 'briefcase', leads: 'users', more: 'more', products: 'layers', orders: 'clipboard', settings: 'settings' };
 const TAB_NAMES: Record<string, string> = { Overview: 'Home', Realty: 'More', Enquiries: 'Enquiries' };
 const tabGlyph = (tab: { key: string }) => TAB_GLYPHS[tab.key] || 'dashboard';
 const tabName = (tab: { label: string }) => TAB_NAMES[tab.label] || tab.label;
 
-export function VerticalFrame({ title, subtitle, children, tabs, activeTab, onTab, onBack }: {
+export function VerticalFrame({ title, subtitle, children, tabs, activeTab, onTab, onBack, onAvatar, initials, refreshing, onRefresh, badges }: {
   title: string; subtitle?: string; children: ReactNode; tabs: { key: string; label: string; icon: string }[];
   activeTab: string; onTab: (key: string) => void; onBack?: () => void;
+  onAvatar?: () => void; initials?: string; refreshing?: boolean; onRefresh?: () => void; badges?: Record<string, number | undefined>;
 }) {
   return <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
     <View style={s.header}>
       {onBack ? <Pressable style={s.back} onPress={onBack}><Text style={s.backText}>‹</Text></Pressable> : <View style={s.brand}><PartnerBrand compact /></View>}
       <View style={s.headerTitle}><Text numberOfLines={1} style={s.headerName}>{title}</Text>{subtitle ? <Text numberOfLines={1} style={s.headerSub}>{subtitle}</Text> : null}</View>
-      <View style={s.avatar}><Text style={s.avatarText}>{title.trim().charAt(0).toUpperCase()}</Text></View>
+      <Pressable disabled={!onAvatar} onPress={onAvatar} accessibilityRole="button" accessibilityLabel="Open workspace menu" style={s.avatar}><Text style={s.avatarText}>{initials || title.trim().charAt(0).toUpperCase()}</Text></Pressable>
     </View>
-    <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+    <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}>{children}</ScrollView>
     {tabs.length ? <View style={s.tabs}>{tabs.map(tab => {
       const on = activeTab === tab.key;
       return <Pressable key={tab.key} onPress={() => onTab(tab.key)} style={s.tab} accessibilityRole="tab" accessibilityLabel={tabName(tab)} accessibilityState={{ selected: on }}>
-        <View style={[s.tabPill, on && s.tabPillOn]}><Icon name={tabGlyph(tab)} size={21} color={on ? palette.green : '#8a9a92'} /></View>
+        <View style={[s.tabPill, on && s.tabPillOn]}><Icon name={tabGlyph(tab)} size={21} color={on ? palette.green : '#8a9a92'} />{badges?.[tab.key] ? <View style={s.tabBadge}><Text style={s.tabBadgeText}>{badges[tab.key]! > 9 ? '9+' : badges[tab.key]}</Text></View> : null}</View>
         <Text numberOfLines={1} style={[s.tabLabel, on && s.tabLabelOn]}>{tabName(tab)}</Text>
       </Pressable>;
     })}</View> : null}
@@ -111,6 +112,7 @@ const s = StyleSheet.create({
   tabs: { flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.line, paddingTop: 6, paddingBottom: 6 },
   tabPill: { width: 50, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, tabPillOn: { backgroundColor: palette.greenSoft },
   tab: { flex: 1, minWidth: 0, alignItems: 'center', gap: 2, paddingHorizontal: 2, paddingVertical: 4 }, tabIcon: { fontSize: 17, color: '#9aa8a1' }, tabIconOn: { color: palette.green }, tabLabel: { color: '#8a9a92', fontSize: 11, fontWeight: '700' }, tabLabelOn: { color: palette.green },
+  tabBadge: { position: 'absolute', top: -4, right: 2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: palette.green, alignItems: 'center', justifyContent: 'center' }, tabBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   heading: { gap: 4, marginBottom: 2 }, eyebrow: { color: palette.muted, fontSize: 10, fontWeight: '800', letterSpacing: 1 }, headingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 }, headingText: { flex: 1 }, pageTitle: { color: palette.ink, fontSize: 25, lineHeight: 31, fontWeight: '800' }, pageSub: { color: palette.body, fontSize: 13, lineHeight: 19, marginTop: 4 },
   panel: { backgroundColor: palette.card, borderColor: palette.line, borderWidth: 1, borderRadius: 16, padding: 14, gap: 9 }, panelTint: { backgroundColor: palette.greenSoft, borderColor: '#bfe0cf' },
   section: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8 }, sectionTitle: { color: palette.ink, fontSize: 16, fontWeight: '800' },

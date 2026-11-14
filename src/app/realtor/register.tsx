@@ -6,7 +6,6 @@ import { realtorApi } from '../../lib/partnerVerticalApi';
 import { PartnerApiError } from '../../lib/partnerApi';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-const TABS = [{ key: 'dashboard', label: 'Overview', icon: '⌂' }, { key: 'properties', label: 'Properties', icon: '▦' }, { key: 'projects', label: 'Projects', icon: '⌂' }, { key: 'leads', label: 'Leads', icon: '♧' }, { key: 'more', label: 'More', icon: '•••' }];
 const ROLES = [
   { key: 'individual_owner', title: 'Individual owner', copy: 'List your own property for sale or rent.' },
   { key: 'agent', title: 'Real estate agent', copy: 'Manage buyer leads and property listings.' },

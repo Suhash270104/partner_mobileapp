@@ -1,3 +1,4 @@
+import { REALTOR_TABS } from '../../components/realtor/RealtorShared';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
@@ -5,7 +6,7 @@ import { DataRow, Field, PageHeading, Panel, PrimaryButton, StatePanel, Vertical
 import { Text } from '../../components/AppText';
 import { realtorApi } from '../../lib/partnerVerticalApi';
 
-const tabs = [{ key: 'overview', label: 'Overview', icon: '⌂' }, { key: 'properties', label: 'Properties', icon: '▦' }, { key: 'listings', label: 'Listings', icon: '▤' }, { key: 'leads', label: 'Leads', icon: '◎' }, { key: 'more', label: 'Realty', icon: '•••' }];
+const tabs = REALTOR_TABS;
 type RecordData = Record<string, any>;
 const empty = { name: '', description: '', headquarters: '', website: '', email: '', phone: '', establishedYear: '', operatingCities: '' };
 const itemId = (value: any) => String(value?._id || value?.id || value || '');

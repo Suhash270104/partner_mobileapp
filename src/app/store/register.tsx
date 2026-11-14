@@ -1,122 +1,121 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { router } from 'expo-router';
-import { BooleanField, Field, Panel, PrimaryButton, SelectChips, StatePanel } from '../../components/vertical/VerticalUi';
 import { StepShell } from '../../components/vertical/StepShell';
-import { Text } from '../../components/AppText';
-import { merchantApi } from '../../lib/partnerVerticalApi';
-import { partnerApi } from '../../lib/partnerApi';
+import { CategoriesStep } from '../../components/marketplace/registration/CategoriesStep';
+import { ContactStep } from '../../components/marketplace/registration/ContactStep';
+import { PayoutStep } from '../../components/marketplace/registration/PayoutStep';
+import { StoreStep } from '../../components/marketplace/registration/StoreStep';
+import { AlertBanner, PillButton, Screen, palette } from '../../components/ui';
+import { PartnerApiError, partnerApi } from '../../lib/partnerApi';
+import { merchantApi } from '../../lib/marketplace/api';
+import { ERROR_CODES } from '../../lib/marketplace/constants';
+import { errorMessage, isPhoneVerificationRequired, parseFieldErrors } from '../../lib/marketplace/errors';
+import {
+  REGISTRATION_STEPS, RegistrationForm, RegistrationStep, blankRegistration, buildRegistrationPayload, clearRegistrationDraft, formKeyForField,
+  loadRegistrationDraft, saveRegistrationDraft, stepForField, validateRegistrationStep,
+} from '../../lib/marketplace/registration';
+import { FieldErrors, firstError } from '../../lib/marketplace/validation';
 
-const tabs = [{ key: 'overview', label: 'Home', icon: '⌂' }, { key: 'products', label: 'Products', icon: '▦' }, { key: 'leads', label: 'Enquiries', icon: '◎' }, { key: 'orders', label: 'Orders', icon: '▤' }, { key: 'settings', label: 'More', icon: '•••' }];
-const businessTypes = ['manufacturer', 'distributor', 'wholesaler', 'dealer', 'retailer', 'fabricator', 'importer', 'service_provider'];
-const legalStatuses = ['proprietorship', 'partnership', 'llp', 'private_limited', 'public_limited', 'huf', 'other'];
-const employeeRanges = ['1-10', '11-50', '51-200', '201-500', '500+'];
-const fulfilledRanges = ['Under 100', '100–500', '500–2,000', '2,000–10,000', '10,000+'];
-const capabilities = ['bulk_supply', 'custom_orders', 'installation', 'pan_india_delivery', 'export', 'samples', 'credit_terms'];
-const blank = { storeName: '', businessName: '', businessId: '', businessType: 'manufacturer', legalStatus: 'proprietorship', yearEstablished: '', employeeCount: '1-10', ordersFulfilled: 'Under 100', description: '', phone: '', whatsappNumber: '', email: '', streetAddress: '', locality: '', city: '', state: '', pinCode: '', openTime: '09:00', closeTime: '18:00', isOpenSundays: false, accountNumber: '', ifscCode: '', beneficiaryName: '', bankName: '', serviceAreas: '', certifications: '', capabilities: [] as string[] };
+const STEP_COPY = [
+  { title: 'Store & business', subtitle: 'Tell buyers who you are. These details appear on your public store page and invoices.' },
+  { title: 'Address & contact', subtitle: 'Where buyers can reach you, and where enquiry alerts are sent.' },
+  { title: 'Categories & operations', subtitle: 'What you sell, where you supply, and when you are open.' },
+  { title: 'Bank & payout', subtitle: 'Where your payouts go. Bank details are never saved on this phone.' },
+] as const;
 
-export default function StoreRegister() {
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState(blank);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [selected, setSelected] = useState<string[]>([]);
+type Gate = 'checking' | 'open' | 'needsPhone' | 'error';
+
+export default function StoreRegisterScreen() {
+  const [gate, setGate] = useState<Gate>('checking');
+  const [gateError, setGateError] = useState('');
+  const [step, setStep] = useState<RegistrationStep>(0);
+  const [form, setForm] = useState<RegistrationForm>(blankRegistration());
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [blocked, setBlocked] = useState(false);
-  const set = (key: keyof typeof blank) => (value: string) => setForm(prev => ({ ...prev, [key]: value }));
-  useEffect(() => {
-    let alive = true;
-    Promise.all([merchantApi.status(), partnerApi.call<Record<string, any>>('/marketplace/shop/home')]).then(([status, home]) => {
-      if (!alive) return;
-      if (status.canAccessDashboard) { router.replace('/store/dashboard' as never); return; }
-      if (status.isMerchant) {
-        setBlocked(true);
-        const merchant = status.merchant as Record<string, unknown> | null;
-        setError(merchant?.approvalStatus === 'pending' ? 'Your store application is awaiting Kraftnex review.' : merchant?.approvalStatus === 'suspended' ? 'Your store is suspended. Contact Kraftnex support if you need help.' : String(status.accessBlockedReason || 'Your current store account cannot register another store.'));
-      } else if (!status.phoneVerified) {
-        setBlocked(true);
-        setError('Verify your Kraftnex phone number before opening a store. Sign in or create an account with a verified mobile number.');
-      }
-      const list = home.categories || home.data?.categories || [];
-      setCategories(list.map((category: any) => String(category.name || category.category || '')).filter(Boolean));
-    }).catch(e => { if (alive) setError(e instanceof Error ? e.message : 'Could not check store eligibility.'); });
-    return () => { alive = false; };
-  }, []);
-  const submit = async () => {
-    const numericYear = Number(form.yearEstablished);
-    if (form.storeName.trim().length < 2 || form.businessName.trim().length < 2 || !form.businessId.trim() || !selected.length || !form.phone.trim() || !form.streetAddress.trim() || !form.city.trim() || !form.state.trim() || !/^\d{6}$/.test(form.pinCode) || !/^\d{9,18}$/.test(form.accountNumber) || !/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(form.ifscCode) || !form.beneficiaryName.trim() || !form.bankName.trim() || numericYear < 1900 || numericYear > new Date().getFullYear()) {
-      setError('Complete the required business, contact, address and payout fields before creating your store.'); return;
-    }
-    setBusy(true); setError('');
+  const [submitError, setSubmitError] = useState('');
+  const ready = useRef(false);
+
+  const check = useCallback(async () => {
+    setGate('checking'); setGateError('');
     try {
-      await merchantApi.register({
-        storeName: form.storeName.trim(), businessName: form.businessName.trim(), businessId: form.businessId.trim().toUpperCase(), businessType: form.businessType,
-        legalStatus: form.legalStatus, yearEstablished: numericYear, employeeCount: form.employeeCount, ordersFulfilled: form.ordersFulfilled,
-        description: form.description.trim(), phone: form.phone.trim(), whatsappNumber: (form.whatsappNumber || form.phone).trim(), email: form.email.trim() || undefined,
-        address: { streetAddress: form.streetAddress.trim(), locality: form.locality.trim(), city: form.city.trim(), state: form.state.trim(), pinCode: form.pinCode, country: 'India' },
-        businessCategories: selected, capabilities: form.capabilities, serviceAreas: form.serviceAreas.split(',').map(v => v.trim()).filter(Boolean), certifications: form.certifications.split(',').map(v => v.trim()).filter(Boolean),
-        operatingHours: { openTime: form.openTime, closeTime: form.closeTime, isOpenSundays: form.isOpenSundays },
-        bankDetails: { accountNumber: form.accountNumber, ifscCode: form.ifscCode.toUpperCase(), beneficiaryName: form.beneficiaryName.trim(), bankName: form.bankName.trim() },
-      });
-      router.replace('/store/dashboard' as never);
-    } catch (e) { setError(e instanceof Error ? e.message : 'The server could not create the store.'); }
-    finally { setBusy(false); }
+      const session = await partnerApi.session();
+      if (!session.user) { router.replace('/' as never); return; }
+      const status = await merchantApi.status();
+      if (status.canAccessDashboard) { router.replace('/store' as never); return; }
+      if (status.isMerchant) { router.replace('/store/blocked' as never); return; }
+      if (!status.phoneVerified) { setGate('needsPhone'); return; }
+      const draft = await loadRegistrationDraft();
+      const phone = session.user.phone?.replace(/\D/g, '').slice(-10) ?? '';
+      setForm(draft?.form ?? blankRegistration({ phone, email: session.user.email ?? '' }));
+      setStep((draft?.step ?? 0) as RegistrationStep);
+      ready.current = true;
+      setGate('open');
+    } catch (cause) { setGateError(errorMessage(cause, 'Could not check your account.')); setGate('error'); }
+  }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void check(); }, [check]);
+
+  // Keep a local draft (without bank numbers or consent) so a restart or the sign-in detour loses nothing.
+  useEffect(() => { if (ready.current) void saveRegistrationDraft(form, step); }, [form, step]);
+
+  const set = useCallback(<K extends keyof RegistrationForm>(key: K, value: RegistrationForm[K]) => {
+    setForm(previous => ({ ...previous, [key]: value }));
+    setErrors(previous => { if (!previous[key as string]) return previous; const { [key as string]: _removed, ...rest } = previous; return rest; });
+    setSubmitError('');
+  }, []);
+
+  const next = async () => {
+    const found = validateRegistrationStep(step, form);
+    setErrors(found);
+    if (Object.keys(found).length) { setSubmitError(firstError(found) ?? 'Please fix the highlighted fields.'); return; }
+    setSubmitError('');
+    if (step < 3) { setStep((step + 1) as RegistrationStep); return; }
+    setBusy(true);
+    try {
+      await merchantApi.register(buildRegistrationPayload(form));
+      await merchantApi.recordLegalConsent();
+      await clearRegistrationDraft();
+      router.replace('/store' as never);
+    } catch (cause) {
+      if (cause instanceof PartnerApiError && cause.code === ERROR_CODES.alreadyRegistered) { router.replace('/store' as never); return; }
+      if (isPhoneVerificationRequired(cause)) { setGate('needsPhone'); return; }
+      if (cause instanceof PartnerApiError && cause.code === ERROR_CODES.businessIdInUse) {
+        setStep(0); setErrors({ businessId: 'This business ID is already registered with another store.' });
+        setSubmitError('This business ID is already registered with another store.'); return;
+      }
+      const fields = parseFieldErrors(cause);
+      const paths = Object.keys(fields);
+      if (paths.length) {
+        // Send the person back to the earliest step that owns a rejected field, with the server's message beside it.
+        setStep(Math.min(...paths.map(stepForField)) as RegistrationStep);
+        setErrors(Object.fromEntries(paths.map(path => [formKeyForField(path), fields[path]])));
+      }
+      setSubmitError(errorMessage(cause, 'We could not create your store. Please try again.'));
+    } finally { setBusy(false); }
   };
-  const stepTitles = ['Store & business', 'Address & contact', 'Categories & operations', 'Bank & payout'];
+
+  if (gate === 'checking') return <Screen standalone><View style={{ paddingVertical: 80, alignItems: 'center' }}><ActivityIndicator color={palette.green} /></View></Screen>;
+  if (gate === 'error') return <Screen standalone title="Open your store" error={gateError} onRetry={() => void check()} onBack={() => router.back()} />;
+  if (gate === 'needsPhone') return <Screen standalone title="Open your store" onBack={() => router.back()}>
+    <AlertBanner tone="amber" icon="phone" title="Verify your mobile number first"
+      message="A verified mobile number is required to open a store. Sign in with mobile OTP, then come back here." actionLabel="Verify mobile number" onAction={() => router.push('/signup' as never)} />
+    <PillButton title="I have verified it — check again" variant="soft" onPress={() => void check()} />
+  </Screen>;
+
+  const sectionProps = { form, errors, set };
   return <StepShell
-    step={step}
-    steps={['BUSINESS', 'CONTACT', 'CATEGORIES', 'PAYOUT']}
-    brand="SELLER"
-    initial={(form.storeName.trim()[0] || 'S').toUpperCase()}
-    title={stepTitles[step]}
-    subtitle="Store setup uses your verified Kraftnex account and marketplace catalogue."
-    onBack={step > 0 ? () => setStep(step - 1) : () => router.back()}
-    onJump={index => { setError(''); setStep(index); }}
-    error={!blocked ? error : undefined}
-    nextLabel={step < 3 ? 'Continue' : 'Create store'}
-    onNext={step < 3 ? () => { setError(''); setStep(step + 1); } : () => void submit()}
-    busy={busy}
-    onStepBack={step > 0 ? () => setStep(step - 1) : undefined}
-    hideFooter={blocked}
+    step={step} steps={REGISTRATION_STEPS.map(name => name.toUpperCase())} brand="SELLER" initial={(form.storeName.trim()[0] || 'S').toUpperCase()}
+    title={STEP_COPY[step].title} subtitle={STEP_COPY[step].subtitle}
+    onBack={() => (step > 0 ? setStep((step - 1) as RegistrationStep) : router.back())}
+    onStepBack={step > 0 ? () => setStep((step - 1) as RegistrationStep) : undefined}
+    onJump={index => { setSubmitError(''); setStep(index as RegistrationStep); }}
+    error={submitError} nextLabel={step < 3 ? 'Continue' : 'Create my store'} onNext={() => void next()} busy={busy}
+    note={step === 3 ? 'By creating your store you confirm the details are accurate.' : 'Your progress is saved on this phone, except bank details.'}
   >
-    {error && blocked ? <><StatePanel title={error.includes('awaiting') ? 'Store under review' : 'Store setup unavailable'} message={error} />{error.includes('Verify') ? <PrimaryButton title="Sign in or verify mobile" onPress={() => router.push('/signup' as never)} /> : null}</> : null}
-    {!blocked ? <>
-    {step === 0 && <Panel>
-      <Field label="Store name" value={form.storeName} onChangeText={set('storeName')} />
-      <Field label="Registered business name" value={form.businessName} onChangeText={set('businessName')} />
-      <Field label="GSTIN, business PAN or trade license" value={form.businessId} onChangeText={set('businessId')} />
-      <Field label="About your store" value={form.description} onChangeText={set('description')} multiline />
-      <SelectChips label="Business type" values={businessTypes} selected={form.businessType} onChange={v => set('businessType')(String(v))} />
-      <SelectChips label="Legal status" values={legalStatuses} selected={form.legalStatus} onChange={v => set('legalStatus')(String(v))} />
-      <Field label="Year established" value={form.yearEstablished} onChangeText={set('yearEstablished')} keyboardType="numeric" />
-      <SelectChips label="Team size" values={employeeRanges} selected={form.employeeCount} onChange={v => set('employeeCount')(String(v))} />
-      <SelectChips label="Orders fulfilled to date" values={fulfilledRanges} selected={form.ordersFulfilled} onChange={v => set('ordersFulfilled')(String(v))} />
-    </Panel>}
-    {step === 1 && <Panel>
-      <Field label="Business phone" value={form.phone} onChangeText={set('phone')} keyboardType="phone-pad" />
-      <Field label="WhatsApp number (optional)" value={form.whatsappNumber} onChangeText={set('whatsappNumber')} keyboardType="phone-pad" />
-      <Field label="Email" value={form.email} onChangeText={set('email')} keyboardType="email-address" />
-      <Field label="Street address" value={form.streetAddress} onChangeText={set('streetAddress')} />
-      <Field label="Locality" value={form.locality} onChangeText={set('locality')} />
-      <Field label="City" value={form.city} onChangeText={set('city')} />
-      <Field label="State" value={form.state} onChangeText={set('state')} />
-      <Field label="PIN code" value={form.pinCode} onChangeText={set('pinCode')} keyboardType="numeric" />
-    </Panel>}
-    {step === 2 && <Panel>
-      {categories.length ? <SelectChips label="Categories you supply" values={categories} selected={selected} multi onChange={value => setSelected(value as string[])} /> : <Text style={{ color: '#b3392f' }}>Marketplace categories could not be loaded. Retry after reconnecting.</Text>}
-      <SelectChips label="Capabilities" values={capabilities} selected={form.capabilities} multi onChange={value => setForm(prev => ({ ...prev, capabilities: value as string[] }))} />
-      <Field label="Service areas (comma separated)" value={form.serviceAreas} onChangeText={set('serviceAreas')} />
-      <Field label="Certifications (comma separated)" value={form.certifications} onChangeText={set('certifications')} />
-      <Field label="Opening time (HH:MM)" value={form.openTime} onChangeText={set('openTime')} />
-      <Field label="Closing time (HH:MM)" value={form.closeTime} onChangeText={set('closeTime')} />
-      <BooleanField label="Open Sundays" value={form.isOpenSundays} onChange={value => setForm(prev => ({ ...prev, isOpenSundays: value }))} />
-    </Panel>}
-    {step === 3 && <Panel>
-      <Field label="Bank account number" value={form.accountNumber} onChangeText={set('accountNumber')} secureTextEntry keyboardType="numeric" />
-      <Field label="IFSC" value={form.ifscCode} onChangeText={set('ifscCode')} />
-      <Field label="Beneficiary name" value={form.beneficiaryName} onChangeText={set('beneficiaryName')} />
-      <Field label="Bank name" value={form.bankName} onChangeText={set('bankName')} />
-      <Text style={{ color: '#7b8a83', fontSize: 12 }}>Your payout information is submitted directly to the store registration endpoint.</Text>
-    </Panel>}
-    </> : null}
+    {step === 0 && <StoreStep {...sectionProps} />}
+    {step === 1 && <ContactStep {...sectionProps} />}
+    {step === 2 && <CategoriesStep {...sectionProps} />}
+    {step === 3 && <PayoutStep {...sectionProps} />}
   </StepShell>;
 }

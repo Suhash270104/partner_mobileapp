@@ -8,7 +8,6 @@ import { Text } from '../../components/AppText';
 import { PartnerApiError } from '../../lib/partnerApi';
 import { realtorApi } from '../../lib/partnerVerticalApi';
 
-const TABS = [{ key: 'dashboard', label: 'Overview', icon: '⌂' }, { key: 'properties', label: 'Properties', icon: '▦' }, { key: 'projects', label: 'Projects', icon: '⌂' }, { key: 'leads', label: 'Leads', icon: '♧' }, { key: 'more', label: 'More', icon: '•••' }];
 const SPECIALIZATIONS = ['new_projects', 'resale', 'rental', 'plots', 'commercial', 'luxury', 'affordable_housing', 'land'];
 type RecordData = Record<string, unknown>;
 function nestedRealtor(data: RecordData): RecordData {
