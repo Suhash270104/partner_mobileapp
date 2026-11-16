@@ -1,91 +1,87 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
-import { Field, PageHeading, Panel, PrimaryButton, StatePanel, VerticalFrame, palette } from '../../components/vertical/VerticalUi';
-import { Text } from '../../components/AppText';
-import { realtorApi } from '../../lib/partnerVerticalApi';
-import { PartnerApiError } from '../../lib/partnerApi';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { AlertBanner, Icon, PillButton, Screen, Text, palette } from '../../components/ui';
+import { AuthApiError, RealtorAccountType, authApi } from '../../lib/auth';
+import { PartnerSession, partnerApi } from '../../lib/partnerApi';
 
-const ROLES = [
+const ROLES: { key: RealtorAccountType; title: string; copy: string }[] = [
   { key: 'individual_owner', title: 'Individual owner', copy: 'List your own property for sale or rent.' },
   { key: 'agent', title: 'Real estate agent', copy: 'Manage buyer leads and property listings.' },
   { key: 'builder', title: 'Builder', copy: 'Publish projects and residential developments.' },
   { key: 'developer', title: 'Developer', copy: 'Manage developments, projects and authorized agents.' },
 ];
 
+const nameOf = (session: PartnerSession | null) => Object.values(session?.user?.profiles ?? {}).find(profile => profile?.name)?.name;
+
+/**
+ * Opens the realtor workspace on the person's one Kraftnex identity (no second account, no separate password).
+ * Signed in → the realtor role is added to that identity. Signed out → mobile OTP with the realtor intent, which creates
+ * the identity and the realtor role together (hand-off §3). Either way the next stop is realtor onboarding.
+ */
 export default function RealtorRegisterScreen() {
-  const [step, setStep] = useState(0);
-  const [role, setRole] = useState('');
-  const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', companyName: '', city: '', reraNumber: '', otp: '', phoneVerificationToken: '' });
+  const [role, setRole] = useState<RealtorAccountType | ''>('');
+  const [session, setSession] = useState<PartnerSession | null>(null);
+  const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [sent, setSent] = useState(false);
-  const [loginMode, setLoginMode] = useState(false);
-  const set = (key: keyof typeof form) => (value: string) => setForm(current => ({ ...current, [key]: value }));
 
-  async function sendOtp() {
-    setBusy(true); setError('');
-    try { await realtorApi.registerOtp({ email: form.email.trim(), phone: form.phone.trim() }); setSent(true); setStep(2); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not send verification code.'); }
-    finally { setBusy(false); }
-  }
+  const check = useCallback(async () => {
+    setChecking(true);
+    try {
+      const current = await partnerApi.session();
+      setSession(current);
+      // Already a realtor: nothing to register.
+      if (current.user?.roles?.some(entry => entry.type === 'realtor')) router.replace('/realtor/dashboard' as never);
+    } catch { setSession(null); }
+    finally { setChecking(false); }
+  }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void check(); }, [check]);
 
-  async function submitAccount() {
+  const createRole = async () => {
+    if (!role) { setError('Choose your seller role to continue.'); return; }
     setBusy(true); setError('');
     try {
-      if (loginMode) {
-        await realtorApi.login({ email: form.email.trim() || undefined, phone: form.phone.trim() || undefined, password: form.password });
-        router.replace('/realtor/onboarding');
-      } else {
-        const verified = await realtorApi.verifyOtp({ phone: form.phone.trim(), otp: form.otp.trim() });
-        if (!verified.phoneVerificationToken) throw new Error('The server did not return a phone verification token.');
-        setForm(current => ({ ...current, phoneVerificationToken: verified.phoneVerificationToken }));
-        await realtorApi.register({ fullName: form.fullName.trim(), email: form.email.trim(), phone: form.phone.trim(), password: form.password, accountType: role, companyName: form.companyName.trim(), city: form.city.trim(), reraNumber: form.reraNumber.trim(), phoneVerificationToken: verified.phoneVerificationToken });
-        router.replace('/realtor/onboarding');
-      }
+      await authApi.addProfile('realtor', { accountType: role, ...(nameOf(session) ? { name: nameOf(session) } : {}) });
+      router.replace('/realtor/onboarding' as never);
     } catch (cause) {
-      setError(cause instanceof PartnerApiError ? cause.message : cause instanceof Error ? cause.message : 'Could not create your realtor account.');
+      // 409: this account already has a realtor profile, so just open it.
+      if (cause instanceof AuthApiError && cause.status === 409) { router.replace('/realtor/dashboard' as never); return; }
+      setError(cause instanceof Error ? cause.message : 'Could not create your realtor account.');
     } finally { setBusy(false); }
-  }
+  };
 
-  return <VerticalFrame title="Kraftnex Realty" subtitle="REAL ESTATE PARTNER" tabs={[]} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
-    <PageHeading eyebrow={`STEP ${Math.min(step + 1, 3)} OF 3`} title={loginMode ? 'Sign in to Realty' : step === 0 ? 'Choose your seller role' : step === 1 ? 'Account & contact details' : 'Verify your mobile number'} subtitle={step === 0 ? 'Select the role that best describes your real estate business.' : 'Your information is used to verify and manage your realtor workspace.'} />
-    {error ? <StatePanel title="Couldn’t continue" message={error} /> : null}
-    {step === 0 && !loginMode ? <>
-      {ROLES.map(item => <Pressable key={item.key} style={[s.roleCard, role === item.key && s.roleSelected]} onPress={() => setRole(item.key)}>
-        <View style={[s.radio, role === item.key && s.radioOn]}><Text style={s.radioMark}>{role === item.key ? '✓' : ''}</Text></View>
-        <View style={s.roleText}><Text style={s.roleTitle}>{item.title}</Text><Text style={s.roleCopy}>{item.copy}</Text></View>
-      </Pressable>)}
-      <PrimaryButton title="Continue" onPress={() => { setError(role ? '' : 'Choose your seller role to continue.'); if (role) setStep(1); }} disabled={!role} />
-    </> : null}
-    {(step === 1 || loginMode) ? <>
-      <Panel>
-        {!loginMode ? <Field label="Full name" value={form.fullName} onChangeText={set('fullName')} /> : null}
-        <Field label="Email address" value={form.email} onChangeText={set('email')} keyboardType="email-address" />
-        <Field label="Mobile number" value={form.phone} onChangeText={set('phone')} keyboardType="phone-pad" />
-        <Field label="Password" value={form.password} onChangeText={set('password')} secureTextEntry helper="Use at least 8 characters." />
-        {!loginMode && ['builder', 'developer'].includes(role) ? <>
-          <Field label="Company name" value={form.companyName} onChangeText={set('companyName')} />
-          <Field label="City" value={form.city} onChangeText={set('city')} />
-          <Field label="RERA registration number" value={form.reraNumber} onChangeText={set('reraNumber')} />
-        </> : null}
-      </Panel>
-      {loginMode ? <PrimaryButton title="Sign in" onPress={() => void submitAccount()} loading={busy} disabled={!form.password || (!form.email && !form.phone)} /> : <PrimaryButton title="Send verification code" onPress={() => void sendOtp()} loading={busy} disabled={!form.fullName || !form.email || !form.phone || form.password.length < 8} />}
-    </> : null}
-    {step === 2 && !loginMode ? <Panel>
-      <Text style={s.verifyCopy}>{sent ? 'Enter the one-time code sent to your mobile number.' : 'Send a verification code to continue.'}</Text>
-      <Field label="One-time code" value={form.otp} onChangeText={set('otp')} keyboardType="numeric" />
-      <PrimaryButton title="Verify and create account" onPress={() => void submitAccount()} loading={busy} disabled={!form.otp.trim()} />
-      <Pressable onPress={() => void sendOtp()}><Text style={s.resend}>Resend code</Text></Pressable>
-    </Panel> : null}
-    <Panel tint><Text style={s.policyTitle}>Account verification</Text><Text style={s.policyCopy}>Your approval status is set by Kraftnex review. Submitting onboarding does not bypass the verification process.</Text></Panel>
-    <Pressable onPress={() => { setLoginMode(value => !value); setError(''); setStep(1); }}><Text style={s.loginLink}>{loginMode ? 'Create a new realtor account' : 'Already have a realtor account? Sign in'}</Text></Pressable>
-  </VerticalFrame>;
+  const signedIn = !!session?.user;
+  return <Screen standalone title="Kraftnex Realty" subtitle="Choose how you will sell, then continue." onBack={() => router.back()}>
+    {checking ? <View style={{ paddingVertical: 40, alignItems: 'center' }}><ActivityIndicator color={palette.green} /></View> : <>
+      <View style={{ gap: 12 }}>{ROLES.map(item => {
+        const on = role === item.key;
+        return <Pressable key={item.key} onPress={() => { setRole(item.key); setError(''); }} accessibilityRole="radio" accessibilityState={{ selected: on }} style={[s.card, on && s.cardOn]}>
+          <View style={[s.radio, on && s.radioOn]}>{on ? <Icon name="check" size={14} color="#fff" /> : null}</View>
+          <View style={{ flex: 1, gap: 4 }}><Text style={s.title}>{item.title}</Text><Text style={s.copy}>{item.copy}</Text></View>
+        </Pressable>;
+      })}</View>
+
+      {error ? <AlertBanner tone="red" icon="shield" title="Could not continue" message={error} /> : null}
+
+      {signedIn ? <>
+        <PillButton title="Create my realtor account" icon="arrowRight" loading={busy} disabled={!role} onPress={() => void createRole()} />
+        <Text style={s.note}>Added to your existing Kraftnex account. No new password or verification needed.</Text>
+      </> : <>
+        <PillButton title="Continue with mobile number" icon="phone" disabled={!role}
+          onPress={() => router.push({ pathname: '/mobile-signin', params: { intent: 'realtor', accountType: role, next: '/realtor/onboarding' } } as never)} />
+        <PillButton variant="soft" title="I already have a Kraftnex account" onPress={() => router.push('/login' as never)} />
+      </>}
+      <View style={s.policy}><Text style={s.policyTitle}>Account verification</Text><Text style={s.copy}>Your approval status is set by Kraftnex review. Submitting onboarding does not bypass the verification process.</Text></View>
+    </>}
+  </Screen>;
 }
 
 const s = StyleSheet.create({
-  roleCard: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: palette.line, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  roleSelected: { borderColor: palette.green, backgroundColor: palette.greenSoft }, radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: '#aebbb4', alignItems: 'center', justifyContent: 'center' }, radioOn: { backgroundColor: palette.green, borderColor: palette.green }, radioMark: { color: '#fff', fontSize: 12, fontWeight: '900' },
-  roleText: { flex: 1, gap: 4 }, roleTitle: { color: palette.ink, fontSize: 14, fontWeight: '800' }, roleCopy: { color: palette.body, fontSize: 12, lineHeight: 17 }, verifyCopy: { color: palette.body, fontSize: 13, lineHeight: 18 }, resend: { color: palette.greenText, fontSize: 12, fontWeight: '800', textAlign: 'center', paddingVertical: 8 },
-  policyTitle: { color: palette.greenText, fontSize: 12, fontWeight: '800' }, policyCopy: { color: palette.body, fontSize: 11, lineHeight: 16 }, loginLink: { color: palette.greenText, fontSize: 12, fontWeight: '800', textAlign: 'center', paddingVertical: 12 },
+  card: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: palette.line, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
+  cardOn: { borderColor: palette.green, backgroundColor: palette.greenSoft },
+  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: '#aebbb4', alignItems: 'center', justifyContent: 'center' }, radioOn: { backgroundColor: palette.green, borderColor: palette.green },
+  title: { color: palette.ink, fontSize: 16, fontWeight: '800' }, copy: { color: palette.body, fontSize: 13, lineHeight: 19 }, note: { color: palette.muted, fontSize: 12, textAlign: 'center' },
+  policy: { padding: 14, borderRadius: 16, backgroundColor: palette.greenSoft, gap: 4 }, policyTitle: { color: palette.greenText, fontSize: 13, fontWeight: '800' },
 });

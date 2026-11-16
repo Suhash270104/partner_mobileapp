@@ -1,7 +1,8 @@
 import { io, Socket } from 'socket.io-client';
+import { getAccessToken } from './sessionTokens';
 
-// Real-time chat, same server and events as the desktop partner app (lib/socket.ts). The session cookie is
-// sent with the handshake. Messages themselves are never sent over the socket: POST /chat/message
+// Real-time chat, same server and events as the desktop partner app (lib/socket.ts). The handshake carries the Bearer
+// access token (`auth.token`) on phones, and the session cookie in the browser. Messages themselves are never sent over the socket: POST /chat/message
 // validates and saves them, then the server broadcasts the saved copy to the room (receive_message).
 const apiBase = process.env.EXPO_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, '') || '';
 const socketUrl = apiBase.replace(/\/api$/, '');
@@ -13,6 +14,8 @@ export function getStudioSocket(): Socket | null {
   if (!socket) {
     socket = io(socketUrl, {
       withCredentials: true,
+      // Read at every (re)connect so a refreshed token is used after the 15-minute access token rolls over.
+      auth: (done: (data: { token?: string }) => void) => { void getAccessToken().then(token => done(token ? { token } : {})); },
       transports: ['polling', 'websocket'],
       autoConnect: true,
       reconnectionAttempts: 10,

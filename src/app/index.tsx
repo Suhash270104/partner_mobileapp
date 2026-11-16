@@ -4,7 +4,9 @@ import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { PartnerBrand } from '../components/PartnerBrand';
-import { firstNameOf, partnerApi, PartnerApiError, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
+import { authApi } from '../lib/auth';
+import { setPendingPhone } from '../lib/pendingPhone';
+import { firstNameOf, partnerApi, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
 import { registerPartnerDevicePush } from '../lib/partnerPush';
 
 // Used only by the hidden website links below; re-enable together with them.
@@ -110,7 +112,8 @@ export default function PartnerHomeScreen() {
     const route = item.type === 'merchant'
       ? merchant?.canAccessDashboard ? item.route : item.setupRoute
       : role?.status === 'active' ? item.route : item.setupRoute;
-    if (item.type === 'realtor') { router.push((role?.status === 'active' ? '/realtor/dashboard' : '/realtor/register') as never); return; }
+    // Any existing realtor role (pending included) opens the dashboard, which guides unfinished onboarding; only people without one register.
+    if (item.type === 'realtor') { router.push((role ? '/realtor/dashboard' : '/realtor/register') as never); return; }
     if (item.type === 'merchant') { router.push((merchant?.canAccessDashboard ? '/store' : '/store/register') as never); return; }
     await openConfigured(partnerSite, route, 'Set EXPO_PUBLIC_PARTNER_SITE_URL to open partner workspace pages.');
   }
@@ -118,13 +121,14 @@ export default function PartnerHomeScreen() {
   async function signIn() {
     setLoginBusy(true); setLoginError('');
     try {
-      const nextSession = await partnerApi.login(emailOrPhone.trim(), password);
-      setSession(nextSession);
+      const outcome = await authApi.login(emailOrPhone.trim(), password);
       setPassword('');
       setModalOpen(false);
+      // An account without a verified phone is finished on its own screen before a session exists.
+      if (outcome.kind === 'verifyPhone') { setPendingPhone(outcome.pending); router.push('/verify-phone' as never); return; }
       await loadSession(true);
     } catch (error) {
-      setLoginError(error instanceof PartnerApiError ? error.message : 'Sign in failed. Please try again.');
+      setLoginError(error instanceof Error && error.message ? error.message : 'Sign in failed. Please try again.');
     } finally { setLoginBusy(false); }
   }
 

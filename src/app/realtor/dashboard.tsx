@@ -175,7 +175,7 @@ export default function RealtorDashboardScreen() {
     {phase === 'signedOut' ? <View style={s.gap}>
       <PageHeading title="Open your Realty workspace" subtitle="Realty uses the same Kraftnex partner sign-in as your other workspaces. Sign in once, then pick Realtor from the home screen." />
       {error ? <Text style={s.error}>{error}</Text> : null}
-      <PillButton title="Go to partner home" onPress={() => router.replace('/')} />
+      <PillButton title="Sign in" onPress={() => router.replace('/login' as never)} />
       <PillButton title="Set up realtor workspace" variant="ghost" onPress={() => router.push('/realtor/register')} />
     </View> : null}
 

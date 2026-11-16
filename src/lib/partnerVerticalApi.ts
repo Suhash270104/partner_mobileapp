@@ -1,14 +1,10 @@
 import { partnerApi, PartnerApiError } from './partnerApi';
+import { nativeHeaders } from './sessionTokens';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 const realtorPath = (path: string) => `/realestate/realtor${path}`;
 
 export const realtorApi = {
-  registerOtp: (input: { email: string; phone: string }) => partnerApi.call<Record<string, unknown>>('/realestate/realtor/register/send-otp', 'POST', input),
-  verifyOtp: (input: { phone: string; otp: string }) => partnerApi.call<{ phoneVerificationToken: string }>('/realestate/realtor/register/verify-otp', 'POST', input),
-  register: (input: Record<string, unknown>) => partnerApi.call<Record<string, unknown>>('/realestate/realtor/register', 'POST', input),
-  login: (input: { email?: string; phone?: string; password: string }) => partnerApi.call<Record<string, unknown>>('/realestate/realtor/login', 'POST', input),
-  logout: () => partnerApi.call<Record<string, unknown>>('/logout', 'POST', {}),
   profile: () => partnerApi.call<Record<string, unknown>>(realtorPath('/profile')),
   saveProfile: (input: Record<string, unknown>) => partnerApi.call<Record<string, unknown>>(realtorPath('/onboarding/profile'), 'PUT', input),
   saveCredentials: (input: Record<string, unknown>) => partnerApi.call<Record<string, unknown>>(realtorPath('/onboarding/credentials'), 'PUT', input),
@@ -48,7 +44,7 @@ export const realtorApi = {
     form.append('type', target.type);
     if (target.isPrimary) form.append('isPrimary', 'true');
     if (target.sortOrder != null) form.append('sortOrder', String(target.sortOrder));
-    const send = () => fetch(`${base}/realestate/realtor/media`, { method: 'POST', body: form, credentials: 'include', headers: { Accept: 'application/json' } });
+    const send = async () => fetch(`${base}/realestate/realtor/media`, { method: 'POST', body: form, credentials: 'include', headers: { Accept: 'application/json', ...(await nativeHeaders()) } });
     const parse = async (response: Response) => {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new PartnerApiError(body?.message || `Media upload failed (${response.status}).`, response.status, body?.code);

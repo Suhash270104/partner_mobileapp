@@ -97,9 +97,11 @@ export default function StoreRegisterScreen() {
 
   if (gate === 'checking') return <Screen standalone><View style={{ paddingVertical: 80, alignItems: 'center' }}><ActivityIndicator color={palette.green} /></View></Screen>;
   if (gate === 'error') return <Screen standalone title="Open your store" error={gateError} onRetry={() => void check()} onBack={() => router.back()} />;
+  // Sign-in itself requires a verified phone, so this only appears for an older session. Signing in again runs the one-time check.
   if (gate === 'needsPhone') return <Screen standalone title="Open your store" onBack={() => router.back()}>
     <AlertBanner tone="amber" icon="phone" title="Verify your mobile number first"
-      message="A verified mobile number is required to open a store. Sign in with mobile OTP, then come back here." actionLabel="Verify mobile number" onAction={() => router.push('/signup' as never)} />
+      message="A verified mobile number is required to open a store. Sign out and sign in again: you will be asked to verify your number once." actionLabel="Sign out and sign in again"
+      onAction={() => { void partnerApi.logout().catch(() => undefined).finally(() => router.replace('/login' as never)); }} />
     <PillButton title="I have verified it — check again" variant="soft" onPress={() => void check()} />
   </Screen>;
 

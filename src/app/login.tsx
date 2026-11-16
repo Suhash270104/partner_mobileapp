@@ -17,7 +17,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import { router, useNavigation } from 'expo-router';
 import GoogleSignInButton from '../components/GoogleSignInButton';
-import { authApi } from '../lib/auth';
+import { SignInOutcome, authApi } from '../lib/auth';
+import { partnerApi } from '../lib/partnerApi';
+import { setPendingPhone } from '../lib/pendingPhone';
 import { hasCompletedLaunchSplash, markLaunchSplashComplete } from '../lib/splashState';
 
 const logo = require('../../assets/kraftnex-logo-transparent.png');
@@ -43,6 +45,11 @@ export default function LoginScreen() {
   });
   const afterLogin = () => {
     router.replace('/' as never);
+  };
+  // The server withholds the session until the account has a verified phone: send the person to verify it once.
+  const handleOutcome = (outcome: SignInOutcome) => {
+    if (outcome.kind === 'verifyPhone') { setPendingPhone(outcome.pending); router.push('/verify-phone' as never); return; }
+    afterLogin();
   };
 
   const [logoProgress] = useState(() => new Animated.Value(playInitialSplash ? 0 : 1));
@@ -86,7 +93,7 @@ export default function LoginScreen() {
   // Someone who is still signed in (the session cookie outlives the app) goes straight to the workspaces.
   useEffect(() => {
     let active = true;
-    authApi.session().then(
+    partnerApi.session().then(
       result => { if (active && result.user) router.replace('/' as never); },
       () => undefined,
     );
@@ -97,8 +104,7 @@ export default function LoginScreen() {
     setBusy(true); setError('');
     try {
       if (!idToken) throw new Error('Google did not return an ID token. Check the Google OAuth client configuration.');
-      await authApi.google(idToken);
-      afterLogin();
+      handleOutcome(await authApi.google(idToken));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Google sign in failed.');
     } finally { setBusy(false); }
@@ -139,12 +145,12 @@ export default function LoginScreen() {
     if (!value || !password) { setError('Enter your email or phone number and password.'); return; }
     setBusy(true); setError('');
     try {
-      await authApi.login(value, password);
+      const outcome = await authApi.login(value, password);
       if (Platform.OS !== 'web') {
         if (rememberMe) await SecureStore.setItemAsync(SAVED_IDENTIFIER_KEY, value);
         else await SecureStore.deleteItemAsync(SAVED_IDENTIFIER_KEY);
       }
-      afterLogin();
+      handleOutcome(outcome);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to sign in.');
     } finally { setBusy(false); }
@@ -213,6 +219,9 @@ export default function LoginScreen() {
 
               <View style={styles.separator}><View style={styles.rule} /><Text style={styles.or}>OR CONTINUE WITH</Text><View style={styles.rule} /></View>
               <GoogleSignInButton clientId={googleClientId} disabled={busy} onIdToken={completeGoogleLogin} onError={setError} />
+              <Pressable accessibilityRole="button" style={styles.mobileLink} onPress={() => router.push('/mobile-signin' as never)}>
+                <Text style={styles.createText}>Continue with mobile number (OTP)</Text>
+              </Pressable>
 
               <View>
                 <View style={styles.createRow}>
@@ -249,6 +258,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  mobileLink: { alignItems: 'center', paddingVertical: 14 },
   safe: { flex: 1, backgroundColor: Platform.OS === 'web' ? '#ebe9f0' : '#fbf9ff' },
   screen: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center', backgroundColor: '#fbf9ff', overflow: 'hidden' },
   webScreen: { shadowColor: '#1a1722', shadowOpacity: 0.12, shadowRadius: 20, shadowOffset: { width: 0, height: 0 } },

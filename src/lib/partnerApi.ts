@@ -1,3 +1,5 @@
+import { captureTokens, clearTokens, getRefreshToken, isNativeApp, nativeHeaders } from './sessionTokens';
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, '');
 
 export type PartnerRoleType = 'customer' | 'designer' | 'technician' | 'realtor' | 'merchant';
@@ -226,11 +228,17 @@ export class PartnerApiError extends Error {
 let refreshInFlight: Promise<void> | null = null;
 function refreshSession(): Promise<void> {
   if (!refreshInFlight) {
-    refreshInFlight = request('/v1/auth/refresh', { method: 'POST', body: '{}' }, true)
-      .then(() => undefined)
+    refreshInFlight = (async () => {
+      // A phone sends its stored refresh token in the body; the browser sends its refresh cookie.
+      const refreshToken = await getRefreshToken();
+      if (isNativeApp && !refreshToken) throw new PartnerApiError('Please sign in again.', 401, 'AUTH_SESSION_EXPIRED');
+      await request('/v1/auth/refresh', { method: 'POST', body: JSON.stringify(isNativeApp ? { refreshToken } : {}) }, true);
+    })()
       .catch((error) => {
-        // "Just refreshed by another request": the new cookies are already in place, so carry on.
+        // "Just refreshed by another request": the new tokens are already stored, so carry on.
         if (error instanceof PartnerApiError && error.status === 409 && error.code === 'AUTH_REFRESH_RACE') return;
+        // A rejected refresh token means the session is over; forget it so the app shows sign-in instead of looping.
+        if (error instanceof PartnerApiError && [401, 403, 409].includes(error.status)) void clearTokens();
         throw error;
       })
       .finally(() => { refreshInFlight = null; });
@@ -238,10 +246,11 @@ function refreshSession(): Promise<void> {
   return refreshInFlight;
 }
 
-function uploadFormData<T>(path: string, formData: FormData, skipRefresh: boolean): Promise<T> {
+async function uploadFormData<T>(path: string, formData: FormData, skipRefresh: boolean): Promise<T> {
   if (!API_BASE_URL) {
-    return Promise.reject(new PartnerApiError('The partner app is not connected. Set EXPO_PUBLIC_API_BASE_URL in its environment.', 0, 'API_URL_MISSING'));
+    throw new PartnerApiError('The partner app is not connected. Set EXPO_PUBLIC_API_BASE_URL in its environment.', 0, 'API_URL_MISSING');
   }
+  const sessionHeaders = await nativeHeaders();
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -249,6 +258,7 @@ function uploadFormData<T>(path: string, formData: FormData, skipRefresh: boolea
     xhr.withCredentials = true;
     xhr.timeout = 120000;
     xhr.setRequestHeader('Accept', 'application/json');
+    Object.entries(sessionHeaders).forEach(([name, value]) => xhr.setRequestHeader(name, value));
     xhr.onload = () => {
       let body: Record<string, unknown> = {};
       try {
@@ -298,7 +308,7 @@ async function request<T>(path: string, init: RequestInit = {}, skipRefresh = fa
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       credentials: 'include',
-      headers: { Accept: 'application/json', ...(!isFormData ? { 'Content-Type': 'application/json' } : {}), ...init.headers },
+      headers: { Accept: 'application/json', ...(!isFormData ? { 'Content-Type': 'application/json' } : {}), ...(await nativeHeaders()), ...init.headers },
     });
   } catch (error) {
     const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
@@ -316,6 +326,7 @@ async function request<T>(path: string, init: RequestInit = {}, skipRefresh = fa
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new PartnerApiError(body?.message || `Kraftnex request failed (${response.status}).`, response.status, body?.code, body?.data ?? body);
+  await captureTokens(body);
   return body as T;
 }
 
@@ -333,10 +344,6 @@ export const partnerApi = {
     }
     return request<PartnerSession>('/v1/auth/session');
   },
-  login: (emailOrPhone: string, password: string) => request<PartnerSession>('/v1/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ emailOrPhone, password }),
-  }, true),
   forgotPassword: (email: string) => request<{ message: string }>('/v1/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify({ email }),
@@ -344,7 +351,13 @@ export const partnerApi = {
   logout: async () => {
     // Stop pushes to this phone while the session is still valid; never let it block signing out.
     try { await (await import('./partnerPush')).unregisterPartnerDevicePush(); } catch { /* best effort */ }
-    return request<{ message: string }>('/v1/auth/logout', { method: 'POST' });
+    const refreshToken = await getRefreshToken();
+    try {
+      return await request<{ message: string }>('/v1/auth/logout', { method: 'POST', body: JSON.stringify(refreshToken ? { refreshToken } : {}) }, true);
+    } finally {
+      // Whatever the server said, this phone is signed out.
+      await clearTokens();
+    }
   },
   merchantStatus: () => request<MerchantStatus>('/marketplace/merchant/auth/status'),
   sendTechnicianOtp: (phone: string) => request<{ message: string }>('/technician/send-otp', {

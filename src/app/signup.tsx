@@ -17,6 +17,7 @@ import { router, useNavigation } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 import { AuthApiError, authApi } from '../lib/auth';
+import { setPendingPhone } from '../lib/pendingPhone';
 
 const GREEN = '#06291f';
 const LOGO = require('../../assets/kraftnex-logo-transparent.png');
@@ -175,8 +176,14 @@ export default function SignupScreen() {
     setBusy(true);
     setError('');
     try {
-      const result = await authApi.google(idToken);
-      if (result.isNew) {
+      const outcome = await authApi.google(idToken);
+      if (outcome.kind === 'verifyPhone') {
+        // New Google people verify a phone before the account exists; consent is recorded when that finishes.
+        setPendingPhone(outcome.pending);
+        router.push('/verify-phone' as never);
+        return;
+      }
+      if (outcome.isNew) {
         try {
           await authApi.recordLegalConsent('studio_signup');
         } catch {
