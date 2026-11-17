@@ -222,11 +222,12 @@ export default function LoginScreen() {
                 {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.signInText}>Sign In  →</Text>}
               </Pressable>
 
-              <View style={styles.separator}><View style={styles.rule} /><Text style={styles.or}>OR CONTINUE WITH</Text><View style={styles.rule} /></View>
-              <GoogleSignInButton clientId={googleClientId} disabled={busy} onIdToken={completeGoogleLogin} onError={setError} />
-              <Pressable accessibilityRole="button" style={styles.mobileLink} onPress={() => router.push('/mobile-signin' as never)}>
-                <Text style={styles.createText}>Continue with mobile number (OTP)</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Continue with mobile number" style={styles.mobileButton} onPress={() => router.push('/mobile-signin' as never)} disabled={busy}>
+                <Text style={styles.mobileButtonText}>Continue with mobile number</Text>
               </Pressable>
+
+              <View style={styles.separator}><View style={styles.rule} /><Text style={styles.or}>OR</Text><View style={styles.rule} /></View>
+              <GoogleSignInButton clientId={googleClientId} disabled={busy} onIdToken={completeGoogleLogin} onError={setError} />
 
               <View>
                 <View style={styles.createRow}>
@@ -263,7 +264,8 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  mobileLink: { alignItems: 'center', paddingVertical: 14 },
+  mobileButton: { height: 54, marginTop: 12, borderRadius: 12, borderWidth: 1.5, borderColor: GREEN, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  mobileButtonText: { color: GREEN, fontSize: 14, fontWeight: '700' },
   safe: { flex: 1, backgroundColor: Platform.OS === 'web' ? '#ebe9f0' : '#fbf9ff' },
   screen: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center', backgroundColor: '#fbf9ff', overflow: 'hidden' },
   webScreen: { shadowColor: '#1a1722', shadowOpacity: 0.12, shadowRadius: 20, shadowOffset: { width: 0, height: 0 } },

@@ -286,6 +286,7 @@ export default function SignupScreen() {
 
                 <View style={styles.separator}><View style={styles.ruleLine} /><Text style={styles.or}>OR SIGN UP WITH</Text><View style={styles.ruleLine} /></View>
                 <GoogleSignInButton clientId={googleClientId} disabled={busy} onIdToken={signUpWithGoogle} onError={setError} />
+                <Pressable accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 14 }} onPress={() => router.push('/mobile-signin' as never)}><Text style={styles.signinLink}>Sign up with mobile number (OTP)</Text></Pressable>
                 <View style={styles.signinRow}><Text style={styles.signinPrompt}>Already have an account? </Text><Pressable onPress={() => router.replace('/login' as never)}><Text style={styles.signinLink}>Sign in  ›</Text></Pressable></View>
               </>
             ) : (

@@ -7,7 +7,7 @@ import { PartnerBrand } from '../components/PartnerBrand';
 import { AccountSummary } from '../components/auth/AccountSummary';
 import { authApi } from '../lib/auth';
 import { setPendingPhone } from '../lib/pendingPhone';
-import { firstNameOf, partnerApi, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
+import { accountNeedsDetails, firstNameOf, partnerApi, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
 import { registerPartnerDevicePush } from '../lib/partnerPush';
 
 // Used only by the hidden website links below; re-enable together with them.
@@ -17,12 +17,10 @@ const partnerSite = process.env.EXPO_PUBLIC_PARTNER_SITE_URL?.trim().replace(/\/
 type Workspace = { type: Exclude<PartnerRoleType, 'customer'>; title: string; category: string; description: string; benefit: string; icon: string; route: string; setupRoute: string };
 const workspaces: Workspace[] = [
   { type: 'technician', title: 'Technician', category: 'FIELD ENGINEERING', description: 'Service jobs, schedule, KYC and earnings', benefit: 'Deployment ready', icon: '⚒', route: '/technician/dashboard', setupRoute: '/become-professional?type=technician' },
-  { type: 'designer', title: 'Interior professional', category: 'STUDIO PRO & ATELIER', description: 'Leads, projects, proposals and clients', benefit: 'Client pipeline included', icon: '◉', route: '/professional/dashboard', setupRoute: '/become-professional?type=designer' },
+  { type: 'designer', title: 'Professional', category: 'STUDIO PRO & ATELIER', description: 'Leads, projects, proposals and clients', benefit: 'Client pipeline included', icon: '◉', route: '/professional/dashboard', setupRoute: '/become-professional?type=designer' },
   { type: 'realtor', title: 'Realtor / Developer', category: 'PRIME REAL ESTATE', description: 'Projects, listings, media and leads', benefit: 'Portfolio verification', icon: '▦', route: '/realtor/dashboard', setupRoute: '/realtor/register' },
   { type: 'merchant', title: 'Marketplace seller', category: 'CURATED MATERIAL SUPPLY', description: 'Products, enquiries and quotations', benefit: 'Enquiry-based B2B marketplace', icon: '▣', route: '/store', setupRoute: '/store/register' },
 ];
-
-const roleTitles = Object.fromEntries(workspaces.map(item => [item.type, item.title])) as Partial<Record<PartnerRoleType, string>>;
 
 export default function PartnerHomeScreen() {
   const [session, setSession] = useState<PartnerSession | null>(null);
@@ -92,6 +90,9 @@ export default function PartnerHomeScreen() {
   }, [loadSession]);
 
   const user = session?.user ?? null;
+  // An account with no name or email (created by phone alone) cannot go further until it has both.
+  const needsDetails = accountNeedsDetails(user);
+  useEffect(() => { if (needsDetails && !loading) router.push('/complete-profile' as never); }, [needsDetails, loading]);
   const welcomeName = firstNameOf(user);
   const initials = useMemo(() => {
     const name = firstNameOf(user);
@@ -195,7 +196,7 @@ export default function PartnerHomeScreen() {
       <Modal visible={modalOpen} transparent animationType="fade" onRequestClose={() => setModalOpen(false)}>
         <View style={styles.modalBackdrop}><View style={styles.modalCard}>
           <View style={styles.modalHeader}><PartnerBrand compact /><Pressable onPress={() => setModalOpen(false)} accessibilityLabel="Close"><Text style={styles.close}>×</Text></Pressable></View>
-          {user ? <><AccountSummary user={user} roleTitles={roleTitles} />{/* Signed-in devices is switched off for now. Re-enable by uncommenting:
+          {user ? <><AccountSummary user={user} />{/* Signed-in devices is switched off for now. Re-enable by uncommenting:
           <Pressable style={styles.primaryButton} onPress={() => { setModalOpen(false); router.push('/devices' as never); }}><Text style={styles.primaryText}>Signed-in devices</Text></Pressable> */}<Pressable style={styles.primaryButton} onPress={() => void signOut()}><Text style={styles.primaryText}>Sign out</Text></Pressable></> : <>
             <Text style={styles.modalTitle}>Sign in to Kraftnex</Text><Text style={styles.modalCopy}>Use your Kraftnex account to continue setting up a workspace.</Text>
             <TextInput style={styles.input} placeholder="Email or phone" placeholderTextColor="#84938d" value={emailOrPhone} onChangeText={setEmailOrPhone} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" />

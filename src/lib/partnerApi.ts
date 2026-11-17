@@ -356,7 +356,10 @@ export const partnerApi = {
     // refresh token this fails harmlessly and the answer stays "signed out".
     try {
       await refreshSession();
-    } catch {
+    } catch (error) {
+      // Only a rejected refresh token means "signed out". A dropped connection or a server hiccup must surface as an error
+      // (with Try again) so a signed-in person is never shown a "please log in" screen because of it.
+      if (error instanceof PartnerApiError && (error.status === 0 || error.status >= 500)) throw error;
       return current;
     }
     const renewed = await request<PartnerSession>('/v1/auth/session');
@@ -612,6 +615,13 @@ export function fullNameOf(user: PartnerUser | null): string | null {
   const profiles = Object.values(user.profiles || {}).filter(Boolean);
   const candidates = [user.profiles?.customer, user.activeRole ? user.profiles?.[user.activeRole] : undefined, ...profiles];
   return candidates.map(profile => profile?.name?.trim()).find(Boolean) || null;
+}
+
+/** Signed in, but the account has no name or no email yet (for example it was created by phone alone). */
+export function accountNeedsDetails(user: PartnerUser | null): boolean {
+  if (!user) return false;
+  const profiles = Object.values(user.profiles || {}).filter(Boolean);
+  return !fullNameOf(user) || !(user.email || profiles.some(profile => profile?.email));
 }
 
 export interface StudioProposalRecord {

@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { PhoneOtpFlow } from '../components/auth/PhoneOtpFlow';
-import { ChipGroup, FormField, Icon, PillButton, Screen, Text, palette } from '../components/ui';
+import { AuthButton, AuthCheckbox, AuthField, AuthShell, authColors } from '../components/auth/AuthKit';
+import { Text } from '../components/AppText';
+import { ChipGroup } from '../components/ui';
 import { AuthApiError, AuthIntent, MobileVerifyResult, RealtorAccountType, authApi } from '../lib/auth';
+import { authMessage } from '../lib/authErrors';
 import { compact, firstError, lengthBetween, optionalEmail, required } from '../lib/marketplace/validation';
 
 const INTENTS: AuthIntent[] = ['customer', 'designer', 'technician', 'realtor'];
@@ -82,34 +85,25 @@ export default function MobileSignInScreen() {
       }
       router.replace(next as never);
     } catch (cause) {
-      setError(cause instanceof AuthApiError && cause.status === 409 ? 'An account already exists for this email or number. Please sign in instead.' : cause instanceof Error ? cause.message : 'Could not finish. Please try again.');
+      setError(cause instanceof AuthApiError && cause.status === 409 ? 'An account already exists for this email or number. Please sign in instead.' : authMessage(cause, 'Could not finish. Please try again.'));
     } finally { setBusy(false); }
   };
 
   const goBack = () => (stage === 'details' ? setStage('otp') : router.canGoBack() ? router.back() : router.replace('/login' as never));
 
-  return <Screen standalone title={stage === 'otp' ? 'Continue with mobile' : 'Tell us about you'} subtitle={stage === 'otp' ? COPY[intent] : 'We need your name and email to finish setting up your account.'} onBack={goBack}>
+  return <AuthShell headerTitle="Login" title={stage === 'otp' ? 'Continue with mobile' : 'Tell us about you'} subtitle={stage === 'otp' ? COPY[intent] : 'We need your name and email to finish setting up your account.'} onBack={goBack}>
     {stage === 'otp' ? <>
-      {intent === 'realtor' ? <ChipGroup label="I am a" required value={accountType} options={ACCOUNT_TYPES} onChange={value => setAccountType(value)} /> : null}
+      {intent === 'realtor' ? <View style={{ marginBottom: 16 }}><ChipGroup label="I am a" required value={accountType} options={ACCOUNT_TYPES} onChange={value => setAccountType(value)} /></View> : null}
       <PhoneOtpFlow onSend={phone => authApi.mobileSend(phone)} onVerify={verify} />
-      <PillButton variant="ghost" title="Use email and password instead" onPress={() => router.replace('/login' as never)} />
-    </> : <View style={{ gap: 14 }}>
-      <FormField label="Full name" required value={form.name} onChangeText={name => setForm(f => ({ ...f, name }))} autoCapitalize="words" error={errors.name} />
-      <FormField label="Email" required value={form.email} onChangeText={email => setForm(f => ({ ...f, email }))} keyboardType="email-address" error={errors.email} />
-      <FormField label="City (optional)" value={form.city} onChangeText={city => setForm(f => ({ ...f, city }))} />
-      {intent === 'realtor' && !proof.existing ? <ChipGroup label="I am a" required value={accountType} options={ACCOUNT_TYPES} onChange={value => setAccountType(value)} /> : null}
-      {!proof.existing ? <Pressable onPress={() => setAgreed(!agreed)} accessibilityRole="checkbox" accessibilityState={{ checked: agreed }} style={[s.consent, !!errors.agreed && { borderColor: palette.red }]}>
-        <View style={[s.box, agreed && s.boxOn]}>{agreed ? <Icon name="check" size={16} color="#fff" /> : null}</View>
-        <Text style={s.consentText}>I agree to the Terms of Service and Privacy Policy.</Text>
-      </Pressable> : null}
-      {error ? <Text style={{ color: palette.red, fontSize: 12.5, fontWeight: '700' }}>{error}</Text> : null}
-      <PillButton title={proof.existing ? 'Save and continue' : 'Create my account'} icon="check" loading={busy} onPress={() => void submit()} />
+      <AuthButton variant="link" title="Use email and password instead" onPress={() => router.replace('/login' as never)} />
+    </> : <View>
+      <AuthField label="Full name" value={form.name} onChangeText={name => setForm(f => ({ ...f, name }))} autoCapitalize="words" textContentType="name" placeholder="Your full name" error={errors.name} />
+      <AuthField label="Email" value={form.email} onChangeText={email => setForm(f => ({ ...f, email }))} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} textContentType="emailAddress" placeholder="you@example.com" error={errors.email} />
+      <AuthField label="City (optional)" value={form.city} onChangeText={city => setForm(f => ({ ...f, city }))} placeholder="Where are you based?" />
+      {intent === 'realtor' && !proof.existing ? <View style={{ marginBottom: 16 }}><ChipGroup label="I am a" required value={accountType} options={ACCOUNT_TYPES} onChange={value => setAccountType(value)} /></View> : null}
+      {!proof.existing ? <AuthCheckbox checked={agreed} error={!!errors.agreed} onToggle={() => setAgreed(!agreed)}>I agree to the Terms of Service and Privacy Policy.</AuthCheckbox> : null}
+      {error ? <Text style={{ color: authColors.error, fontSize: 12, marginBottom: 10 }}>{error}</Text> : null}
+      <AuthButton title={proof.existing ? 'Save and continue' : 'Create my account'} loading={busy} onPress={() => void submit()} />
     </View>}
-  </Screen>;
+  </AuthShell>;
 }
-
-const s = StyleSheet.create({
-  consent: { flexDirection: 'row', gap: 12, alignItems: 'center', padding: 14, borderRadius: 18, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff' },
-  box: { width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: '#9aa8a1', alignItems: 'center', justifyContent: 'center' }, boxOn: { backgroundColor: '#0d4a38', borderColor: '#0d4a38' },
-  consentText: { flex: 1, color: '#33463f', fontSize: 13.5, lineHeight: 19 },
-});
