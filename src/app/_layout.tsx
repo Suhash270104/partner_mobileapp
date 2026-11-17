@@ -36,7 +36,7 @@ function usePartnerNotificationNavigation() {
         if (screen === 'technician-setup') {
           router.push('/technician/setup');
           void Notifications.clearLastNotificationResponse();
-        } else if (typeof screen === 'string' && /^\/(technician|professional)\/[\w\-/()[\]?=&%.]*$/.test(screen)) {
+        } else if (typeof screen === 'string' && /^\/(technician|professional|realtor|store)\/[\w\-/()[\]?=&%.]*$/.test(screen)) {
           // Lead, proposal, message, job and approval alerts open the matching workspace screen.
           router.push(screen as never);
           void Notifications.clearLastNotificationResponse();

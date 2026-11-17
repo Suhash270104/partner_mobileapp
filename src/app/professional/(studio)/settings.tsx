@@ -6,14 +6,14 @@ import { partnerApi } from '../../../lib/partnerApi';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
 import { useStudio } from '../../../components/studio/StudioContext';
 
-interface Prefs { notifLeads: boolean; notifMessages: boolean; autoAcceptBookings: boolean }
+interface PushPrefs { leads: boolean; proposals: boolean; messages: boolean; marketplace: boolean }
 
 export default function SettingsScreen() {
   const { profile, studioName, ownerName } = useStudio();
-  const record = profile as { approvalStatus?: string; email?: string; createdAt?: string; tier?: string; membershipLevel?: string; notificationPreferences?: Partial<Prefs> };
+  const record = profile as { approvalStatus?: string; email?: string; createdAt?: string; tier?: string; membershipLevel?: string; notificationPreferences?: { autoAcceptBookings?: boolean } };
   const approval = record.approvalStatus || (profile.isApproved ? 'approved' : 'pending');
-  const stored = record.notificationPreferences;
-  const [prefs, setPrefs] = useState<Prefs>({ notifLeads: stored?.notifLeads ?? true, notifMessages: stored?.notifMessages ?? true, autoAcceptBookings: stored?.autoAcceptBookings ?? false });
+  const [pushPrefs, setPushPrefs] = useState<PushPrefs>({ leads: true, proposals: true, messages: true, marketplace: true });
+  const [autoAcceptBookings, setAutoAcceptBookings] = useState(record.notificationPreferences?.autoAcceptBookings ?? false);
   const [error, setError] = useState('');
   const [hasTechnician, setHasTechnician] = useState(false);
 
@@ -23,28 +23,50 @@ export default function SettingsScreen() {
       session => { if (!cancelled) setHasTechnician(Boolean(session.user?.roles?.some(role => role.type === 'technician'))); },
       () => undefined,
     );
+    partnerApi.getNotificationPreferences().then(
+      result => { if (!cancelled) setPushPrefs(result.preferences); },
+      cause => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not load notification preferences'); },
+    );
     return () => { cancelled = true; };
   }, []);
 
-  async function change(key: keyof Prefs, value: boolean) {
-    const previous = prefs;
-    const next = { ...prefs, [key]: value };
-    setPrefs(next);
+  async function changePush(key: keyof PushPrefs, value: boolean) {
+    const previous = pushPrefs;
+    setPushPrefs({ ...pushPrefs, [key]: value });
     setError('');
     try {
-      await partnerApi.updateStudioProfile({ notificationPreferences: next });
-    } catch (e) {
-      setPrefs(previous);
-      setError(e instanceof Error ? e.message : 'Unable to save preference');
+      const result = await partnerApi.updateNotificationPreferences({ [key]: value });
+      setPushPrefs(result.preferences);
+    } catch (cause) {
+      setPushPrefs(previous);
+      setError(cause instanceof Error ? cause.message : 'Unable to save notification preference');
+    }
+  }
+
+  async function changeAutoAcceptBookings(value: boolean) {
+    const previous = autoAcceptBookings;
+    setAutoAcceptBookings(value);
+    setError('');
+    try {
+      await partnerApi.updateStudioProfile({
+        notificationPreferences: {
+          ...(record.notificationPreferences || {}),
+          autoAcceptBookings: value,
+        },
+      });
+    } catch (cause) {
+      setAutoAcceptBookings(previous);
+      setError(cause instanceof Error ? cause.message : 'Unable to save booking preference');
     }
   }
 
   const since = record.createdAt ? new Date(record.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : '—';
   const rows: [string, string][] = [['Owner', ownerName || '—'], ['Email', record.email || '—'], ['Studio Since', since], ['Plan', record.tier || record.membershipLevel || 'Standard']];
-  const toggles: [keyof Prefs, string, string][] = [
-    ['notifLeads', 'New Leads', 'Email & push when a matching lead appears'],
-    ['notifMessages', 'Messages', 'Notify on new client messages'],
-    ['autoAcceptBookings', 'Auto-Accept Bookings', 'Confirm meeting requests automatically'],
+  const pushToggles: [keyof PushPrefs, string, string][] = [
+    ['leads', 'New Leads', 'Push when a matching lead appears'],
+    ['proposals', 'Proposal updates', 'Push when a client accepts or declines your proposal'],
+    ['messages', 'Messages', 'Push on new client messages'],
+    ['marketplace', 'Marketplace', 'Push on store enquiries and orders'],
   ];
 
   return (
@@ -64,12 +86,16 @@ export default function SettingsScreen() {
       <View style={s.card}>
         <Text style={s.cardTitle}>Notifications</Text>
         {!!error && <ErrorText>{error}</ErrorText>}
-        {toggles.map(([key, label, hint]) => (
+        {pushToggles.map(([key, label, hint]) => (
           <View key={key} style={s.toggleRow}>
             <View style={{ flex: 1 }}><Text style={s.rowTitle}>{label}</Text><Text style={s.hint}>{hint}</Text></View>
-            <Switch value={prefs[key]} onValueChange={value => void change(key, value)} trackColor={{ true: c.green, false: '#cfd8d3' }} thumbColor="#fff" />
+            <Switch value={pushPrefs[key]} onValueChange={value => void changePush(key, value)} trackColor={{ true: c.green, false: '#cfd8d3' }} thumbColor="#fff" />
           </View>
         ))}
+        <View style={s.toggleRow}>
+          <View style={{ flex: 1 }}><Text style={s.rowTitle}>Auto-Accept Bookings</Text><Text style={s.hint}>Confirm meeting requests automatically</Text></View>
+          <Switch value={autoAcceptBookings} onValueChange={value => void changeAutoAcceptBookings(value)} trackColor={{ true: c.green, false: '#cfd8d3' }} thumbColor="#fff" />
+        </View>
       </View>
 
       <View style={s.card}>

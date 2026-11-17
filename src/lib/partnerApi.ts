@@ -33,6 +33,16 @@ export interface PartnerSession {
   activeRole?: PartnerRoleType;
 }
 
+export interface PartnerNotificationPreferences {
+  bookings: boolean;
+  studio: boolean;
+  leads: boolean;
+  proposals: boolean;
+  messages: boolean;
+  marketplace: boolean;
+  security: boolean;
+}
+
 export interface PartnerDevice {
   sessionId: string; deviceId?: string | null; userAgent?: string | null; ip?: string | null; activeRole?: string | null;
   createdAt?: string; lastUsedAt?: string; expiresAt?: string;
@@ -472,6 +482,10 @@ export const partnerApi = {
   }),
   // `app` tells the backend which app this phone token belongs to, so a partner-only alert is not also
   // delivered to the customer app of someone who holds both kinds of account.
+  getNotificationPreferences: () => request<{ success: boolean; preferences: PartnerNotificationPreferences }>('/notifications/preferences'),
+  updateNotificationPreferences: (patch: Partial<Omit<PartnerNotificationPreferences, 'security'>>) => request<{ success: boolean; preferences: PartnerNotificationPreferences }>('/notifications/preferences', {
+    method: 'PUT', body: JSON.stringify(patch),
+  }),
   registerPushToken: (token: string, platform: 'android' | 'ios') => request<{ success: boolean }>('/ai/push-token', {
     method: 'POST', body: JSON.stringify({ token, platform, app: 'partner' }),
   }),
