@@ -32,9 +32,9 @@ export function TimeField({ label, value, onChange }: { label: string; value: st
 }
 
 const s = StyleSheet.create({
-  label: { color: '#33463f', fontSize: 14, fontWeight: '800' },
+  label: { color: '#33463f', fontSize: 13.5, fontWeight: '800' },
   box: { minHeight: 52, borderRadius: 26, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff', paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  value: { color: palette.ink, fontSize: 16 },
+  value: { color: palette.ink, fontSize: 14.5 },
   option: { minHeight: 50, borderRadius: 14, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, optionOn: { backgroundColor: palette.greenSoft },
-  optionText: { color: '#22332c', fontSize: 16 },
+  optionText: { color: '#22332c', fontSize: 14.5 },
 });

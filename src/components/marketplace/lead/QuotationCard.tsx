@@ -27,6 +27,6 @@ export function QuotationCard({ quote }: { quote: Quotation }) {
 
 const s = StyleSheet.create({
   card: { borderWidth: 1, borderColor: palette.line, borderRadius: 14, padding: 12, gap: 2, marginTop: 8 },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }, price: { color: palette.ink, fontSize: 16, fontWeight: '800' }, date: { color: palette.muted, fontSize: 12 },
-  notes: { color: palette.body, fontSize: 13, lineHeight: 19, marginTop: 4 },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }, price: { color: palette.ink, fontSize: 14.5, fontWeight: '800' }, date: { color: palette.muted, fontSize: 11.5 },
+  notes: { color: palette.body, fontSize: 12.5, lineHeight: 18, marginTop: 4 },
 });

@@ -99,4 +99,4 @@ export default function NewRealtorListingScreen() {
   </VerticalFrame>;
 }
 
-const s = StyleSheet.create({ sectionTitle: { color: palette.ink, fontSize: 14, fontWeight: '800' }, emptyCopy: { color: palette.muted, fontSize: 12, lineHeight: 18 }, entity: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line, paddingHorizontal: 6, borderRadius: 10 }, entityOn: { borderColor: palette.green, borderWidth: 1, backgroundColor: palette.greenSoft }, });
+const s = StyleSheet.create({ sectionTitle: { color: palette.ink, fontSize: 13.5, fontWeight: '800' }, emptyCopy: { color: palette.muted, fontSize: 11.5, lineHeight: 17 }, entity: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line, paddingHorizontal: 6, borderRadius: 10 }, entityOn: { borderColor: palette.green, borderWidth: 1, backgroundColor: palette.greenSoft }, });

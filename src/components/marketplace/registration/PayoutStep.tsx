@@ -47,5 +47,5 @@ export function PayoutStep({ form, errors, set }: SectionProps<RegistrationForm>
 const s = StyleSheet.create({
   consent: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', padding: 14, borderRadius: 18, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff' },
   box: { width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: '#9aa8a1', alignItems: 'center', justifyContent: 'center' }, boxOn: { backgroundColor: '#0d4a38', borderColor: '#0d4a38' },
-  consentText: { flex: 1, color: '#33463f', fontSize: 14, lineHeight: 20 },
+  consentText: { flex: 1, color: '#33463f', fontSize: 13.5, lineHeight: 19 },
 });

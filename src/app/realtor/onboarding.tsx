@@ -167,4 +167,4 @@ export default function RealtorOnboardingScreen() {
   </StepShell>;
 }
 
-const s = StyleSheet.create({ approvalTitle: { color: palette.green, fontSize: 17, fontWeight: '800' }, copy: { color: palette.body, fontSize: 12, lineHeight: 18 }, gstNotice: { color: '#865c12', fontSize: 12, lineHeight: 18 }, stepFoot: { color: palette.muted, fontSize: 11, textAlign: 'center', paddingVertical: 4 } });
+const s = StyleSheet.create({ approvalTitle: { color: palette.green, fontSize: 16, fontWeight: '800' }, copy: { color: palette.body, fontSize: 11.5, lineHeight: 17 }, gstNotice: { color: '#865c12', fontSize: 11.5, lineHeight: 17 }, stepFoot: { color: palette.muted, fontSize: 10.5, textAlign: 'center', paddingVertical: 4 } });

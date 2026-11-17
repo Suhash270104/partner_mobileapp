@@ -214,12 +214,12 @@ export default function ProfessionalOnboardingScreen() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
-  centerCopy: { color: c.body, fontSize: 13 },
+  centerCopy: { color: c.body, fontSize: 12.5 },
   card: { width: '100%', backgroundColor: '#fff', borderRadius: 20, padding: 22, gap: 12, borderWidth: 1, borderColor: c.line },
-  cardTitle: { color: c.ink, fontSize: 19, fontWeight: '800', textAlign: 'center' },
+  cardTitle: { color: c.ink, fontSize: 18, fontWeight: '800', textAlign: 'center' },
   cardCopy: { color: c.body, fontSize: 13.5, lineHeight: 20, textAlign: 'center' },
   cardFoot: { color: c.muted, fontSize: 11.5, textAlign: 'center' },
   button: { height: 50, borderRadius: 14, backgroundColor: c.green, alignItems: 'center', justifyContent: 'center' },
-  buttonText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  link: { color: c.green, fontSize: 13, fontWeight: '800', textAlign: 'center' },
+  buttonText: { color: '#fff', fontSize: 14.5, fontWeight: '800' },
+  link: { color: c.green, fontSize: 12.5, fontWeight: '800', textAlign: 'center' },
 });

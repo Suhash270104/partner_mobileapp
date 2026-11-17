@@ -19,6 +19,6 @@ export function ReviewCard({ review }: { review: Review }) {
 
 const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 18, padding: 14, gap: 8 },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, date: { color: palette.muted, fontSize: 12 },
-  comment: { color: palette.ink, fontSize: 14, lineHeight: 21 }, meta: { color: palette.muted, fontSize: 12 },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, date: { color: palette.muted, fontSize: 11.5 },
+  comment: { color: palette.ink, fontSize: 13.5, lineHeight: 20 }, meta: { color: palette.muted, fontSize: 11.5 },
 });

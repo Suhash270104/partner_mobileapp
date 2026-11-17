@@ -44,6 +44,8 @@ export default function MoreScreen() {
       {showOrders ? <NavCard icon="clipboard" tone="amber" title="Orders & fulfilment" detail="Earlier orders and returns" onPress={() => router.push('/store/orders' as never)} /> : null}
       <NavCard icon="settings" tone="green" title="Store settings" detail={can('settingsEdit') ? 'Profile, hours, alerts and payout' : 'View your store details'} onPress={() => router.push('/store/settings' as never)} />
       {can('staff') ? <NavCard icon="users" tone="blue" title="Team & roles" detail="Invite staff and manage access" onPress={() => router.push('/store/staff' as never)} /> : null}
+      {/* Signed-in devices is switched off for now. Re-enable by uncommenting:
+      <NavCard icon="lock" tone="violet" title="Signed-in devices" detail="See where you are signed in" onPress={() => router.push('/devices' as never)} /> */}
       {marketplaceUrl ? <NavCard icon="externalLink" tone="green" title="Browse marketplace" detail="See how buyers see your store" onPress={() => void Linking.openURL(marketplaceUrl)} /> : null}
     </View>
     <PillButton title="Sign out of store" icon="logOut" variant="danger" loading={isBusy('signout')} onPress={() => void confirmSignOut()} />
@@ -52,5 +54,5 @@ export default function MoreScreen() {
 
 const s = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line },
-  logo: { width: 60, height: 60, borderRadius: 18, backgroundColor: palette.greenSoft }, name: { color: palette.ink, fontSize: 18, fontWeight: '800' }, city: { color: palette.body, fontSize: 13 },
+  logo: { width: 60, height: 60, borderRadius: 18, backgroundColor: palette.greenSoft }, name: { color: palette.ink, fontSize: 16, fontWeight: '800' }, city: { color: palette.body, fontSize: 12.5 },
 });

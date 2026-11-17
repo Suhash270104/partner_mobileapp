@@ -11,5 +11,5 @@ export function InfoRow({ label, value }: { label: string; value?: ReactNode }) 
 
 const s = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 14, paddingVertical: 6 },
-  label: { color: palette.muted, fontSize: 13 }, value: { flex: 1, color: palette.ink, fontSize: 13, fontWeight: '700', textAlign: 'right' },
+  label: { color: palette.muted, fontSize: 12.5 }, value: { flex: 1, color: palette.ink, fontSize: 12.5, fontWeight: '700', textAlign: 'right' },
 });

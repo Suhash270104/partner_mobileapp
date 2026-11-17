@@ -16,7 +16,7 @@ export function ProductPricingSection({ form, errors, set }: SectionProps<Produc
   return <SectionCard title="Pricing & GST">
     <View style={{ gap: 14 }}>
       <SelectField label="Price type" value={form.priceType} options={PRICE_TYPE_OPTIONS} onChange={v => set('priceType', v)} />
-      <Text style={{ color: palette.muted, fontSize: 12, marginTop: -8 }}>{SEGMENT_HELP[form.priceType]}</Text>
+      <Text style={{ color: palette.muted, fontSize: 11.5, marginTop: -8 }}>{SEGMENT_HELP[form.priceType]}</Text>
       {priced ? <>
         <FormField label="MRP" required prefix="₹" value={form.mrp} onChangeText={v => set('mrp', v)} keyboardType="decimal-pad" error={errors.mrp} />
         <FormField label={form.priceType === 'range' ? 'Lowest selling price' : 'Selling price'} required prefix="₹" value={form.sellingPrice} onChangeText={v => set('sellingPrice', v)} keyboardType="decimal-pad" error={errors.sellingPrice} />

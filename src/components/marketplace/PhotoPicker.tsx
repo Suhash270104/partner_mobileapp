@@ -36,11 +36,11 @@ export function PhotoPicker({ photos, onChange, max = PHOTO_LIMIT }: { photos: s
 }
 
 const s = StyleSheet.create({
-  wrap: { gap: 8 }, hint: { color: palette.muted, fontSize: 12 }, grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  wrap: { gap: 8 }, hint: { color: palette.muted, fontSize: 11.5 }, grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   cell: { width: '30.5%', aspectRatio: 1, borderRadius: 14, overflow: 'hidden', backgroundColor: palette.greenSoft }, image: { width: '100%', height: '100%' },
-  add: { alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#bfe0cf', gap: 2 }, addText: { color: palette.green, fontSize: 12, fontWeight: '800' },
+  add: { alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#bfe0cf', gap: 2 }, addText: { color: palette.green, fontSize: 11.5, fontWeight: '800' },
   cover: { position: 'absolute', left: 4, bottom: 4, borderRadius: 6, backgroundColor: palette.green, paddingHorizontal: 6, paddingVertical: 2 },
-  coverBtn: { position: 'absolute', left: 4, bottom: 4, borderRadius: 6, backgroundColor: 'rgba(16,35,28,0.72)', paddingHorizontal: 6, paddingVertical: 2 }, coverText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  coverBtn: { position: 'absolute', left: 4, bottom: 4, borderRadius: 6, backgroundColor: 'rgba(16,35,28,0.72)', paddingHorizontal: 6, paddingVertical: 2 }, coverText: { color: '#fff', fontSize: 10.5, fontWeight: '800' },
   remove: { position: 'absolute', right: 4, top: 4, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(16,35,28,0.72)', alignItems: 'center', justifyContent: 'center' },
-  error: { color: palette.red, fontSize: 12, fontWeight: '700' },
+  error: { color: palette.red, fontSize: 11.5, fontWeight: '700' },
 });

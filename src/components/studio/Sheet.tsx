@@ -41,7 +41,7 @@ const s = StyleSheet.create({
   grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#d5ddd9', marginBottom: 12 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },
   eyebrow: { color: c.greenText, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.7, marginBottom: 3 },
-  title: { color: c.ink, fontSize: 18, fontWeight: '800' },
+  title: { color: c.ink, fontSize: 16, fontWeight: '800' },
   close: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef3f0', alignItems: 'center', justifyContent: 'center' },
   closeText: { color: c.ink, fontSize: 22, lineHeight: 24 },
 });

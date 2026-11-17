@@ -25,7 +25,7 @@ function CourierForm({ confirmLabel, onConfirm, onClose }: { confirmLabel: strin
   return <View style={{ gap: 14 }}>
     <SelectField label="Courier partner" required value={courier} options={COURIER_OPTIONS} onChange={setCourier} placeholder="Select courier" />
     <FormField label="Tracking / AWB number" required value={tracking} onChangeText={setTracking} autoCapitalize="none" />
-    {error ? <Text style={{ color: palette.red, fontSize: 13, fontWeight: '700' }}>{error}</Text> : null}
+    {error ? <Text style={{ color: palette.red, fontSize: 12.5, fontWeight: '700' }}>{error}</Text> : null}
     <PillButton title={confirmLabel} icon="send" loading={busy} onPress={() => void confirm()} />
   </View>;
 }

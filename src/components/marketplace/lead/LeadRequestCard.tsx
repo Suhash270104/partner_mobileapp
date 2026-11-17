@@ -11,11 +11,11 @@ export function LeadRequestCard({ lead }: { lead: Lead }) {
     <InfoRow label="Quantity" value={lead.quantity ? `${lead.quantity}${lead.unit ? ` ${humanize(lead.unit).toLowerCase()}` : ''}` : ''} />
     <InfoRow label="Deliver to" value={lead.deliveryLocation} />
     <InfoRow label="Required by" value={lead.requiredBy ? formatDate(lead.requiredBy) : ''} />
-    {lead.requirements ? <Text style={{ color: palette.ink, fontSize: 14, lineHeight: 21, marginTop: 6 }}>{lead.requirements}</Text> : null}
-    {lead.message ? <Text style={{ color: palette.body, fontSize: 14, lineHeight: 21, marginTop: 6 }}>“{lead.message}”</Text> : null}
+    {lead.requirements ? <Text style={{ color: palette.ink, fontSize: 13.5, lineHeight: 20, marginTop: 6 }}>{lead.requirements}</Text> : null}
+    {lead.message ? <Text style={{ color: palette.body, fontSize: 13.5, lineHeight: 20, marginTop: 6 }}>“{lead.message}”</Text> : null}
     {answers.length ? <View style={{ marginTop: 10, gap: 8 }}>
-      <Text style={{ color: palette.muted, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>THEIR ANSWERS</Text>
-      {answers.map((item, index) => <View key={index}><Text style={{ color: palette.muted, fontSize: 12 }}>{item.question}</Text><Text style={{ color: palette.ink, fontSize: 14, fontWeight: '700' }}>{item.answer || '—'}</Text></View>)}
+      <Text style={{ color: palette.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8 }}>THEIR ANSWERS</Text>
+      {answers.map((item, index) => <View key={index}><Text style={{ color: palette.muted, fontSize: 11.5 }}>{item.question}</Text><Text style={{ color: palette.ink, fontSize: 13.5, fontWeight: '700' }}>{item.answer || '—'}</Text></View>)}
     </View> : null}
   </SectionCard>;
 }

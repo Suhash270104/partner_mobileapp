@@ -25,7 +25,7 @@ export function SettingsSection({ title, subtitle, readOnly = false, saveLabel =
   return <SectionCard title={title} subtitle={subtitle}>
     <View style={{ gap: 14, paddingTop: 4 }}>
       {children}
-      {message ? <Text style={{ color: message.kind === 'ok' ? palette.greenText : palette.red, fontSize: 13, fontWeight: '700' }}>{message.text}</Text> : null}
+      {message ? <Text style={{ color: message.kind === 'ok' ? palette.greenText : palette.red, fontSize: 12.5, fontWeight: '700' }}>{message.text}</Text> : null}
       {!readOnly ? <PillButton title={saveLabel} loading={busy} onPress={() => void save()} /> : null}
     </View>
   </SectionCard>;

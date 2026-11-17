@@ -57,7 +57,7 @@ export function PhoneOtpFlow({ sendLabel = 'Send code', verifyLabel = 'Verify', 
   </View>;
 
   return <View style={{ gap: 14 }}>
-    <Text style={{ color: palette.body, fontSize: 14, lineHeight: 20 }}>We sent a 6-digit code to +91 {nationalPhone(phone)}.</Text>
+    <Text style={{ color: palette.body, fontSize: 13.5, lineHeight: 19 }}>We sent a 6-digit code to +91 {nationalPhone(phone)}.</Text>
     <FormField label="Verification code" required value={otp} onChangeText={value => { setOtp(value.replace(/\D/g, '')); setError(''); }} keyboardType="numeric" maxLength={6} placeholder="123456" error={error} />
     <PillButton title={verifyLabel} icon="check" loading={busy} onPress={() => void verify()} />
     <PillButton variant="ghost" title={countdown.seconds > 0 ? `Resend code in ${countdown.seconds}s` : 'Resend code'} disabled={countdown.seconds > 0 || busy} onPress={() => void send()} />

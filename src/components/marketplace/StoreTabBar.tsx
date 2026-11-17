@@ -25,7 +25,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', paddingTop: 6, paddingBottom: 4 },
   tab: { flex: 1, minWidth: 0, alignItems: 'center', gap: 3, paddingVertical: 2 },
   pill: { width: 54, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, pillOn: { backgroundColor: palette.greenSoft },
-  label: { color: '#8a9a92', fontSize: 12, fontWeight: '700' }, labelOn: { color: palette.green },
+  label: { color: '#8a9a92', fontSize: 11.5, fontWeight: '700' }, labelOn: { color: palette.green },
   badge: { position: 'absolute', top: -3, right: 2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: palette.red, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  badgeText: { color: '#fff', fontSize: 10.5, fontWeight: '800' },
 });

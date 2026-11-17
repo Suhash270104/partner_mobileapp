@@ -135,16 +135,16 @@ export function ProjectCard({ item, busy, onOpen, onSubmit }: { item: Data; busy
 }
 
 const s = StyleSheet.create({
-  badge: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 16, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start' }, badgeText: { fontSize: 12, fontWeight: '800', letterSpacing: 0.3 },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 16, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start' }, badgeText: { fontSize: 11.5, fontWeight: '800', letterSpacing: 0.3 },
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 24, padding: 16, gap: 10 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  typeChip: { backgroundColor: '#eef2f5', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 7 }, typeChipText: { color: '#344054', fontSize: 12, fontWeight: '800', letterSpacing: 0.8 },
-  price: { color: palette.ink, fontSize: 20, fontWeight: '800' }, title: { color: palette.ink, fontSize: 19, fontWeight: '800', lineHeight: 25 },
-  society: { color: palette.greenText, fontSize: 15, fontWeight: '700' }, locRow: { flexDirection: 'row', alignItems: 'center', gap: 6 }, loc: { color: palette.body, fontSize: 15, flexShrink: 1 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, chip: { borderWidth: 1, borderColor: palette.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#f8faf9' }, chipText: { color: '#33463f', fontSize: 14, fontWeight: '600' },
+  typeChip: { backgroundColor: '#eef2f5', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 7 }, typeChipText: { color: '#344054', fontSize: 11.5, fontWeight: '800', letterSpacing: 0.8 },
+  price: { color: palette.ink, fontSize: 18, fontWeight: '800' }, title: { color: palette.ink, fontSize: 18, fontWeight: '800', lineHeight: 24 },
+  society: { color: palette.greenText, fontSize: 14.5, fontWeight: '700' }, locRow: { flexDirection: 'row', alignItems: 'center', gap: 6 }, loc: { color: palette.body, fontSize: 14.5, flexShrink: 1 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, chip: { borderWidth: 1, borderColor: palette.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#f8faf9' }, chipText: { color: '#33463f', fontSize: 13.5, fontWeight: '600' },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.line, paddingTop: 10, marginTop: 2 }, footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  hint: { color: palette.muted, fontSize: 12, flexShrink: 1, textAlign: 'right' }, sub: { color: palette.body, fontSize: 15 }, btnRow: { flexDirection: 'row', gap: 10 },
-  note: { backgroundColor: '#fff9ec', borderColor: '#f1dfb0', borderWidth: 1, borderRadius: 14, padding: 12, gap: 3 }, noteTitle: { color: '#7a4700', fontSize: 13, fontWeight: '800' }, noteMsg: { color: '#7a4700', fontSize: 13, lineHeight: 19 },
-  leadCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20 }, leadName: { color: palette.ink, fontSize: 16, fontWeight: '800' }, leadSub: { color: palette.body, fontSize: 14, lineHeight: 20 }, time: { color: '#8a9a92', fontSize: 12, fontWeight: '700', marginTop: 2 },
-  notif: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: '#f1f5f3', borderRadius: 20 }, bell: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#0d4a38', alignItems: 'center', justifyContent: 'center' }, markRead: { color: palette.green, fontSize: 13, fontWeight: '800' },
+  hint: { color: palette.muted, fontSize: 11.5, flexShrink: 1, textAlign: 'right' }, sub: { color: palette.body, fontSize: 14.5 }, btnRow: { flexDirection: 'row', gap: 10 },
+  note: { backgroundColor: '#fff9ec', borderColor: '#f1dfb0', borderWidth: 1, borderRadius: 14, padding: 12, gap: 3 }, noteTitle: { color: '#7a4700', fontSize: 12.5, fontWeight: '800' }, noteMsg: { color: '#7a4700', fontSize: 12.5, lineHeight: 18 },
+  leadCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20 }, leadName: { color: palette.ink, fontSize: 14.5, fontWeight: '800' }, leadSub: { color: palette.body, fontSize: 13.5, lineHeight: 19 }, time: { color: '#8a9a92', fontSize: 11.5, fontWeight: '700', marginTop: 2 },
+  notif: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: '#f1f5f3', borderRadius: 20 }, bell: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#0d4a38', alignItems: 'center', justifyContent: 'center' }, markRead: { color: palette.green, fontSize: 12.5, fontWeight: '800' },
 });

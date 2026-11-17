@@ -14,6 +14,6 @@ export function NotBuilt({ title }: { title: string }) {
 
 const s = StyleSheet.create({
   wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 6 },
-  title: { color: c.ink, fontSize: 20, fontWeight: '800' },
+  title: { color: c.ink, fontSize: 18, fontWeight: '800' },
   copy: { color: c.body, fontSize: 13.5, textAlign: 'center' },
 });

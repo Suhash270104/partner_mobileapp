@@ -66,9 +66,9 @@ export default function RealtorDeveloperScreen() {
         <Field label="Established year" value={form.establishedYear} onChangeText={set('establishedYear')} keyboardType="numeric" />
         <Field label="Operating cities (comma separated)" value={form.operatingCities} onChangeText={set('operatingCities')} />
         <PrimaryButton title={developer ? 'Save developer profile' : 'Create developer profile'} onPress={() => void save()} loading={busy} disabled={!isOwner && !!developer} />
-        {!isOwner && developer ? <Text style={{ color: '#7b8a83', fontSize: 12 }}>An authorized agent can use this developer profile but cannot edit it.</Text> : null}
+        {!isOwner && developer ? <Text style={{ color: '#7b8a83', fontSize: 11.5 }}>An authorized agent can use this developer profile but cannot edit it.</Text> : null}
       </Panel>
-      {developer && <Panel><Text style={{ fontSize: 16, fontWeight: '800' }}>Authorized agents</Text>
+      {developer && <Panel><Text style={{ fontSize: 14.5, fontWeight: '800' }}>Authorized agents</Text>
         {(developer.authorizedAgentIds || []).map((agent: any) => <View key={itemId(agent)}><DataRow title={agent.fullName || agent.name || itemId(agent)} detail={agent.email || agent.phone} /><PrimaryButton title="Revoke access" onPress={() => void agentAction(true, itemId(agent))} loading={busy} /></View>)}
         {isOwner ? <><Field label="Agent realtor account ID" value={agentId} onChangeText={setAgentId} /><PrimaryButton title="Authorize agent" onPress={() => void agentAction()} loading={busy} disabled={!agentId.trim()} /></> : <Text style={{ color: '#7b8a83' }}>Only the owning developer account can manage access.</Text>}
       </Panel>}

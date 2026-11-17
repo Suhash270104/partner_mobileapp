@@ -117,12 +117,12 @@ export function MediaManager({ resourceType, resourceId, max = 15 }: { resourceT
 }
 
 const s = StyleSheet.create({
-  summaryTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 }, summaryTitle: { flex: 1, color: palette.ink, fontSize: 16, fontWeight: '800', lineHeight: 22 },
-  summaryLine: { color: palette.body, fontSize: 12, lineHeight: 18 }, summaryPrice: { color: palette.green, fontSize: 20, fontWeight: '800' },
-  sectionTitle: { color: palette.ink, fontSize: 14, fontWeight: '800' }, hint: { color: palette.muted, fontSize: 11, lineHeight: 16 },
+  summaryTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 }, summaryTitle: { flex: 1, color: palette.ink, fontSize: 14.5, fontWeight: '800', lineHeight: 20 },
+  summaryLine: { color: palette.body, fontSize: 11.5, lineHeight: 17 }, summaryPrice: { color: palette.green, fontSize: 18, fontWeight: '800' },
+  sectionTitle: { color: palette.ink, fontSize: 13.5, fontWeight: '800' }, hint: { color: palette.muted, fontSize: 10.5, lineHeight: 15 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, cell: { width: '31%', aspectRatio: 1, borderRadius: 10, overflow: 'hidden', backgroundColor: palette.greenSoft },
   image: { width: '100%', height: '100%' }, noImage: { backgroundColor: palette.line },
   remove: { position: 'absolute', right: 3, top: 3, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(16,35,28,0.7)', alignItems: 'center', justifyContent: 'center' }, removeText: { color: '#fff', fontWeight: '900' },
-  coverTag: { position: 'absolute', left: 3, bottom: 3, borderRadius: 6, backgroundColor: palette.green, paddingHorizontal: 6, paddingVertical: 2 }, coverBtn: { position: 'absolute', left: 3, bottom: 3, borderRadius: 6, backgroundColor: 'rgba(16,35,28,0.7)', paddingHorizontal: 6, paddingVertical: 2 }, coverText: { color: '#fff', fontSize: 9, fontWeight: '800' },
-  pick: { backgroundColor: palette.greenSoft, borderColor: '#bfe0cf', borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center' }, pickTitle: { color: palette.green, fontSize: 13, fontWeight: '800' },
+  coverTag: { position: 'absolute', left: 3, bottom: 3, borderRadius: 6, backgroundColor: palette.green, paddingHorizontal: 6, paddingVertical: 2 }, coverBtn: { position: 'absolute', left: 3, bottom: 3, borderRadius: 6, backgroundColor: 'rgba(16,35,28,0.7)', paddingHorizontal: 6, paddingVertical: 2 }, coverText: { color: '#fff', fontSize: 10.5, fontWeight: '800' },
+  pick: { backgroundColor: palette.greenSoft, borderColor: '#bfe0cf', borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center' }, pickTitle: { color: palette.green, fontSize: 12.5, fontWeight: '800' },
 });

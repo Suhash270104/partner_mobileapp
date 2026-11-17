@@ -261,6 +261,6 @@ export default function RealtorDashboardScreen() {
 }
 
 const s = StyleSheet.create({
-  gap: { gap: 14 }, error: { color: palette.red, fontSize: 13, lineHeight: 19 },
-  warn: { color: '#c26a00', fontSize: 15, fontWeight: '800', lineHeight: 22 }, dashed: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#d7dfdb', borderRadius: 24, backgroundColor: '#fff' },
+  gap: { gap: 14 }, error: { color: palette.red, fontSize: 12.5, lineHeight: 18 },
+  warn: { color: '#c26a00', fontSize: 14.5, fontWeight: '800', lineHeight: 21 }, dashed: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#d7dfdb', borderRadius: 24, backgroundColor: '#fff' },
 });

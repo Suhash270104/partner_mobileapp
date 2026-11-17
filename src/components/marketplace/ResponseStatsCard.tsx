@@ -20,6 +20,6 @@ export function ResponseStatsCard({ stats }: { stats?: Json | null }) {
 const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 18, padding: 14, gap: 10 },
   top: { flexDirection: 'row', gap: 12 }, flex: { flex: 1 }, right: { alignItems: 'flex-end' },
-  label: { color: palette.muted, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }, value: { color: palette.ink, fontSize: 26, fontWeight: '800', marginTop: 2 },
-  note: { color: palette.body, fontSize: 12, lineHeight: 17 },
+  label: { color: palette.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8 }, value: { color: palette.ink, fontSize: 20, fontWeight: '800', marginTop: 2 },
+  note: { color: palette.body, fontSize: 11.5, lineHeight: 16 },
 });

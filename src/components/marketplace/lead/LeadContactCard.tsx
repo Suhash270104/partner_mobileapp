@@ -9,7 +9,7 @@ export function LeadContactCard({ lead }: { lead: Lead }) {
   return <SectionCard title="Buyer">
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
       <Avatar label={name} size={48} dark={false} />
-      <View style={{ flex: 1 }}><Text style={{ color: palette.ink, fontSize: 17, fontWeight: '800' }}>{name}</Text></View>
+      <View style={{ flex: 1 }}><Text style={{ color: palette.ink, fontSize: 16, fontWeight: '800' }}>{name}</Text></View>
     </View>
     <InfoRow label="Phone" value={lead.buyerPhone} />
     <InfoRow label="Email" value={lead.buyerEmail} />

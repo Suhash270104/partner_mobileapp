@@ -34,8 +34,8 @@ export default function BulkProductsScreen() {
 
   return <Screen title="Bulk add products" subtitle="Import many products from a CSV file" onBack={() => router.back()}>
     <SectionCard title="1. Prepare your file" subtitle="First row must be the column names">
-      <Text style={{ color: palette.body, fontSize: 13, lineHeight: 20 }}>{BULK_CSV_COLUMNS.join(' · ')}</Text>
-      <Text style={{ color: palette.muted, fontSize: 12, marginTop: 6 }}>Title, Category, Subcategory, MRP and Selling Price are required. Up to {LIMITS.bulkRows} rows per import.</Text>
+      <Text style={{ color: palette.body, fontSize: 12.5, lineHeight: 19 }}>{BULK_CSV_COLUMNS.join(' · ')}</Text>
+      <Text style={{ color: palette.muted, fontSize: 11.5, marginTop: 6 }}>Title, Category, Subcategory, MRP and Selling Price are required. Up to {LIMITS.bulkRows} rows per import.</Text>
     </SectionCard>
     <SectionCard title="2. Choose the file">
       <PillButton variant="soft" icon="fileText" title={fileName || 'Choose CSV file'} onPress={() => void choose()} />

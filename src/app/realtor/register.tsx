@@ -82,6 +82,6 @@ const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: palette.line, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
   cardOn: { borderColor: palette.green, backgroundColor: palette.greenSoft },
   radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: '#aebbb4', alignItems: 'center', justifyContent: 'center' }, radioOn: { backgroundColor: palette.green, borderColor: palette.green },
-  title: { color: palette.ink, fontSize: 16, fontWeight: '800' }, copy: { color: palette.body, fontSize: 13, lineHeight: 19 }, note: { color: palette.muted, fontSize: 12, textAlign: 'center' },
-  policy: { padding: 14, borderRadius: 16, backgroundColor: palette.greenSoft, gap: 4 }, policyTitle: { color: palette.greenText, fontSize: 13, fontWeight: '800' },
+  title: { color: palette.ink, fontSize: 14.5, fontWeight: '800' }, copy: { color: palette.body, fontSize: 12.5, lineHeight: 18 }, note: { color: palette.muted, fontSize: 11.5, textAlign: 'center' },
+  policy: { padding: 14, borderRadius: 16, backgroundColor: palette.greenSoft, gap: 4 }, policyTitle: { color: palette.greenText, fontSize: 12.5, fontWeight: '800' },
 });

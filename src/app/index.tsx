@@ -4,6 +4,7 @@ import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { PartnerBrand } from '../components/PartnerBrand';
+import { AccountSummary } from '../components/auth/AccountSummary';
 import { authApi } from '../lib/auth';
 import { setPendingPhone } from '../lib/pendingPhone';
 import { firstNameOf, partnerApi, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
@@ -20,6 +21,8 @@ const workspaces: Workspace[] = [
   { type: 'realtor', title: 'Realtor / Developer', category: 'PRIME REAL ESTATE', description: 'Projects, listings, media and leads', benefit: 'Portfolio verification', icon: '▦', route: '/realtor/dashboard', setupRoute: '/realtor/register' },
   { type: 'merchant', title: 'Marketplace seller', category: 'CURATED MATERIAL SUPPLY', description: 'Products, enquiries and quotations', benefit: 'Enquiry-based B2B marketplace', icon: '▣', route: '/store', setupRoute: '/store/register' },
 ];
+
+const roleTitles = Object.fromEntries(workspaces.map(item => [item.type, item.title])) as Partial<Record<PartnerRoleType, string>>;
 
 export default function PartnerHomeScreen() {
   const [session, setSession] = useState<PartnerSession | null>(null);
@@ -41,6 +44,12 @@ export default function PartnerHomeScreen() {
     if (refresh) setRefreshing(true);
     else setLoading(true);
     setApiError('');
+    // A returning person sees their account at once while the server confirms it (and keeps it when offline).
+    let shownFromCache = false;
+    if (!refresh) {
+      const cached = await partnerApi.cachedSession();
+      if (cached?.user) { setSession(cached); setLoading(false); shownFromCache = true; }
+    }
     try {
       const nextSession = await partnerApi.session();
       setSession(nextSession);
@@ -56,8 +65,8 @@ export default function PartnerHomeScreen() {
         }
       } else setMerchant(null);
     } catch (error) {
-      setSession(null);
-      setMerchant(null);
+      // Unreachable: keep the saved account rather than signing the person out of the screen.
+      if (!shownFromCache) { setSession(null); setMerchant(null); }
       setApiError(error instanceof Error ? error.message : 'Could not load the partner session.');
     } finally {
       setLoading(false);
@@ -186,7 +195,8 @@ export default function PartnerHomeScreen() {
       <Modal visible={modalOpen} transparent animationType="fade" onRequestClose={() => setModalOpen(false)}>
         <View style={styles.modalBackdrop}><View style={styles.modalCard}>
           <View style={styles.modalHeader}><PartnerBrand compact /><Pressable onPress={() => setModalOpen(false)} accessibilityLabel="Close"><Text style={styles.close}>×</Text></Pressable></View>
-          {user ? <><Text style={styles.modalTitle}>Your account</Text><Text style={styles.modalCopy}>{firstNameOf(user) || user.email || user.phone || 'Partner account'}</Text><Pressable style={styles.primaryButton} onPress={() => void signOut()}><Text style={styles.primaryText}>Sign out</Text></Pressable></> : <>
+          {user ? <><AccountSummary user={user} roleTitles={roleTitles} />{/* Signed-in devices is switched off for now. Re-enable by uncommenting:
+          <Pressable style={styles.primaryButton} onPress={() => { setModalOpen(false); router.push('/devices' as never); }}><Text style={styles.primaryText}>Signed-in devices</Text></Pressable> */}<Pressable style={styles.primaryButton} onPress={() => void signOut()}><Text style={styles.primaryText}>Sign out</Text></Pressable></> : <>
             <Text style={styles.modalTitle}>Sign in to Kraftnex</Text><Text style={styles.modalCopy}>Use your Kraftnex account to continue setting up a workspace.</Text>
             <TextInput style={styles.input} placeholder="Email or phone" placeholderTextColor="#84938d" value={emailOrPhone} onChangeText={setEmailOrPhone} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" />
             <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#84938d" value={password} onChangeText={setPassword} secureTextEntry onSubmitEditing={() => void signIn()} />

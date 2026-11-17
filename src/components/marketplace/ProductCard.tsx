@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { FONT_SCALE_LIMIT } from '../../theme/typeScale';
 import { Badge, IconButton, IconTile, Text, ToggleRow, palette } from '../ui';
 import { priceText } from '../../lib/marketplace/format';
 import type { Product } from '../../lib/marketplace/types';
@@ -41,7 +42,7 @@ export function ProductCard({ product, canEdit, busy, onOpen, onMore, onStock }:
     <View style={s.bottom}>
       <View style={s.stock}>
         <Text style={s.stockLabel}>Stock</Text>
-        <TextInput value={qty} onChangeText={setDraft} onEndEditing={commit} onSubmitEditing={commit} editable={canEdit} keyboardType="numeric" selectTextOnFocus
+        <TextInput maxFontSizeMultiplier={FONT_SCALE_LIMIT} value={qty} onChangeText={setDraft} onEndEditing={commit} onSubmitEditing={commit} editable={canEdit} keyboardType="numeric" selectTextOnFocus
           accessibilityLabel={`Stock quantity for ${product.title}`} style={[s.stockInput, low && s.stockLow]} />
         {low ? <Text style={s.lowText}>Low</Text> : null}
       </View>
@@ -54,10 +55,10 @@ export function ProductCard({ product, canEdit, busy, onOpen, onMore, onStock }:
 const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 18, padding: 12, gap: 8 },
   top: { flexDirection: 'row', gap: 12 }, photo: { width: 72, height: 72, borderRadius: 14, backgroundColor: palette.greenSoft },
-  info: { flex: 1, minWidth: 0, gap: 3 }, title: { color: palette.ink, fontSize: 15, fontWeight: '800', lineHeight: 20 }, sub: { color: palette.muted, fontSize: 12 },
-  price: { color: palette.green, fontSize: 15, fontWeight: '800' }, badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  info: { flex: 1, minWidth: 0, gap: 3 }, title: { color: palette.ink, fontSize: 14.5, fontWeight: '800', lineHeight: 19 }, sub: { color: palette.muted, fontSize: 11.5 },
+  price: { color: palette.green, fontSize: 14.5, fontWeight: '800' }, badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  stock: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }, stockLabel: { color: palette.body, fontSize: 13, fontWeight: '700' },
-  stockInput: { minWidth: 72, height: 40, borderRadius: 12, borderWidth: 1.5, borderColor: palette.line, textAlign: 'center', color: palette.ink, fontSize: 15, fontWeight: '800', backgroundColor: '#fff' },
-  stockLow: { borderColor: '#e6b34d', backgroundColor: palette.amberSoft }, lowText: { color: palette.amber, fontSize: 12, fontWeight: '800' },
+  stock: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }, stockLabel: { color: palette.body, fontSize: 12.5, fontWeight: '700' },
+  stockInput: { minWidth: 72, height: 40, borderRadius: 12, borderWidth: 1.5, borderColor: palette.line, textAlign: 'center', color: palette.ink, fontSize: 14.5, fontWeight: '800', backgroundColor: '#fff' },
+  stockLow: { borderColor: '#e6b34d', backgroundColor: palette.amberSoft }, lowText: { color: palette.amber, fontSize: 11.5, fontWeight: '800' },
 });

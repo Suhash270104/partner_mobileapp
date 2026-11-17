@@ -103,10 +103,10 @@ export function ListingCreditsSheet({ visible, title = 'Buy Listing Credits to P
 }
 
 const s = StyleSheet.create({
-  center: { alignItems: 'center', gap: 10 }, title: { color: palette.ink, fontSize: 24, fontWeight: '800', textAlign: 'center', lineHeight: 30 }, copy: { color: palette.body, fontSize: 14, lineHeight: 21, textAlign: 'center' }, copyLeft: { color: palette.body, fontSize: 14, lineHeight: 20 },
+  center: { alignItems: 'center', gap: 10 }, title: { color: palette.ink, fontSize: 20, fontWeight: '800', textAlign: 'center', lineHeight: 25 }, copy: { color: palette.body, fontSize: 13.5, lineHeight: 20, textAlign: 'center' }, copyLeft: { color: palette.body, fontSize: 13.5, lineHeight: 19 },
   pack: { borderWidth: 2, borderColor: '#8fd3b3', borderRadius: 24, backgroundColor: '#f6fcf9', padding: 16, gap: 12 }, packTop: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  badge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#ecf8f2', borderWidth: 1, borderColor: '#bfe9d6', borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5 }, badgeText: { color: palette.greenText, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },
-  packName: { color: palette.ink, fontSize: 21, fontWeight: '800' }, price: { color: palette.ink, fontSize: 28, fontWeight: '800' }, per: { backgroundColor: '#ecf8f2', borderWidth: 1, borderColor: '#bfe9d6', borderRadius: 10, paddingHorizontal: 9, paddingVertical: 4 }, perText: { color: palette.greenText, fontSize: 12, fontWeight: '800' },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#bfe0cf' }, bullet: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' }, bulletText: { flex: 1, color: '#33463f', fontSize: 15, lineHeight: 22 },
-  secure: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', marginTop: 4 }, secureText: { color: palette.greenText, fontSize: 14, fontWeight: '800', flexShrink: 1 },
+  badge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#ecf8f2', borderWidth: 1, borderColor: '#bfe9d6', borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5 }, badgeText: { color: palette.greenText, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8 },
+  packName: { color: palette.ink, fontSize: 18, fontWeight: '800' }, price: { color: palette.ink, fontSize: 22, fontWeight: '800' }, per: { backgroundColor: '#ecf8f2', borderWidth: 1, borderColor: '#bfe9d6', borderRadius: 10, paddingHorizontal: 9, paddingVertical: 4 }, perText: { color: palette.greenText, fontSize: 11.5, fontWeight: '800' },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#bfe0cf' }, bullet: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' }, bulletText: { flex: 1, color: '#33463f', fontSize: 14.5, lineHeight: 21 },
+  secure: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', marginTop: 4 }, secureText: { color: palette.greenText, fontSize: 13.5, fontWeight: '800', flexShrink: 1 },
 });

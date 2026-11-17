@@ -18,7 +18,7 @@ function ReasonForm({ confirmLabel, onConfirm, onClose }: { confirmLabel: string
 
   return <View style={{ gap: 14 }}>
     <FormField label="Reason" required value={reason} onChangeText={setReason} multiline maxLength={500} helper="The buyer is told this reason." />
-    {error ? <Text style={{ color: palette.red, fontSize: 13, fontWeight: '700' }}>{error}</Text> : null}
+    {error ? <Text style={{ color: palette.red, fontSize: 12.5, fontWeight: '700' }}>{error}</Text> : null}
     <PillButton title={confirmLabel} variant="danger" loading={busy} onPress={() => void confirm()} />
   </View>;
 }

@@ -69,16 +69,16 @@ export function ReportTab({ projectId }: { projectId: string }) {
 
 const s = StyleSheet.create({
   empty: { color: c.body, fontSize: 13.5, lineHeight: 20 },
-  link: { color: c.green, fontSize: 13, fontWeight: '800' },
+  link: { color: c.green, fontSize: 12.5, fontWeight: '800' },
   card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: c.line, padding: 14, gap: 10 },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { color: c.ink, fontSize: 15, fontWeight: '800' },
-  pct: { color: c.greenText, fontSize: 15, fontWeight: '800' },
+  title: { color: c.ink, fontSize: 14.5, fontWeight: '800' },
+  pct: { color: c.greenText, fontSize: 14.5, fontWeight: '800' },
   track: { height: 8, borderRadius: 4, backgroundColor: '#e6ebe8', overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4, backgroundColor: c.green },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   tile: { width: '48%', backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: c.line, padding: 14, gap: 2 },
-  tileLabel: { color: c.muted, fontSize: 12, fontWeight: '600' },
-  tileValue: { color: c.ink, fontSize: 22, fontWeight: '800' },
+  tileLabel: { color: c.muted, fontSize: 11.5, fontWeight: '600' },
+  tileValue: { color: c.ink, fontSize: 20, fontWeight: '800' },
   tileFoot: { color: c.muted, fontSize: 10.5 },
 });

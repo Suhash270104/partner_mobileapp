@@ -65,8 +65,8 @@ export function LeadSheet({ lead, onClose, onSaved }: { lead: Data | null; onClo
 }
 
 const s = StyleSheet.create({
-  summary: { backgroundColor: '#f4f7fa', borderRadius: 22, padding: 16, gap: 9 }, listing: { color: palette.ink, fontSize: 16, fontWeight: '800', lineHeight: 22 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 }, rowText: { color: '#0f3b2e', fontSize: 16, fontWeight: '700' }, source: { color: '#8a97a6', fontSize: 12, fontWeight: '800', letterSpacing: 0.9 },
-  contactRow: { flexDirection: 'row', gap: 10 }, history: { gap: 4, backgroundColor: palette.bg, borderRadius: 16, padding: 12 }, historyTitle: { color: '#33463f', fontSize: 13, fontWeight: '800' }, historyText: { color: palette.body, fontSize: 13, lineHeight: 19 },
-  error: { color: palette.red, fontSize: 13, fontWeight: '700', lineHeight: 19 },
+  summary: { backgroundColor: '#f4f7fa', borderRadius: 22, padding: 16, gap: 9 }, listing: { color: palette.ink, fontSize: 14.5, fontWeight: '800', lineHeight: 20 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10 }, rowText: { color: '#0f3b2e', fontSize: 14.5, fontWeight: '700' }, source: { color: '#8a97a6', fontSize: 11.5, fontWeight: '800', letterSpacing: 0.9 },
+  contactRow: { flexDirection: 'row', gap: 10 }, history: { gap: 4, backgroundColor: palette.bg, borderRadius: 16, padding: 12 }, historyTitle: { color: '#33463f', fontSize: 12.5, fontWeight: '800' }, historyText: { color: palette.body, fontSize: 12.5, lineHeight: 18 },
+  error: { color: palette.red, fontSize: 12.5, fontWeight: '700', lineHeight: 18 },
 });

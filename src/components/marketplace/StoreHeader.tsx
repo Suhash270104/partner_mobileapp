@@ -18,6 +18,6 @@ export function StoreHeader({ storeName, roleLabel, onAdd, onMenu }: { storeName
 const s = StyleSheet.create({
   safe: { backgroundColor: '#fff', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line },
   row: { minHeight: 58, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  title: { flex: 1, minWidth: 0 }, name: { color: palette.ink, fontSize: 14, fontWeight: '800' }, role: { color: palette.muted, fontSize: 11, marginTop: 1 },
+  title: { flex: 1, minWidth: 0 }, name: { color: palette.ink, fontSize: 13.5, fontWeight: '800' }, role: { color: palette.muted, fontSize: 10.5, marginTop: 1 },
   add: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0d4a38', alignItems: 'center', justifyContent: 'center' },
 });

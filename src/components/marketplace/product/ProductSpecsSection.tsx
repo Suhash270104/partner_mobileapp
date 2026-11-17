@@ -35,6 +35,6 @@ export function ProductSpecsSection({ form, errors, set }: SectionProps<ProductF
 
 const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 18, overflow: 'hidden' },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 16 }, title: { color: palette.ink, fontSize: 17, fontWeight: '800' }, sub: { color: palette.muted, fontSize: 12, marginTop: 2 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 16 }, title: { color: palette.ink, fontSize: 16, fontWeight: '800' }, sub: { color: palette.muted, fontSize: 11.5, marginTop: 2 },
   body: { padding: 16, paddingTop: 0, gap: 14 },
 });

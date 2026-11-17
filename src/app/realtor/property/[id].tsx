@@ -34,4 +34,4 @@ export default function EditRealtorPropertyScreen() {
   </View></SafeAreaView>;
 }
 
-const s = StyleSheet.create({ safe: { flex: 1, backgroundColor: palette.bg }, body: { flex: 1, padding: 18, justifyContent: 'center', gap: 14 }, loading: { color: palette.body, textAlign: 'center', fontSize: 15 } });
+const s = StyleSheet.create({ safe: { flex: 1, backgroundColor: palette.bg }, body: { flex: 1, padding: 18, justifyContent: 'center', gap: 14 }, loading: { color: palette.body, textAlign: 'center', fontSize: 14.5 } });

@@ -42,8 +42,8 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: palette.bg }, flex: { flex: 1, minWidth: 0 },
   content: { padding: 16, paddingBottom: 32, gap: 14 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 }, back: { marginLeft: -6, width: 34, height: 40, alignItems: 'center', justifyContent: 'center' },
-  title: { color: palette.ink, fontSize: 24, fontWeight: '800', lineHeight: 30 }, subtitle: { color: palette.body, fontSize: 13, lineHeight: 19, marginTop: 2 },
-  center: { alignItems: 'center', gap: 10, paddingVertical: 48 }, muted: { color: palette.muted, fontSize: 13 },
+  title: { color: palette.ink, fontSize: 20, fontWeight: '800', lineHeight: 25 }, subtitle: { color: palette.body, fontSize: 12.5, lineHeight: 18, marginTop: 2 },
+  center: { alignItems: 'center', gap: 10, paddingVertical: 48 }, muted: { color: palette.muted, fontSize: 12.5 },
   error: { alignItems: 'center', gap: 8, padding: 22, borderRadius: 18, backgroundColor: palette.redSoft },
-  errorTitle: { color: palette.ink, fontSize: 16, fontWeight: '800' }, errorText: { color: palette.body, fontSize: 13, lineHeight: 19, textAlign: 'center', marginBottom: 6 },
+  errorTitle: { color: palette.ink, fontSize: 14.5, fontWeight: '800' }, errorText: { color: palette.body, fontSize: 12.5, lineHeight: 18, textAlign: 'center', marginBottom: 6 },
 });

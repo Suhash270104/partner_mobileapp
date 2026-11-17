@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, ScrollViewInstance, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { FONT_SCALE_LIMIT } from '../../theme/typeScale';
 import { Icon } from '../Icon';
 import { Text } from '../AppText';
 import { palette } from '../vertical/VerticalUi';
@@ -16,7 +17,7 @@ export function FormField({ label, value, onChangeText, placeholder, required, m
     {label ? <Text style={s.label}>{label}{required ? <Text style={{ color: palette.red }}> *</Text> : null}</Text> : null}
     <View style={[s.inputWrap, multiline && s.inputWrapMulti, !!error && { borderColor: palette.red }]}>
       {prefix ? <Text style={s.prefix}>{prefix}</Text> : null}
-      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#9aa8a1" multiline={multiline} keyboardType={keyboardType}
+      <TextInput maxFontSizeMultiplier={FONT_SCALE_LIMIT} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#9aa8a1" multiline={multiline} keyboardType={keyboardType}
         maxLength={maxLength} autoCapitalize={autoCapitalize ?? (keyboardType === 'email-address' || keyboardType === 'url' ? 'none' : 'sentences')} accessibilityLabel={label}
         style={[s.input, multiline && { minHeight: 96, textAlignVertical: 'top', paddingTop: 14 }]} />
     </View>
@@ -70,16 +71,16 @@ export function StepTabs({ steps, current, onSelect, reached }: { steps: string[
 }
 
 const s = StyleSheet.create({
-  field: { gap: 7 }, label: { color: '#33463f', fontSize: 14, fontWeight: '800' },
+  field: { gap: 7 }, label: { color: '#33463f', fontSize: 13.5, fontWeight: '800' },
   inputWrap: { minHeight: 52, borderRadius: 26, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff', paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', gap: 6 }, inputWrapMulti: { borderRadius: 22, alignItems: 'flex-start' },
-  prefix: { color: palette.body, fontSize: 16, fontWeight: '700' }, input: { flex: 1, color: palette.ink, fontSize: 16, paddingVertical: 12 },
-  helper: { color: palette.muted, fontSize: 12, lineHeight: 17 }, error: { color: palette.red, fontSize: 12, fontWeight: '700' },
-  sectionLabel: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }, sectionLabelText: { color: '#33463f', fontSize: 14, fontWeight: '800', letterSpacing: 0.6 },
+  prefix: { color: palette.body, fontSize: 14.5, fontWeight: '700' }, input: { flex: 1, color: palette.ink, fontSize: 14.5, paddingVertical: 12 },
+  helper: { color: palette.muted, fontSize: 11.5, lineHeight: 16 }, error: { color: palette.red, fontSize: 11.5, fontWeight: '700' },
+  sectionLabel: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }, sectionLabelText: { color: '#33463f', fontSize: 13.5, fontWeight: '800', letterSpacing: 0.6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff' },
-  chipOn: { backgroundColor: '#0d4a38', borderColor: '#0d4a38' }, chipText: { color: '#33463f', fontSize: 14, fontWeight: '700' },
-  toggle: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line }, toggleLabel: { color: '#22332c', fontSize: 15, fontWeight: '700' },
+  chipOn: { backgroundColor: '#0d4a38', borderColor: '#0d4a38' }, chipText: { color: '#33463f', fontSize: 13.5, fontWeight: '700' },
+  toggle: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line }, toggleLabel: { color: '#22332c', fontSize: 14.5, fontWeight: '700' },
   stepsWrap: { flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line }, steps: { gap: 10, paddingVertical: 12, paddingHorizontal: 2 },
   step: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, height: 40, borderRadius: 20 }, stepOn: { backgroundColor: '#0d4a38' },
-  stepNum: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#e3e9ee', alignItems: 'center', justifyContent: 'center' }, stepNumText: { color: '#5b6b64', fontSize: 13, fontWeight: '800' },
-  stepText: { color: '#5b6b64', fontSize: 14, fontWeight: '800' },
+  stepNum: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#e3e9ee', alignItems: 'center', justifyContent: 'center' }, stepNumText: { color: '#5b6b64', fontSize: 12.5, fontWeight: '800' },
+  stepText: { color: '#5b6b64', fontSize: 13.5, fontWeight: '800' },
 });

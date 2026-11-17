@@ -29,5 +29,5 @@ export function QuestionEditorCard({ index, question, error, canMoveUp, canMoveD
 
 const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 18, padding: 14, gap: 10 },
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, title: { color: palette.ink, fontSize: 15, fontWeight: '800' }, tools: { flexDirection: 'row' },
+  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, title: { color: palette.ink, fontSize: 14.5, fontWeight: '800' }, tools: { flexDirection: 'row' },
 });

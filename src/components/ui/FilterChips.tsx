@@ -19,5 +19,5 @@ export function FilterChips({ options, value, onChange }: { options: FilterOptio
 const s = StyleSheet.create({
   wrap: { flexGrow: 0, marginHorizontal: -16 }, row: { gap: 8, paddingHorizontal: 16, paddingVertical: 2 },
   chip: { minHeight: 38, paddingHorizontal: 14, borderRadius: 19, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff', justifyContent: 'center' },
-  on: { backgroundColor: '#0d4a38', borderColor: '#0d4a38' }, text: { color: '#33463f', fontSize: 13, fontWeight: '700' }, textOn: { color: '#fff' },
+  on: { backgroundColor: '#0d4a38', borderColor: '#0d4a38' }, text: { color: '#33463f', fontSize: 12.5, fontWeight: '700' }, textOn: { color: '#fff' },
 });

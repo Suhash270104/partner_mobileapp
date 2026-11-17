@@ -83,7 +83,7 @@ export default function EditRealtorListingScreen() {
     <PageHeading eyebrow="EDIT LISTING" title={name} subtitle="Update the public contact details and listing purpose." />
     {loading ? <StatePanel title="Loading listing" message="Fetching the latest saved details…" /> : null}
     {error ? <StatePanel title={listing ? 'Listing update failed' : 'Could not load listing'} message={error} retry={listing ? undefined : () => void load()} /> : null}
-    {notice ? <Panel tint><Text style={{ color: '#17684b', fontWeight: '700', fontSize: 12 }}>{notice}</Text></Panel> : null}
+    {notice ? <Panel tint><Text style={{ color: '#17684b', fontWeight: '700', fontSize: 11.5 }}>{notice}</Text></Panel> : null}
     {listing ? <>
       <SummaryHeader title={name} location={resource ? locationText(resource) : undefined} price={price || undefined} status={status} extra={[toText(listing.listingPurpose), toText(listing.transactionType).replaceAll('_', ' ')].filter(Boolean).join(' · ')} />
       {listing.moderationNote ? <Panel><DataRow title="Reviewer note" detail={toText(listing.moderationNote)} /></Panel> : null}
@@ -97,7 +97,7 @@ export default function EditRealtorListingScreen() {
         <PrimaryButton title="Submit for review" onPress={() => void submit()} loading={busy} />
         <SecondaryButton title="Delete listing" onPress={remove} />
       </Panel> : <Panel>
-        <Text style={{ color: '#4d5f57', fontSize: 12, lineHeight: 18 }}>This listing is “{status.replaceAll('_', ' ')}”, so it can’t be edited or deleted right now. Listings can only be changed while they are a draft or when changes have been requested.</Text>
+        <Text style={{ color: '#4d5f57', fontSize: 11.5, lineHeight: 17 }}>This listing is “{status.replaceAll('_', ' ')}”, so it can’t be edited or deleted right now. Listings can only be changed while they are a draft or when changes have been requested.</Text>
         <DataRow title="Contact" detail={[contact.name, contact.phone, contact.email].filter(Boolean).join(' · ')} />
       </Panel>}
       {listing.propertyId ? <SecondaryButton title="Edit linked property" onPress={() => router.push(`/realtor/property/${String(listing.propertyId)}` as never)} /> : null}

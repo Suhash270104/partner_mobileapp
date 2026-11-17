@@ -35,7 +35,7 @@ export function BrandingSection({ store, canEdit, onChanged }: { store: Store; c
 }
 
 const s = StyleSheet.create({
-  banner: { width: '100%', height: 110, borderRadius: 14, backgroundColor: palette.greenSoft }, empty: { alignItems: 'center', justifyContent: 'center' }, emptyText: { color: palette.muted, fontSize: 13 },
+  banner: { width: '100%', height: 110, borderRadius: 14, backgroundColor: palette.greenSoft }, empty: { alignItems: 'center', justifyContent: 'center' }, emptyText: { color: palette.muted, fontSize: 12.5 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, marginVertical: 10 }, logo: { width: 64, height: 64, borderRadius: 18, backgroundColor: palette.greenSoft },
-  hint: { flex: 1, color: palette.body, fontSize: 12, lineHeight: 17 }, error: { color: palette.red, fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  hint: { flex: 1, color: palette.body, fontSize: 11.5, lineHeight: 16 }, error: { color: palette.red, fontSize: 12.5, fontWeight: '700', marginBottom: 8 },
 });

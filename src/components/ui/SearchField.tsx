@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { FONT_SCALE_LIMIT } from '../../theme/typeScale';
 import { Icon } from '../Icon';
 import { palette } from '../vertical/VerticalUi';
 
@@ -17,7 +18,7 @@ export function SearchField({ value, onChange, placeholder = 'Search', delay = 4
   };
   return <View style={s.box}>
     <Icon name="search" size={19} color={palette.muted} />
-    <TextInput value={text} onChangeText={change} placeholder={placeholder} placeholderTextColor="#9aa8a1" style={s.input} returnKeyType="search" autoCorrect={false} accessibilityLabel={placeholder}
+    <TextInput maxFontSizeMultiplier={FONT_SCALE_LIMIT} value={text} onChangeText={change} placeholder={placeholder} placeholderTextColor="#9aa8a1" style={s.input} returnKeyType="search" autoCorrect={false} accessibilityLabel={placeholder}
       onSubmitEditing={() => { if (timer.current) clearTimeout(timer.current); onChange(text.trim()); setDraft(null); }} />
     {text ? <Pressable hitSlop={10} accessibilityLabel="Clear search" onPress={() => { if (timer.current) clearTimeout(timer.current); setDraft(null); onChange(''); }}><Icon name="x" size={18} color={palette.muted} /></Pressable> : null}
   </View>;
@@ -25,5 +26,5 @@ export function SearchField({ value, onChange, placeholder = 'Search', delay = 4
 
 const s = StyleSheet.create({
   box: { minHeight: 48, borderRadius: 24, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff', paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  input: { flex: 1, color: palette.ink, fontSize: 15, paddingVertical: 10 },
+  input: { flex: 1, color: palette.ink, fontSize: 14.5, paddingVertical: 10 },
 });

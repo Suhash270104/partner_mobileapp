@@ -1,5 +1,5 @@
 import { partnerApi, PartnerApiError } from './partnerApi';
-import { nativeHeaders } from './sessionTokens';
+import { credentialsFor, nativeHeaders } from './sessionTokens';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 const realtorPath = (path: string) => `/realestate/realtor${path}`;
@@ -44,7 +44,7 @@ export const realtorApi = {
     form.append('type', target.type);
     if (target.isPrimary) form.append('isPrimary', 'true');
     if (target.sortOrder != null) form.append('sortOrder', String(target.sortOrder));
-    const send = async () => fetch(`${base}/realestate/realtor/media`, { method: 'POST', body: form, credentials: 'include', headers: { Accept: 'application/json', ...(await nativeHeaders()) } });
+    const send = async () => fetch(`${base}/realestate/realtor/media`, { method: 'POST', body: form, credentials: credentialsFor('/realestate/realtor/media'), headers: { Accept: 'application/json', ...(await nativeHeaders()) } });
     const parse = async (response: Response) => {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new PartnerApiError(body?.message || `Media upload failed (${response.status}).`, response.status, body?.code);

@@ -37,7 +37,7 @@ export default function StaffScreen() {
     <BottomSheet visible={!!selected} onClose={() => setSelected(null)} title={selected?.fullName ?? selected?.name ?? 'Team member'}>
       {selected ? <>
         <Avatar label={selected.fullName ?? selected.name ?? 'T'} size={52} dark={false} />
-        <Text style={{ color: palette.body, fontSize: 14 }}>{selected.phone}{selected.email ? ` · ${selected.email}` : ''}</Text>
+        <Text style={{ color: palette.body, fontSize: 13.5 }}>{selected.phone}{selected.email ? ` · ${selected.email}` : ''}</Text>
         <SelectField label="Role" value={selected.role ?? 'manager'} options={STAFF_ROLE_OPTIONS} onChange={role => update(selected, { role })} />
         {selected.status === 'suspended'
           ? <PillButton variant="soft" icon="check" title="Reactivate" loading={isBusy(`u:${idOf(selected)}`)} onPress={() => update(selected, { status: 'active' })} />

@@ -17,5 +17,5 @@ export function StickyActionBar({ actions, error, note }: { actions: BarAction[]
 
 const s = StyleSheet.create({
   bar: { backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12, gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.line },
-  row: { flexDirection: 'row', gap: 10 }, error: { color: palette.red, fontSize: 13, fontWeight: '700', textAlign: 'center' }, note: { color: palette.muted, fontSize: 12, textAlign: 'center' },
+  row: { flexDirection: 'row', gap: 10 }, error: { color: palette.red, fontSize: 12.5, fontWeight: '700', textAlign: 'center' }, note: { color: palette.muted, fontSize: 11.5, textAlign: 'center' },
 });

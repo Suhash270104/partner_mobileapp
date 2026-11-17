@@ -19,6 +19,6 @@ export function RatingBreakdown({ average, count, breakdown }: { average?: numbe
 
 const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 18, padding: 16, gap: 10 },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 4 }, avg: { color: palette.ink, fontSize: 44, fontWeight: '800' }, count: { color: palette.muted, fontSize: 13 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 }, star: { width: 26, color: palette.body, fontSize: 13, fontWeight: '700' }, n: { width: 28, textAlign: 'right', color: palette.muted, fontSize: 13 },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 4 }, avg: { color: palette.ink, fontSize: 36, fontWeight: '800' }, count: { color: palette.muted, fontSize: 12.5 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10 }, star: { width: 26, color: palette.body, fontSize: 12.5, fontWeight: '700' }, n: { width: 28, textAlign: 'right', color: palette.muted, fontSize: 12.5 },
 });

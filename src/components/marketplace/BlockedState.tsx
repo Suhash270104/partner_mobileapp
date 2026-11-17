@@ -30,9 +30,9 @@ export function BlockedState({ kind, reason, onCheckAgain, checking, onContactSu
 
 const s = StyleSheet.create({
   wrap: { alignItems: 'center', gap: 12, paddingVertical: 32 },
-  title: { color: palette.ink, fontSize: 22, fontWeight: '800', textAlign: 'center', marginTop: 8 },
-  message: { color: palette.body, fontSize: 15, lineHeight: 22, textAlign: 'center' },
+  title: { color: palette.ink, fontSize: 20, fontWeight: '800', textAlign: 'center', marginTop: 8 },
+  message: { color: palette.body, fontSize: 14.5, lineHeight: 21, textAlign: 'center' },
   reason: { alignSelf: 'stretch', padding: 14, borderRadius: 16, backgroundColor: palette.redSoft, gap: 4 },
-  reasonLabel: { color: palette.red, fontSize: 12, fontWeight: '800', letterSpacing: 0.6 }, reasonText: { color: palette.ink, fontSize: 14, lineHeight: 20 },
+  reasonLabel: { color: palette.red, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.6 }, reasonText: { color: palette.ink, fontSize: 13.5, lineHeight: 19 },
   actions: { alignSelf: 'stretch', gap: 10, marginTop: 12 },
 });

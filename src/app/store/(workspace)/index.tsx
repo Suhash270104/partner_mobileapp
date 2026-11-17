@@ -36,7 +36,7 @@ export default function OverviewScreen() {
 
   return <Screen loading={loading} error={error && !data ? error : ''} onRetry={() => void reload()} refreshing={refreshing} onRefresh={() => void refresh()}>
     <View style={{ gap: 6 }}>
-      <Text style={{ color: palette.ink, fontSize: 24, fontWeight: '800' }}>Welcome back</Text>
+      <Text style={{ color: palette.ink, fontSize: 20, fontWeight: '800' }}>Welcome back</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {open !== null ? <Badge label={open ? 'Open now' : 'Closed now'} tone={open ? 'green' : 'slate'} icon="clock" /> : null}
         {publicUrl ? <PillButton compact variant="soft" icon="externalLink" title="View public store" onPress={() => void Linking.openURL(publicUrl)} /> : null}
@@ -63,7 +63,7 @@ export default function OverviewScreen() {
     <SectionCard title="Low stock" subtitle="Products at or below their alert level">
       {data?.lowStock.length ? data.lowStock.map(product => <ListRow key={product._id} title={product.title} detail={`${product.stockQuantity ?? 0} left · ${priceText(product)}`}
         trailing={<PillButton compact variant="soft" title="Restock" onPress={() => router.push({ pathname: '/store/product/[id]', params: { id: product._id } } as never)} />} />)
-        : <Text style={{ color: palette.body, fontSize: 13, paddingVertical: 8 }}>All published products are well stocked.</Text>}
+        : <Text style={{ color: palette.body, fontSize: 12.5, paddingVertical: 8 }}>All published products are well stocked.</Text>}
     </SectionCard>
   </Screen>;
 }

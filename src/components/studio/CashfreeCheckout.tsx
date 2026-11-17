@@ -54,6 +54,6 @@ export function CashfreeCheckout({ order, onClose }: { order: CashfreeOrder | nu
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   bar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderBottomColor: c.line },
-  title: { fontSize: 15, fontWeight: '800', color: c.ink },
+  title: { fontSize: 14.5, fontWeight: '800', color: c.ink },
   close: { fontSize: 13, fontWeight: '800', color: c.green },
 });

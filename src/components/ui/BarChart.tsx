@@ -22,6 +22,6 @@ export function BarChart({ data, height = 120, format }: { data: BarDatum[]; hei
 const s = StyleSheet.create({
   plot: { flexDirection: 'row', alignItems: 'flex-end', gap: 2, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line },
   col: { flex: 1, justifyContent: 'flex-end', height: '100%' }, bar: { width: '100%', backgroundColor: '#2f8a68', borderTopLeftRadius: 3, borderTopRightRadius: 3 },
-  labels: { flexDirection: 'row', gap: 2, marginTop: 4 }, label: { flex: 1, color: palette.muted, fontSize: 9, textAlign: 'center' },
-  peak: { color: palette.muted, fontSize: 11, marginTop: 6 },
+  labels: { flexDirection: 'row', gap: 2, marginTop: 4 }, label: { flex: 1, color: palette.muted, fontSize: 10.5, textAlign: 'center' },
+  peak: { color: palette.muted, fontSize: 10.5, marginTop: 6 },
 });

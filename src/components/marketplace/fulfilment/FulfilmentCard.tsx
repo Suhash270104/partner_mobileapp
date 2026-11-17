@@ -17,6 +17,6 @@ export function FulfilmentCard({ title, subtitle, status, rows, steps, busy, onS
 
 const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 18, padding: 14, gap: 2 },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }, title: { color: palette.ink, fontSize: 15, fontWeight: '800' }, sub: { color: palette.muted, fontSize: 12 },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }, title: { color: palette.ink, fontSize: 14.5, fontWeight: '800' }, sub: { color: palette.muted, fontSize: 11.5 },
   steps: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
 });

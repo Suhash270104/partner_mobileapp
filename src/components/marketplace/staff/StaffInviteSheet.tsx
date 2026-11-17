@@ -29,7 +29,7 @@ function InviteForm({ onClose, onInvited }: { onClose: () => void; onInvited: ()
     <FormField label="Mobile number" required prefix="+91" value={form.phone} onChangeText={t => set('phone', t)} keyboardType="phone-pad" maxLength={14} error={errors.phone} helper="They sign in with this number." />
     <FormField label="Email (optional)" value={form.email} onChangeText={t => set('email', t)} keyboardType="email-address" error={errors.email} />
     <SelectField label="Role" required value={form.role} options={STAFF_ROLE_OPTIONS} onChange={t => set('role', t)} />
-    {error ? <Text style={{ color: palette.red, fontSize: 13, fontWeight: '700' }}>{error}</Text> : null}
+    {error ? <Text style={{ color: palette.red, fontSize: 12.5, fontWeight: '700' }}>{error}</Text> : null}
     <PillButton title="Send invitation" icon="send" loading={busy} onPress={() => void send()} />
   </View>;
 }

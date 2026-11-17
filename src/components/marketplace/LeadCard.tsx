@@ -34,7 +34,7 @@ export function LeadCard({ lead, onOpen }: { lead: Lead; onOpen: () => void }) {
 const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 18, padding: 14, gap: 8 },
   flex: { flex: 1, minWidth: 0 }, top: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  name: { color: palette.ink, fontSize: 15, fontWeight: '800' }, time: { color: palette.muted, fontSize: 12 },
-  product: { color: palette.ink, fontSize: 15, fontWeight: '700', lineHeight: 20 }, request: { color: palette.greenText, fontSize: 13, fontWeight: '700' }, body: { color: palette.body, fontSize: 13, lineHeight: 19 },
+  name: { color: palette.ink, fontSize: 14.5, fontWeight: '800' }, time: { color: palette.muted, fontSize: 11.5 },
+  product: { color: palette.ink, fontSize: 14.5, fontWeight: '700', lineHeight: 19 }, request: { color: palette.greenText, fontSize: 12.5, fontWeight: '700' }, body: { color: palette.body, fontSize: 12.5, lineHeight: 18 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
 });

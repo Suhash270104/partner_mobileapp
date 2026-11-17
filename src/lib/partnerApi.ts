@@ -1,4 +1,4 @@
-import { captureTokens, clearTokens, getRefreshToken, isNativeApp, nativeHeaders } from './sessionTokens';
+import { accessTokenExpiring, captureTokens, clearTokens, credentialsFor, getRefreshToken, getSessionSnapshot, isNativeApp, needsLaunchRefresh, nativeHeaders, saveSessionSnapshot } from './sessionTokens';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, '');
 
@@ -31,6 +31,11 @@ export interface PartnerUser {
 export interface PartnerSession {
   user: PartnerUser | null;
   activeRole?: PartnerRoleType;
+}
+
+export interface PartnerDevice {
+  sessionId: string; deviceId?: string | null; userAgent?: string | null; ip?: string | null; activeRole?: string | null;
+  createdAt?: string; lastUsedAt?: string; expiresAt?: string;
 }
 
 export interface MerchantStatus {
@@ -237,8 +242,11 @@ function refreshSession(): Promise<void> {
       .catch((error) => {
         // "Just refreshed by another request": the new tokens are already stored, so carry on.
         if (error instanceof PartnerApiError && error.status === 409 && error.code === 'AUTH_REFRESH_RACE') return;
-        // A rejected refresh token means the session is over; forget it so the app shows sign-in instead of looping.
-        if (error instanceof PartnerApiError && [401, 403, 409].includes(error.status)) void clearTokens();
+        // 409: another request just rotated this token and its new pair is already stored. Keep it.
+        if (error instanceof PartnerApiError && error.status === 409) return;
+        // A rejected refresh token (401/403) means the session is over; forget it so the app shows sign-in instead of looping.
+        // A network failure is NOT a rejection: the session stays, and the next request tries again.
+        if (error instanceof PartnerApiError && [401, 403].includes(error.status)) void clearTokens();
         throw error;
       })
       .finally(() => { refreshInFlight = null; });
@@ -255,7 +263,7 @@ async function uploadFormData<T>(path: string, formData: FormData, skipRefresh: 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${API_BASE_URL}${path}`);
-    xhr.withCredentials = true;
+    xhr.withCredentials = credentialsFor(path) === 'include';
     xhr.timeout = 120000;
     xhr.setRequestHeader('Accept', 'application/json');
     Object.entries(sessionHeaders).forEach(([name, value]) => xhr.setRequestHeader(name, value));
@@ -299,6 +307,12 @@ async function request<T>(path: string, init: RequestInit = {}, skipRefresh = fa
     throw new PartnerApiError('The partner app is not connected. Set EXPO_PUBLIC_API_BASE_URL in its environment.', 0, 'API_URL_MISSING');
   }
 
+  // Renew an access token that is about to lapse BEFORE sending, so people do not pay a wasted 401 round trip every 15 minutes.
+  // Auth-flow calls never trigger or wait for a refresh.
+  if (!skipRefresh && !path.startsWith('/v1/auth/') && !path.startsWith('/auth/') && accessTokenExpiring()) {
+    try { await refreshSession(); } catch { /* a rejected session is handled by the 401 path below; a network error just retries later */ }
+  }
+
   const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
   if (isFormData && init.body instanceof FormData) {
     return uploadFormData<T>(path, init.body, skipRefresh);
@@ -307,7 +321,7 @@ async function request<T>(path: string, init: RequestInit = {}, skipRefresh = fa
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
-      credentials: 'include',
+      credentials: credentialsFor(path),
       headers: { Accept: 'application/json', ...(!isFormData ? { 'Content-Type': 'application/json' } : {}), ...(await nativeHeaders()), ...init.headers },
     });
   } catch (error) {
@@ -332,17 +346,33 @@ async function request<T>(path: string, init: RequestInit = {}, skipRefresh = fa
 
 export const partnerApi = {
   session: async () => {
+    // First check of this app run: renew once so the 30-day idle window slides forward and the access token's expiry is known.
+    // Offline, this fails quietly and the saved account is kept.
+    if (needsLaunchRefresh()) { try { await refreshSession(); } catch { /* handled by the checks below */ } }
     const current = await request<PartnerSession>('/v1/auth/session');
-    if (current.user) return current;
+    if (current.user) { void saveSessionSnapshot({ user: current.user, activeRole: current.activeRole }); return current; }
     // The 15-minute access token reads as "nobody is signed in" (HTTP 200, user: null), not a 401, so
-    // the usual refresh-on-401 never runs. Try the refresh cookie once before treating the person as
-    // signed out; with no refresh cookie this fails harmlessly and the answer stays "signed out".
+    // the usual refresh-on-401 never runs. Renew once before treating the person as signed out; with no
+    // refresh token this fails harmlessly and the answer stays "signed out".
     try {
       await refreshSession();
     } catch {
       return current;
     }
-    return request<PartnerSession>('/v1/auth/session');
+    const renewed = await request<PartnerSession>('/v1/auth/session');
+    if (renewed.user) void saveSessionSnapshot({ user: renewed.user, activeRole: renewed.activeRole });
+    return renewed;
+  },
+  /** The last confirmed account, for an instant first paint and for offline starts. Never a credential. */
+  cachedSession: async (): Promise<PartnerSession | null> => {
+    const saved = await getSessionSnapshot();
+    return saved?.user ? { user: saved.user as PartnerUser, activeRole: saved.activeRole as PartnerRoleType | undefined } : null;
+  },
+  devices: () => request<{ sessions: PartnerDevice[] }>('/v1/auth/sessions'),
+  revokeDevice: (sessionId: string) => request<{ message?: string }>(`/v1/auth/sessions/${encodeURIComponent(sessionId)}`, { method: 'DELETE' }),
+  logoutEverywhere: async () => {
+    try { return await request<{ message?: string }>('/v1/auth/logout-all', { method: 'POST', body: '{}' }); }
+    finally { await clearTokens(); }
   },
   forgotPassword: (email: string) => request<{ message: string }>('/v1/auth/forgot-password', {
     method: 'POST',
@@ -350,7 +380,7 @@ export const partnerApi = {
   }, true),
   logout: async () => {
     // Stop pushes to this phone while the session is still valid; never let it block signing out.
-    try { await (await import('./partnerPush')).unregisterPartnerDevicePush(); } catch { /* best effort */ }
+    try { await Promise.race([(await import('./partnerPush')).unregisterPartnerDevicePush(), new Promise(resolve => setTimeout(resolve, 4000))]); } catch { /* best effort */ }
     const refreshToken = await getRefreshToken();
     try {
       return await request<{ message: string }>('/v1/auth/logout', { method: 'POST', body: JSON.stringify(refreshToken ? { refreshToken } : {}) }, true);
@@ -574,6 +604,14 @@ export function firstNameOf(user: PartnerUser | null): string | null {
     || Object.values(user.profiles || {}).find(Boolean);
   const name = profile?.name?.trim();
   return name ? name.split(/\s+/)[0] : null;
+}
+
+/** Full display name: the customer profile first, then the active role's, then any profile that has a name. */
+export function fullNameOf(user: PartnerUser | null): string | null {
+  if (!user) return null;
+  const profiles = Object.values(user.profiles || {}).filter(Boolean);
+  const candidates = [user.profiles?.customer, user.activeRole ? user.profiles?.[user.activeRole] : undefined, ...profiles];
+  return candidates.map(profile => profile?.name?.trim()).find(Boolean) || null;
 }
 
 export interface StudioProposalRecord {

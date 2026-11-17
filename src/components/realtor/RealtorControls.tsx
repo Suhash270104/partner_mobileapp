@@ -19,7 +19,7 @@ export function PillButton({ title, icon, onPress, disabled = false, loading = f
     style={[s.pill, compact && s.pillCompact, grow && { flex: 1 }, { backgroundColor: bg, borderColor: border }, (disabled || loading) && { opacity: 0.5 }]}>
     {loading ? <ActivityIndicator size="small" color={fg} /> : <>
       {icon ? <Icon name={icon} size={compact ? 15 : 18} color={fg} /> : null}
-      <Text style={[s.pillText, compact && { fontSize: 13 }, { color: fg }]} numberOfLines={1}>{title}</Text>
+      <Text style={[s.pillText, compact && { fontSize: 12.5 }, { color: fg }]} numberOfLines={1}>{title}</Text>
     </>}
   </Pressable>;
 }
@@ -104,22 +104,22 @@ export function SectionHeader({ title, actionLabel, actionIcon = 'plus', onActio
 
 const s = StyleSheet.create({
   pill: { minHeight: 48, borderRadius: 24, borderWidth: 1, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  pillCompact: { minHeight: 40, paddingHorizontal: 14 }, pillText: { fontSize: 15, fontWeight: '800' },
+  pillCompact: { minHeight: 40, paddingHorizontal: 14 }, pillText: { fontSize: 14.5, fontWeight: '800' },
   iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   sheetRoot: { flex: 1, justifyContent: 'flex-end' }, sheetBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(16,35,28,0.5)' },
   sheet: { maxHeight: '92%', backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
   handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: '#cfd8e3', marginTop: 10 },
   sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line },
-  sheetTitle: { flex: 1, color: palette.ink, fontSize: 19, fontWeight: '800' }, sheetBody: { padding: 18, paddingBottom: 34, gap: 12 },
-  field: { gap: 6 }, label: { color: '#33463f', fontSize: 14, fontWeight: '800' },
-  select: { minHeight: 52, borderRadius: 26, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff', paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', gap: 8 }, selectText: { flex: 1, color: palette.ink, fontSize: 16 },
-  option: { minHeight: 52, borderRadius: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, optionOn: { backgroundColor: palette.greenSoft }, optionText: { color: palette.ink, fontSize: 16 },
+  sheetTitle: { flex: 1, color: palette.ink, fontSize: 18, fontWeight: '800' }, sheetBody: { padding: 18, paddingBottom: 34, gap: 12 },
+  field: { gap: 6 }, label: { color: '#33463f', fontSize: 13.5, fontWeight: '800' },
+  select: { minHeight: 52, borderRadius: 26, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff', paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', gap: 8 }, selectText: { flex: 1, color: palette.ink, fontSize: 14.5 },
+  option: { minHeight: 52, borderRadius: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, optionOn: { backgroundColor: palette.greenSoft }, optionText: { color: palette.ink, fontSize: 14.5 },
   intro: { backgroundColor: '#fff', borderWidth: 1, borderColor: palette.line, borderRadius: 26, padding: 20, gap: 10 },
   chip: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#ecf8f2', borderWidth: 1, borderColor: '#bfe9d6', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
-  chipText: { color: palette.greenText, fontSize: 12, fontWeight: '800', letterSpacing: 0.8 },
-  introTitle: { color: palette.ink, fontSize: 28, fontWeight: '800' }, introDesc: { color: palette.body, fontSize: 15, lineHeight: 22 }, introNote: { color: palette.amber, fontSize: 13, fontWeight: '700', lineHeight: 19 },
+  chipText: { color: palette.greenText, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.8 },
+  introTitle: { color: palette.ink, fontSize: 22, fontWeight: '800' }, introDesc: { color: palette.body, fontSize: 14.5, lineHeight: 21 }, introNote: { color: palette.amber, fontSize: 12.5, fontWeight: '700', lineHeight: 18 },
   creditsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   creditsPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#ecf8f2', borderWidth: 1, borderColor: '#bfe9d6', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9, flexShrink: 1 },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#1fbf7a' }, creditsText: { color: palette.green, fontSize: 14, fontWeight: '800', flexShrink: 1 }, topUp: { color: palette.ink, fontSize: 14, fontWeight: '800' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 4 }, sectionHeaderTitle: { color: palette.ink, fontSize: 20, fontWeight: '800', flexShrink: 1 },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#1fbf7a' }, creditsText: { color: palette.green, fontSize: 13.5, fontWeight: '800', flexShrink: 1 }, topUp: { color: palette.ink, fontSize: 13.5, fontWeight: '800' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 4 }, sectionHeaderTitle: { color: palette.ink, fontSize: 18, fontWeight: '800', flexShrink: 1 },
 });

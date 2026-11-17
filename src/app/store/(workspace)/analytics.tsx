@@ -40,7 +40,7 @@ export default function AnalyticsScreen() {
         <InfoRow label="Discounts" value={formatMoney(sales.discounts)} />
       </SectionCard>
       <SectionCard title="Top products">
-        {top.length ? top.map((product, index) => <ListRow key={index} title={String(product.title ?? 'Product')} detail={`${formatNumber(product.quantity)} sold${product.sku ? ` · ${product.sku}` : ''}`} trailing={<Text style={{ color: palette.ink, fontSize: 14, fontWeight: '800' }}>{formatCompactMoney(product.salesValue)}</Text>} />)
+        {top.length ? top.map((product, index) => <ListRow key={index} title={String(product.title ?? 'Product')} detail={`${formatNumber(product.quantity)} sold${product.sku ? ` · ${product.sku}` : ''}`} trailing={<Text style={{ color: palette.ink, fontSize: 13.5, fontWeight: '800' }}>{formatCompactMoney(product.salesValue)}</Text>} />)
           : <EmptyState icon="layers" title="No product sales yet" />}
       </SectionCard>
     </>}

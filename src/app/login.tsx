@@ -38,6 +38,8 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [playInitialSplash] = useState(() => !hasCompletedLaunchSplash());
+  // The floating logo only exists for the intro animation. Afterwards the same logo sits in the page and scrolls with it.
+  const [introDone, setIntroDone] = useState(() => hasCompletedLaunchSplash());
   const googleClientId = Platform.select({
     android: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
     ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
@@ -135,7 +137,7 @@ export default function LoginScreen() {
               Animated.timing(headerProgress, { toValue: 1, duration: 450, useNativeDriver: true }),
             ]),
           ]),
-        ]).start();
+        ]).start(() => { if (active) setIntroDone(true); });
       });
     return () => { active = false; revealProgress.stopAnimation(); shineProgress.stopAnimation(); logoProgress.stopAnimation(); contentProgress.stopAnimation(); headerProgress.stopAnimation(); };
   }, [contentProgress, headerProgress, logoProgress, playInitialSplash, revealProgress, shineProgress]);
@@ -169,7 +171,10 @@ export default function LoginScreen() {
 
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
-            <View style={[styles.logoSpace, { height: Math.max(70, finalLogoTop + finalLogoWidth / ASPECT + 20 - 54) }]} />
+            <View style={[styles.logoSpace, { height: Math.max(70, finalLogoTop + finalLogoWidth / ASPECT + 20 - 54) }]}>
+              {introDone ? <Image source={logo} resizeMode="contain" accessibilityLabel="Kraftnex — Where People & Spaces Connect"
+                style={{ alignSelf: 'center', marginTop: finalLogoTop - 54, width: finalLogoWidth, height: finalLogoHeight }} /> : null}
+            </View>
             <Animated.View style={{ opacity: pageOpacity, transform: [{ translateY: pageTranslate }] }}>
               <Text style={styles.title}>Welcome back</Text>
               <Text style={styles.subtitle}>Sign in to continue to your partner workspace.</Text>
@@ -235,7 +240,7 @@ export default function LoginScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
 
-        <Animated.View
+        {!introDone ? <Animated.View
           style={[styles.animatedLogo, {
             width: initialLogoWidth,
             height: initialLogoHeight,
@@ -250,7 +255,7 @@ export default function LoginScreen() {
             />
             <Animated.View pointerEvents="none" style={[styles.logoSheen, { left: shineLeft, height: initialLogoHeight * 0.9, top: initialLogoHeight * 0.05 }]} />
           </Animated.View>
-        </Animated.View>
+        </Animated.View> : null}
         {!ready ? <View style={styles.loading} pointerEvents="none" /> : null}
       </View>
     </SafeAreaView>

@@ -1,4 +1,4 @@
-import { captureTokens, clearTokens, getRefreshToken, nativeHeaders } from './sessionTokens';
+import { captureTokens, clearTokens, credentialsFor, getRefreshToken, nativeHeaders } from './sessionTokens';
 
 const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
 
@@ -45,7 +45,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   try {
     response = await fetch(`${baseUrl}${path}`, {
       ...init,
-      credentials: 'include',
+      credentials: credentialsFor(path),
       headers: { 'Content-Type': 'application/json', ...(await nativeHeaders()), ...init.headers },
     });
   } catch {

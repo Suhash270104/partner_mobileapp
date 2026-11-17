@@ -111,7 +111,7 @@ export default function EditRealtorProjectScreen() {
     <PageHeading eyebrow="EDIT PROJECT" title={toText(project?.name) || 'Project'} subtitle="Update project details, photos and available configurations." />
     {loading ? <StatePanel title="Loading project" message="Fetching the latest saved details…" /> : null}
     {error ? <StatePanel title={project ? 'Project update failed' : 'Could not load project'} message={error} retry={project ? undefined : () => void load()} /> : null}
-    {notice ? <Panel tint><Text style={{ color: '#17684b', fontWeight: '700', fontSize: 12 }}>{notice}</Text></Panel> : null}
+    {notice ? <Panel tint><Text style={{ color: '#17684b', fontWeight: '700', fontSize: 11.5 }}>{notice}</Text></Panel> : null}
     {project ? <>
       <SummaryHeader title={toText(project.name) || 'Project'} location={locationText(project)} price={priceRange || undefined} status={status} extra={toText(project.projectType).replaceAll('_', ' ')} />
       {project.moderationNote ? <Panel><DataRow title="Reviewer note" detail={toText(project.moderationNote)} /></Panel> : null}
@@ -127,7 +127,7 @@ export default function EditRealtorProjectScreen() {
         <Field label="RERA registration number" value={form.reraNumber} onChangeText={set('reraNumber')} />
         <PrimaryButton title="Save changes" onPress={() => void save()} loading={busy} />
         <SecondaryButton title="Submit for review" onPress={() => void submit()} />
-      </Panel> : <Panel><Text style={{ color: '#4d5f57', fontSize: 12, lineHeight: 18 }}>This project is “{status.replaceAll('_', ' ')}”, so its details can’t be edited right now. Projects can only be changed while they are a draft or when changes have been requested. Configurations below can still be updated.</Text></Panel>}
+      </Panel> : <Panel><Text style={{ color: '#4d5f57', fontSize: 11.5, lineHeight: 17 }}>This project is “{status.replaceAll('_', ' ')}”, so its details can’t be edited right now. Projects can only be changed while they are a draft or when changes have been requested. Configurations below can still be updated.</Text></Panel>}
       <MediaManager resourceType="project" resourceId={String(id)} />
       <SectionTitle title="Configurations" action={editingConfig ? undefined : <SecondaryButton title="＋ Add" onPress={() => { setConfigForm(emptyConfig); setEditingConfig('new'); }} />} />
       {!configs.length && !editingConfig ? <StatePanel title="No configurations yet" message="Add the unit types (for example 2 BHK) buyers can choose from." /> : null}
@@ -139,7 +139,7 @@ export default function EditRealtorProjectScreen() {
         </View>
       </Panel>)}
       {editingConfig ? <Panel>
-        <Text style={{ fontWeight: '800', fontSize: 14, color: '#10231c' }}>{editingConfig === 'new' ? 'New configuration' : 'Edit configuration'}</Text>
+        <Text style={{ fontWeight: '800', fontSize: 13.5, color: '#10231c' }}>{editingConfig === 'new' ? 'New configuration' : 'Edit configuration'}</Text>
         <Field label="Configuration name" value={configForm.name} onChangeText={setCfg('name')} />
         <SelectChips label="Property type" values={PROJECT_TYPES} selected={configForm.propertyType} onChange={value => setCfg('propertyType')(String(value))} />
         <Field label="Bedrooms (BHK)" value={configForm.bhk} onChangeText={setCfg('bhk')} keyboardType="numeric" />

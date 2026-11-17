@@ -85,8 +85,8 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: c.line },
   back: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.greenSoft, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontSize: 10, fontWeight: '800', color: c.muted, letterSpacing: 0.7 },
-  title: { fontSize: 20, fontWeight: '800', color: c.ink },
+  eyebrow: { fontSize: 10.5, fontWeight: '800', color: c.muted, letterSpacing: 0.7 },
+  title: { fontSize: 18, fontWeight: '800', color: c.ink },
   scroll: { padding: 16, paddingBottom: 40, gap: 14 },
   copy: { color: c.body, fontSize: 13.5, lineHeight: 20 },
   card: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: c.line, padding: 14, gap: 8 },
@@ -95,5 +95,5 @@ const s = StyleSheet.create({
   boxOn: { backgroundColor: c.green, borderColor: c.green },
   termsText: { flex: 1, color: c.body, fontSize: 12.5, lineHeight: 18 },
   cta: { height: 50, borderRadius: 14, backgroundColor: c.green, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
-  ctaText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  ctaText: { color: '#fff', fontSize: 13.5, fontWeight: '800' },
 });

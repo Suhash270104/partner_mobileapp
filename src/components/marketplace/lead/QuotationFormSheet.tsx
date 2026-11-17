@@ -34,7 +34,7 @@ function QuotationFormBody({ lead, onClose, onSend }: { lead: Lead; onClose: () 
     <FormField label="Price per unit" required prefix="₹" value={form.unitPrice} onChangeText={money('unitPrice')} keyboardType="decimal-pad" error={errors.unitPrice} />
     <FormField label="Unit (e.g. sq ft, bag)" value={form.priceUnit} onChangeText={v => set('priceUnit', v)} />
     <FormField label="Quantity" value={form.quantity} onChangeText={v => set('quantity', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" error={errors.quantity} />
-    {total !== undefined ? <View style={{ padding: 12, borderRadius: 14, backgroundColor: palette.greenSoft }}><Text style={{ color: palette.greenText, fontSize: 13, fontWeight: '800' }}>Total {formatMoney(total)}</Text></View> : null}
+    {total !== undefined ? <View style={{ padding: 12, borderRadius: 14, backgroundColor: palette.greenSoft }}><Text style={{ color: palette.greenText, fontSize: 12.5, fontWeight: '800' }}>Total {formatMoney(total)}</Text></View> : null}
     <ToggleRow label="Price includes GST" value={form.gstIncluded} onChange={v => set('gstIncluded', v)} />
     <FormField label="GST %" value={form.gstPercentage} onChangeText={v => set('gstPercentage', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" error={errors.gstPercentage} />
     <FormField label="Delivery charges (optional)" prefix="₹" value={form.deliveryCharges} onChangeText={money('deliveryCharges')} keyboardType="decimal-pad" error={errors.deliveryCharges} />
@@ -42,7 +42,7 @@ function QuotationFormBody({ lead, onClose, onSend }: { lead: Lead; onClose: () 
     <FormField label="Quote valid until" value={form.validUntil} onChangeText={v => set('validUntil', v)} placeholder="YYYY-MM-DD" keyboardType="default" error={errors.validUntil} />
     <FormField label="Payment terms" value={form.paymentTerms} onChangeText={v => set('paymentTerms', v)} maxLength={LIMITS.quotePaymentTerms} error={errors.paymentTerms} placeholder="e.g. 50% advance, 50% on delivery" />
     <FormField label="Notes to buyer" value={form.notes} onChangeText={v => set('notes', v)} multiline maxLength={LIMITS.quoteNotes} error={errors.notes} />
-    {error ? <Text style={{ color: palette.red, fontSize: 13, fontWeight: '700' }}>{error}</Text> : null}
+    {error ? <Text style={{ color: palette.red, fontSize: 12.5, fontWeight: '700' }}>{error}</Text> : null}
     <PillButton title="Send to buyer" icon="send" loading={busy} onPress={() => void send()} />
   </View>;
 }
