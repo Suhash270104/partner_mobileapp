@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { PartnerBrand } from '../../components/PartnerBrand';
 import {
   KYC_SUPPORT_REASONS,
@@ -21,6 +21,8 @@ function errorText(error: unknown) {
 }
 
 export default function TechnicianKycScreen() {
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const resumeSetup = returnTo === 'setup';
   const [kyc, setKyc] = useState<TechnicianKycState | null>(null);
   const [support, setSupport] = useState<TechnicianKycSupportTicket | null>(null);
   const [configured, setConfigured] = useState(true);
@@ -130,6 +132,14 @@ export default function TechnicianKycScreen() {
   const declined = status === 'DECLINED';
   const lockedOut = declined && (kyc?.attemptsRemaining ?? 0) <= 0;
   const nameMatchProblem = kyc?.nameMatch === 'MISMATCH' && Boolean(kyc.documentName);
+
+  function continueAfterKyc() {
+    if (resumeSetup) {
+      router.replace({ pathname: '/technician/setup', params: { resume: 'kyc' } });
+    } else {
+      router.replace('/technician/dashboard');
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -261,10 +271,16 @@ export default function TechnicianKycScreen() {
             </View>
 
             {inReview ? (
-              <View style={styles.lockedButton}><Text style={styles.lockedButtonText}>Verification Under Active Review  ⌛</Text></View>
+              resumeSetup ? (
+                <Pressable style={styles.primaryButton} onPress={continueAfterKyc}>
+                  <Text style={styles.primaryButtonText}>Continue setup while review is pending  →</Text>
+                </Pressable>
+              ) : (
+                <View style={styles.lockedButton}><Text style={styles.lockedButtonText}>Verification Under Active Review  ⌛</Text></View>
+              )
             ) : verified ? (
-              <Pressable style={styles.primaryButton} onPress={() => router.replace('/technician/dashboard')}>
-                <Text style={styles.primaryButtonText}>Go to technician dashboard  →</Text>
+              <Pressable style={styles.primaryButton} onPress={continueAfterKyc}>
+                <Text style={styles.primaryButtonText}>{resumeSetup ? 'Continue technician setup  →' : 'Go to technician dashboard  →'}</Text>
               </Pressable>
             ) : lockedOut && support ? (
               <View style={styles.ticketCard}>

@@ -408,7 +408,10 @@ export default function TechnicianSetupScreen() {
   }
 
   async function submitTechnicianProfile() {
-    if (submitted) { setStep(7); return; }
+    if (submitted) {
+      router.push({ pathname: '/technician/kyc', params: { returnTo: 'setup' } });
+      return;
+    }
     if (!otpToken) { setError('Verify your mobile number before continuing.'); return; }
     if (!tier) { setError('Choose a partner tier before continuing.'); return; }
     if (!selected.size) { setError('Select at least one trade service.'); return; }
@@ -434,12 +437,12 @@ export default function TechnicianSetupScreen() {
         serviceRadiusKm: radiusKm,
       });
       setSubmitted(true);
-      setStep(7);
       if (expoPushToken) {
         void partnerApi.registerPushToken(expoPushToken, Platform.OS === 'ios' ? 'ios' : 'android').catch(() => {});
       }
       const response = await partnerApi.technicianProfile();
       setSavedTechnician(response.technician);
+      router.push({ pathname: '/technician/kyc', params: { returnTo: 'setup' } });
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Could not submit your technician profile.');
     } finally { setBusy(false); }
@@ -565,7 +568,7 @@ export default function TechnicianSetupScreen() {
             {!!notice && <Text style={styles.notice}>{notice}</Text>}
             <View style={styles.spacer} />
             <Text style={styles.note}>Dispatch area is based on the location and radius you choose. You can update it later from your technician profile.</Text>
-            <Button label="Continue to Equipment & Tools (Step 7)  →" onPress={() => void submitTechnicianProfile()} busy={busy} disabled={!place} />
+            <Button label="Verify identity with Didit  →" onPress={() => void submitTechnicianProfile()} busy={busy} disabled={!place} />
           </>}
 
           {step === 7 && <>
