@@ -43,7 +43,9 @@
         "expo-notifications",
         {
           "defaultChannel": "partner-updates",
-          "color": "#07523e"
+          "color": "#07523e",
+          "icon": "./assets/notification-icon.png",
+          "largeIcon": "./assets/android-icon-foreground.png"
         }
       ],
       [
