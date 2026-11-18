@@ -7,7 +7,8 @@ import { PartnerBrand } from '../components/PartnerBrand';
 import { AccountSummary } from '../components/auth/AccountSummary';
 import { authApi } from '../lib/auth';
 import { setPendingPhone } from '../lib/pendingPhone';
-import { accountNeedsDetails, firstNameOf, partnerApi, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
+import { accountNeedsDetails, firstNameOf, partnerApi, PartnerApiError, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
+import { isProfileComplete } from '../lib/professionalOnboarding';
 import { registerPartnerDevicePush } from '../lib/partnerPush';
 
 // Used only by the hidden website links below; re-enable together with them.
@@ -113,8 +114,20 @@ export default function PartnerHomeScreen() {
     }
     if (!user) { router.push('/login' as never); return; }
     if (item.type === 'designer') {
-      const designerRole = user.roles?.find(entry => entry.type === 'designer');
-      router.push(designerRole ? '/professional/dashboard' : '/professional/onboarding');
+      // A studio registered on the website may not be listed in this session's roles, so ask the server for the
+      // saved studio first. Only a person with no studio at all starts the wizard from stage 1.
+      try {
+        const studio = await partnerApi.professionalProfile();
+        router.push((isProfileComplete(studio) ? '/professional/dashboard' : '/professional/onboarding') as never);
+        return;
+      } catch (error) {
+        if (!(error instanceof PartnerApiError && error.status === 404)) {
+          const designerRole = user.roles?.find(entry => entry.type === 'designer');
+          router.push((designerRole ? '/professional/dashboard' : '/professional/onboarding') as never);
+          return;
+        }
+      }
+      router.push('/professional/onboarding' as never);
       return;
     }
     const role = user.roles?.find(entry => entry.type === item.type);

@@ -116,7 +116,12 @@ export default function RealtorDashboardScreen() {
   function deleteProperty(item: Data) {
     Alert.alert('Delete this property?', 'Its listings will be deleted too. The listing credit used to post it is NOT refunded.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => void run(idOf(item), () => realtorApi.properties('DELETE', undefined, idOf(item)), 'Could not delete property') },
+      { text: 'Delete', style: 'destructive', onPress: () => void run(idOf(item), async () => {
+        // The server says whether the posting credit came back (it does not once a listing has ever gone live): show its words.
+        const result = await realtorApi.properties('DELETE', undefined, idOf(item));
+        const note = typeof result.message === 'string' ? result.message : '';
+        if (note) setTimeout(() => Alert.alert(result.creditRefunded ? 'Credit returned' : 'Property deleted', note), 300);
+      }, 'Could not delete property') },
     ]);
   }
   function deleteListing(item: Data) {
