@@ -10,6 +10,7 @@ import { setPendingPhone } from '../lib/pendingPhone';
 import { accountNeedsDetails, firstNameOf, partnerApi, PartnerApiError, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
 import { isProfileComplete } from '../lib/professionalOnboarding';
 import { registerPartnerDevicePush } from '../lib/partnerPush';
+import { hasAutoOpened, isTechnicianSetupDone, markAutoOpened } from '../lib/workspaceLaunch';
 
 // Used only by the hidden website links below; re-enable together with them.
 // const publicSite = process.env.EXPO_PUBLIC_PUBLIC_SITE_URL?.trim().replace(/\/+$/, '');
@@ -94,6 +95,28 @@ export default function PartnerHomeScreen() {
   // An account with no name or email (created by phone alone) cannot go further until it has both.
   const needsDetails = accountNeedsDetails(user);
   useEffect(() => { if (needsDetails && !loading) router.push('/complete-profile' as never); }, [needsDetails, loading]);
+
+  // A returning, already-set-up partner should land on their dashboard, not on the workspace picker
+  // or the onboarding wizard. Runs once per sign-in; coming back to this screen later keeps the picker.
+  useEffect(() => {
+    if (!user || loading || needsDetails || hasAutoOpened(user.id)) return;
+    const partnerRoles = (user.roles ?? []).filter(role => role.type !== 'customer');
+    const target = partnerRoles.length === 1
+      ? partnerRoles[0].type
+      : user.activeRole && user.activeRole !== 'customer' ? user.activeRole : null;
+    if (!target) return;
+    markAutoOpened(user.id);
+    void (async () => {
+      if (target === 'technician') {
+        try {
+          const { technician } = await partnerApi.technicianProfile();
+          if (isTechnicianSetupDone(technician)) router.replace('/technician/dashboard');
+        } catch { /* no technician profile yet: stay on the picker so they can set up */ }
+      } else if (target === 'designer') router.replace('/professional/dashboard' as never);
+      else if (target === 'realtor') router.replace('/realtor/dashboard' as never);
+    })();
+  }, [user, loading, needsDetails]);
+
   const welcomeName = firstNameOf(user);
   const initials = useMemo(() => {
     const name = firstNameOf(user);
@@ -109,7 +132,11 @@ export default function PartnerHomeScreen() {
 
   async function openWorkspace(item: Workspace) {
     if (item.type === 'technician') {
-      router.push('/technician/setup');
+      // Already set up: open the dashboard. Otherwise start or resume the setup wizard.
+      try {
+        const { technician } = await partnerApi.technicianProfile();
+        router.push(isTechnicianSetupDone(technician) ? '/technician/dashboard' : '/technician/setup');
+      } catch { router.push('/technician/setup'); }
       return;
     }
     if (!user) { router.push('/login' as never); return; }

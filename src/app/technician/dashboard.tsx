@@ -602,8 +602,8 @@ export default function TechnicianDashboardScreen() {
               <Text style={styles.kycProfileArrow}>→</Text>
             </Pressable>
           </View>
-          <Pressable style={styles.secondaryButton} onPress={() => router.push('/technician/setup')}>
-            <Text style={styles.secondaryButtonText}>Review onboarding details</Text>
+          <Pressable style={styles.secondaryButton} onPress={() => router.push({ pathname: '/technician/setup', params: { edit: '1' } })}>
+            <Text style={styles.secondaryButtonText}>Review or edit onboarding details</Text>
           </Pressable>
           <Pressable style={styles.signOutButton} onPress={() => void signOut()}>
             <Text style={styles.signOutText}>Sign out</Text>

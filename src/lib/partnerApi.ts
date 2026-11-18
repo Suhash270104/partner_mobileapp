@@ -1,3 +1,4 @@
+import { resetAutoOpen } from './workspaceLaunch';
 import { accessTokenExpiring, captureTokens, clearTokens, credentialsFor, getRefreshToken, getSessionSnapshot, isNativeApp, needsLaunchRefresh, nativeHeaders, saveSessionSnapshot } from './sessionTokens';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, '');
@@ -385,7 +386,7 @@ export const partnerApi = {
   revokeDevice: (sessionId: string) => request<{ message?: string }>(`/v1/auth/sessions/${encodeURIComponent(sessionId)}`, { method: 'DELETE' }),
   logoutEverywhere: async () => {
     try { return await request<{ message?: string }>('/v1/auth/logout-all', { method: 'POST', body: '{}' }); }
-    finally { await clearTokens(); }
+    finally { await clearTokens(); resetAutoOpen(); }
   },
   forgotPassword: (email: string) => request<{ message: string }>('/v1/auth/forgot-password', {
     method: 'POST',
@@ -400,6 +401,7 @@ export const partnerApi = {
     } finally {
       // Whatever the server said, this phone is signed out.
       await clearTokens();
+      resetAutoOpen();
     }
   },
   merchantStatus: () => request<MerchantStatus>('/marketplace/merchant/auth/status'),

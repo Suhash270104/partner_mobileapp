@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PartnerBrand } from '../../components/PartnerBrand';
 import { partnerApi, PartnerApiError, TechnicianProfileRecord, TechnicianServiceCategory } from '../../lib/partnerApi';
 import { getEquipmentForCategories } from '../../lib/technicianEquipment';
+import { isTechnicianSetupDone } from '../../lib/workspaceLaunch';
 import { getPartnerExpoPushToken, showPartnerNotification } from '../../lib/partnerNotifications';
 import { isExpoGo } from '../../lib/runtime';
 type Tier = 'KN_CERTIFIED' | 'INDEPENDENT';
@@ -45,8 +46,10 @@ function passwordProblem(password: string): string | null {
 
 export default function TechnicianSetupScreen() {
   // "Add proof" on the dashboard re-opens the wizard at the expertise step, as on desktop (?step=expertise).
-  const { resume } = useLocalSearchParams<{ resume?: string }>();
+  const { resume, edit } = useLocalSearchParams<{ resume?: string; edit?: string }>();
   const resumeExpertise = resume === 'expertise';
+  // Opened on purpose from the dashboard to change details later: never bounce back, start at the review page.
+  const editMode = edit === '1';
   const [step, setStep] = useState(1);
   const [tier, setTier] = useState<Tier | null>(null);
   const [phone, setPhone] = useState('');
@@ -121,7 +124,8 @@ export default function TechnicianSetupScreen() {
       if (!active) return;
       setSavedTechnician(technician);
       setSubmitted(true);
-      if (technician.onboardingSubmittedAt && !resumeExpertise) {
+      // Already set up (submitted, or all the details are saved): go straight to the dashboard.
+      if (isTechnicianSetupDone(technician) && !resumeExpertise && !editMode) {
         router.replace('/technician/dashboard');
         return;
       }
@@ -147,7 +151,8 @@ export default function TechnicianSetupScreen() {
         setPlace({ title: technician.baseAddress?.split(',')[0] || technician.city, subtitle: technician.baseAddress || technician.city, lat: technician.coordinates.lat, lng: technician.coordinates.lng, city: technician.city });
       }
       setRadiusKm(technician.serviceRadiusKm || 10);
-      if (resumeExpertise) setStep(8);
+      if (editMode) setStep(11);
+      else if (resumeExpertise) setStep(8);
       else if (proof?.documentUrl) setStep(11);
       else if (technician.bankDetails?.accountNumber || technician.bankDetails?.ifscCode) setStep(10);
       else if ((technician.equipmentChecklist || []).length) setStep(8);
@@ -158,7 +163,7 @@ export default function TechnicianSetupScreen() {
       if (status !== 401 && status !== 403 && status !== 404) setError(error instanceof Error ? error.message : 'Could not restore your technician setup.');
     });
     return () => { active = false; };
-  }, [resumeExpertise]);
+  }, [resumeExpertise, editMode]);
 
   useEffect(() => {
     const normalized = query.trim();
