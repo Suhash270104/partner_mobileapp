@@ -308,7 +308,10 @@ export function hydrateFromProfile(profile: ProfessionalProfileRecord): Onboardi
 }
 
 export function isProfileComplete(profile: ProfessionalProfileRecord): boolean {
-  return Boolean(profile.isOnboarded || (profile.onboardingStage && profile.onboardingStage >= TOTAL_STAGES));
+  // Studios added through the website's "add a workspace" flow (and older sign-ups) are saved as
+  // isProfileComplete with onboardingStage 1 and isOnboarded false. The website dashboard opens them,
+  // so the app must too instead of sending them back through the wizard.
+  return Boolean(profile.isOnboarded || profile.isProfileComplete || (profile.onboardingStage && profile.onboardingStage >= TOTAL_STAGES));
 }
 
 // ---- Per-stage "can continue" rules (the desktop's) ----

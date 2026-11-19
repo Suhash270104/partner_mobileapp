@@ -7,10 +7,9 @@ import { PartnerBrand } from '../components/PartnerBrand';
 import { AccountSummary } from '../components/auth/AccountSummary';
 import { authApi } from '../lib/auth';
 import { setPendingPhone } from '../lib/pendingPhone';
-import { accountNeedsDetails, firstNameOf, partnerApi, PartnerApiError, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
-import { isProfileComplete } from '../lib/professionalOnboarding';
+import { accountNeedsDetails, firstNameOf, partnerApi, PartnerRoleType, PartnerSession } from '../lib/partnerApi';
 import { registerPartnerDevicePush } from '../lib/partnerPush';
-import { hasAutoOpened, isTechnicianSetupDone, markAutoOpened } from '../lib/workspaceLaunch';
+import { hasAutoOpened, LaunchTarget, markAutoOpened, resolveStudioLaunch, resolveTechnicianLaunch } from '../lib/workspaceLaunch';
 
 // Used only by the hidden website links below; re-enable together with them.
 // const publicSite = process.env.EXPO_PUBLIC_PUBLIC_SITE_URL?.trim().replace(/\/+$/, '');
@@ -107,12 +106,9 @@ export default function PartnerHomeScreen() {
     if (!target) return;
     markAutoOpened(user.id);
     void (async () => {
-      if (target === 'technician') {
-        try {
-          const { technician } = await partnerApi.technicianProfile();
-          if (isTechnicianSetupDone(technician)) router.replace('/technician/dashboard');
-        } catch { /* no technician profile yet: stay on the picker so they can set up */ }
-      } else if (target === 'designer') router.replace('/professional/dashboard' as never);
+      // Open the dashboard only for finished workspaces; otherwise stay on the picker and let them choose.
+      const launch = target === 'technician' ? await resolveTechnicianLaunch() : target === 'designer' ? await resolveStudioLaunch() : null;
+      if (launch) { if (launch.kind === 'open') router.replace(launch.path as never); }
       else if (target === 'realtor') router.replace('/realtor/dashboard' as never);
     })();
   }, [user, loading, needsDetails]);
@@ -130,33 +126,21 @@ export default function PartnerHomeScreen() {
     catch { setConfigError('Kraftnex could not open that destination. Check the configured site URL.'); }
   }
 
+  /** Follows a launch decision. A failure to tell is shown, never turned into a setup wizard. */
+  function follow(target: LaunchTarget, signedOutPath: string) {
+    if (target.kind === 'error') { setApiError(target.message); return; }
+    setApiError('');
+    router.push((target.kind === 'signedOut' ? signedOutPath : target.path) as never);
+  }
+
   async function openWorkspace(item: Workspace) {
-    if (item.type === 'technician') {
-      // Already set up: open the dashboard. Otherwise start or resume the setup wizard.
-      try {
-        const { technician } = await partnerApi.technicianProfile();
-        router.push(isTechnicianSetupDone(technician) ? '/technician/dashboard' : '/technician/setup');
-      } catch { router.push('/technician/setup'); }
-      return;
-    }
+    // A new technician registers inside the setup wizard itself, so no account is needed to open it.
+    if (item.type === 'technician' && !user) { router.push('/technician/setup'); return; }
     if (!user) { router.push('/login' as never); return; }
-    if (item.type === 'designer') {
-      // A studio registered on the website may not be listed in this session's roles, so ask the server for the
-      // saved studio first. Only a person with no studio at all starts the wizard from stage 1.
-      try {
-        const studio = await partnerApi.professionalProfile();
-        router.push((isProfileComplete(studio) ? '/professional/dashboard' : '/professional/onboarding') as never);
-        return;
-      } catch (error) {
-        if (!(error instanceof PartnerApiError && error.status === 404)) {
-          const designerRole = user.roles?.find(entry => entry.type === 'designer');
-          router.push((designerRole ? '/professional/dashboard' : '/professional/onboarding') as never);
-          return;
-        }
-      }
-      router.push('/professional/onboarding' as never);
-      return;
-    }
+    // Technician and studio: the server's saved profile decides (dashboard, resume, or start), not this session's role list,
+    // because a workspace created on the website may not be listed there.
+    if (item.type === 'technician') { follow(await resolveTechnicianLaunch(), '/login'); return; }
+    if (item.type === 'designer') { follow(await resolveStudioLaunch(), '/login'); return; }
     const role = user.roles?.find(entry => entry.type === item.type);
     if (item.type === 'merchant' && !merchant) { setApiError('Seller access could not be verified. Refresh and try again.'); return; }
     const route = item.type === 'merchant'

@@ -1,4 +1,54 @@
-import type { TechnicianProfileRecord } from './partnerApi';
+import { partnerApi, PartnerApiError, type TechnicianProfileRecord } from './partnerApi';
+import { isProfileComplete } from './professionalOnboarding';
+
+/** Where a signed-in person goes when they open a workspace. One decision for every entry point.
+ *  open   = finished: the dashboard.      resume = started elsewhere (e.g. the website): the wizard at the saved step.
+ *  start  = no workspace yet: the wizard.  signedOut = sign in first.   error = could not tell (offline, server error):
+ *  never guess, never open a wizard. */
+export type LaunchTarget =
+  | { kind: 'open' | 'resume' | 'start'; path: string }
+  | { kind: 'signedOut' }
+  | { kind: 'error'; message: string };
+
+/** 'none' = the server has no such workspace for this person; 'signedOut' = nobody is signed in; null = a real failure.
+ *  A signed-in account without the role also answers 401, so a live session decides which of the two it is. */
+async function classify(error: unknown): Promise<'none' | 'signedOut' | null> {
+  if (!(error instanceof PartnerApiError)) return null;
+  if (error.status === 404) return 'none';
+  if (error.status === 401 || error.status === 403) {
+    try { return (await partnerApi.session()).user ? 'none' : 'signedOut'; } catch { return null; }
+  }
+  return null;
+}
+const failure = (error: unknown, what: string): LaunchTarget => ({ kind: 'error', message: error instanceof Error && error.message ? error.message : `Could not load your ${what}. Check your connection and try again.` });
+
+export async function resolveStudioLaunch(): Promise<LaunchTarget> {
+  try {
+    const studio = await partnerApi.professionalProfile();
+    return isProfileComplete(studio)
+      ? { kind: 'open', path: '/professional/dashboard' }
+      : { kind: (studio.onboardingStage ?? 1) > 1 ? 'resume' : 'start', path: '/professional/onboarding' };
+  } catch (error) {
+    const outcome = await classify(error);
+    if (outcome === 'none') return { kind: 'start', path: '/professional/onboarding' };
+    if (outcome === 'signedOut') return { kind: 'signedOut' };
+    return failure(error, 'studio');
+  }
+}
+
+export async function resolveTechnicianLaunch(): Promise<LaunchTarget> {
+  try {
+    const { technician } = await partnerApi.technicianProfile();
+    return isTechnicianSetupDone(technician)
+      ? { kind: 'open', path: '/technician/dashboard' }
+      : { kind: 'resume', path: '/technician/setup' };
+  } catch (error) {
+    const outcome = await classify(error);
+    if (outcome === 'none') return { kind: 'start', path: '/technician/setup' };
+    if (outcome === 'signedOut') return { kind: 'signedOut' };
+    return failure(error, 'technician profile');
+  }
+}
 
 // Remembers, for this app run, which signed-in person the home screen has already sent straight to
 // their workspace. Going back to the home screen afterwards must NOT bounce them in again, and

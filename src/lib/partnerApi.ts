@@ -601,6 +601,7 @@ export interface ProfessionalProfileRecord {
   city?: string;
   experience?: number;
   isOnboarded?: boolean;
+  isProfileComplete?: boolean;
   onboardingStage?: number;
   onboardingData?: Record<string, unknown>;
   acceptedBudgetCategories?: string[];
