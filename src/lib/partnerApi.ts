@@ -231,6 +231,15 @@ export const KYC_SUPPORT_REASONS: { value: KycSupportReason; label: string }[] =
   { value: 'other', label: 'Something else' },
 ];
 
+/** The backend refuses unapproved studios with 403 DESIGNER_NOT_APPROVED. Say so plainly instead of showing a raw error. */
+export function isNotApprovedError(error: unknown): boolean {
+  return error instanceof PartnerApiError && error.status === 403 && (error.code === 'DESIGNER_NOT_APPROVED' || /not approved|approval/i.test(error.message));
+}
+const rethrowIfNotApproved = (action: string) => (error: unknown): never => {
+  if (isNotApprovedError(error)) throw new PartnerApiError(`Your studio is still under review. Once KraftNex approves it you can ${action}.`, 403, 'DESIGNER_NOT_APPROVED');
+  throw error;
+};
+
 export class PartnerApiError extends Error {
   constructor(message: string, readonly status: number, readonly code?: string, readonly data?: unknown) {
     super(message);
@@ -546,8 +555,8 @@ export const partnerApi = {
   studioRefundReasons: () => request<{ reasons?: { id: string; label: string }[] }>('/professional/leads/refund-reasons'),
   studioRequestRefund: (projectId: string, reason: string, details: string) => request<{ success?: boolean }>(`/professional/leads/${projectId}/refund-request`, { method: 'POST', body: JSON.stringify({ reason, details }) }),
   clientProjectDetail: (projectId: string) => request<{ clientName?: string; clientPhone?: string; clientEmail?: string; exactAddress?: string }>(`/client-projects/${projectId}`),
-  submitStudioProposal: (payload: { projectId: string; priceEst: string; timeline: string; scopeText: string }) => request<{ proposal?: StudioProposalRecord }>('/proposals', { method: 'POST', body: JSON.stringify(payload) }),
-  openProfessionalChatRoom: (projectId: string) => request<{ room?: { roomId?: string } }>('/chat/room/professional', { method: 'POST', body: JSON.stringify({ projectId }) }),
+  submitStudioProposal: (payload: { projectId: string; priceEst: string; timeline: string; scopeText: string }) => request<{ proposal?: StudioProposalRecord }>('/proposals', { method: 'POST', body: JSON.stringify(payload) }).catch(rethrowIfNotApproved('send proposals')),
+  openProfessionalChatRoom: (projectId: string) => request<{ room?: { roomId?: string } }>('/chat/room/professional', { method: 'POST', body: JSON.stringify({ projectId }) }).catch(rethrowIfNotApproved('message clients')),
   createCashfreeOrder: (payload: Record<string, unknown>) => request<CashfreeOrder>('/payments/cashfree/order', { method: 'POST', body: JSON.stringify(payload) }),
   verifyCashfreeOrder: (orderId: string, buyerType: 'designer') => request<{ success: boolean; status: 'PAID' | 'PENDING' | 'FAILED' | 'USER_DROPPED' }>('/payments/cashfree/verify', { method: 'POST', body: JSON.stringify({ orderId, buyerType }) }),
   leadCreditHistory: () => request<{ success?: boolean; entries?: LeadCreditEntry[] }>('/professional/lead-credits/history'),
@@ -792,4 +801,13 @@ export interface StudioProjectDetail extends OpenClientProject {
   galleryImages?: { main?: string; others?: string[] };
   images?: string[];
   portfolioImages?: string[];
+}
+
+/** A studio that admin has not approved (yet). Uses approvalStatus too, so a missing isApproved flag cannot hide the banner. */
+export function studioApprovalState(profile: { isApproved?: boolean; approvalStatus?: string } | null | undefined): 'approved' | 'pending' | 'rejected' {
+  if (!profile) return 'approved';
+  const status = (profile.approvalStatus || '').toLowerCase();
+  if (status === 'rejected' || status === 'suspended') return 'rejected';
+  if (profile.isApproved === true || status === 'approved') return 'approved';
+  return 'pending';
 }

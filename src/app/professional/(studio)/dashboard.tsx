@@ -3,7 +3,7 @@ import { ActivityIndicator, AppState, Pressable, RefreshControl, ScrollView, Sty
 import { Text } from '../../../components/AppText';
 import { Icon } from '../../../components/Icon';
 import { router } from 'expo-router';
-import { partnerApi, StudioDashboardResponse, StudioProposalRecord } from '../../../lib/partnerApi';
+import { partnerApi, studioApprovalState, StudioDashboardResponse, StudioProposalRecord } from '../../../lib/partnerApi';
 import { c, Card, ErrorText } from '../../../components/professional/onboardingUi';
 import { RecommendedProjects } from '../../../components/studio/RecommendedProjects';
 import { useStudio } from '../../../components/studio/StudioContext';
@@ -124,10 +124,12 @@ export default function DashboardScreen() {
       </View>
       {!!availabilityError && <ErrorText>{availabilityError}</ErrorText>}
 
-      {profile.isApproved === false && (
+      {studioApprovalState(profile) !== 'approved' && (
         <View style={s.banner}>
-          <Text style={s.bannerTitle}>APPLICATION UNDER ADMIN REVIEW</Text>
-          <Text style={s.bannerCopy}>Your studio application is currently under review by KraftNex Admin. Once approved in the Admin Panel, your studio will be published on the public directory.</Text>
+          <Text style={s.bannerTitle}>{studioApprovalState(profile) === 'rejected' ? 'APPLICATION NOT APPROVED' : 'APPLICATION UNDER ADMIN REVIEW'}</Text>
+          <Text style={s.bannerCopy}>{studioApprovalState(profile) === 'rejected'
+            ? 'KraftNex could not approve your studio application. Contact support from the Help section to find out why and what to do next.'
+            : 'Your studio application is currently under review by KraftNex Admin. You can explore the app now; unlocking leads, sending proposals and chatting with clients open once it is approved.'}</Text>
         </View>
       )}
 

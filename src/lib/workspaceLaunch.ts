@@ -8,18 +8,26 @@ import { isProfileComplete } from './professionalOnboarding';
 export type LaunchTarget =
   | { kind: 'open' | 'resume' | 'start'; path: string }
   | { kind: 'signedOut' }
+  | { kind: 'blocked'; message: string }
   | { kind: 'error'; message: string };
 
 /** 'none' = the server has no such workspace for this person; 'signedOut' = nobody is signed in; null = a real failure.
  *  A signed-in account without the role also answers 401, so a live session decides which of the two it is. */
-async function classify(error: unknown): Promise<'none' | 'signedOut' | null> {
+async function classify(error: unknown, roleType: 'designer' | 'technician'): Promise<'none' | 'signedOut' | 'blocked' | null> {
   if (!(error instanceof PartnerApiError)) return null;
   if (error.status === 404) return 'none';
   if (error.status === 401 || error.status === 403) {
-    try { return (await partnerApi.session()).user ? 'none' : 'signedOut'; } catch { return null; }
+    try {
+      const { user } = await partnerApi.session();
+      if (!user) return 'signedOut';
+      // The backend hides rejected and suspended roles behind the same 401, but the session still lists their status.
+      const status = user.roles?.find(role => role.type === roleType)?.status;
+      return status === 'rejected' || status === 'suspended' ? 'blocked' : 'none';
+    } catch { return null; }
   }
   return null;
 }
+const BLOCKED_COPY = (what: string) => `Your ${what} was not approved or has been suspended by KraftNex. Contact support from the Help section to find out why and what to do next.`;
 const failure = (error: unknown, what: string): LaunchTarget => ({ kind: 'error', message: error instanceof Error && error.message ? error.message : `Could not load your ${what}. Check your connection and try again.` });
 
 export async function resolveStudioLaunch(): Promise<LaunchTarget> {
@@ -29,7 +37,8 @@ export async function resolveStudioLaunch(): Promise<LaunchTarget> {
       ? { kind: 'open', path: '/professional/dashboard' }
       : { kind: (studio.onboardingStage ?? 1) > 1 ? 'resume' : 'start', path: '/professional/onboarding' };
   } catch (error) {
-    const outcome = await classify(error);
+    const outcome = await classify(error, 'designer');
+    if (outcome === 'blocked') return { kind: 'blocked', message: BLOCKED_COPY('studio') };
     if (outcome === 'none') return { kind: 'start', path: '/professional/onboarding' };
     if (outcome === 'signedOut') return { kind: 'signedOut' };
     return failure(error, 'studio');
@@ -43,7 +52,8 @@ export async function resolveTechnicianLaunch(): Promise<LaunchTarget> {
       ? { kind: 'open', path: '/technician/dashboard' }
       : { kind: 'resume', path: '/technician/setup' };
   } catch (error) {
-    const outcome = await classify(error);
+    const outcome = await classify(error, 'technician');
+    if (outcome === 'blocked') return { kind: 'blocked', message: BLOCKED_COPY('technician profile') };
     if (outcome === 'none') return { kind: 'start', path: '/technician/setup' };
     if (outcome === 'signedOut') return { kind: 'signedOut' };
     return failure(error, 'technician profile');

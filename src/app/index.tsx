@@ -4,6 +4,7 @@ import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { PartnerBrand } from '../components/PartnerBrand';
+import { Icon } from '../components/Icon';
 import { AccountSummary } from '../components/auth/AccountSummary';
 import { authApi } from '../lib/auth';
 import { setPendingPhone } from '../lib/pendingPhone';
@@ -17,10 +18,10 @@ const partnerSite = process.env.EXPO_PUBLIC_PARTNER_SITE_URL?.trim().replace(/\/
 
 type Workspace = { type: Exclude<PartnerRoleType, 'customer'>; title: string; category: string; description: string; benefit: string; icon: string; route: string; setupRoute: string };
 const workspaces: Workspace[] = [
-  { type: 'technician', title: 'Technician', category: 'FIELD ENGINEERING', description: 'Service jobs, schedule, KYC and earnings', benefit: 'Deployment ready', icon: '⚒', route: '/technician/dashboard', setupRoute: '/become-professional?type=technician' },
-  { type: 'designer', title: 'Professional', category: 'STUDIO PRO & ATELIER', description: 'Leads, projects, proposals and clients', benefit: 'Client pipeline included', icon: '◉', route: '/professional/dashboard', setupRoute: '/become-professional?type=designer' },
-  { type: 'realtor', title: 'Realtor / Developer', category: 'PRIME REAL ESTATE', description: 'Projects, listings, media and leads', benefit: 'Portfolio verification', icon: '▦', route: '/realtor/dashboard', setupRoute: '/realtor/register' },
-  { type: 'merchant', title: 'Marketplace seller', category: 'CURATED MATERIAL SUPPLY', description: 'Products, enquiries and quotations', benefit: 'Enquiry-based B2B marketplace', icon: '▣', route: '/store', setupRoute: '/store/register' },
+  { type: 'technician', title: 'Technician', category: 'FIELD ENGINEERING', description: 'Service jobs, schedule, KYC and earnings', benefit: 'Deployment ready', icon: 'settings', route: '/technician/dashboard', setupRoute: '/become-professional?type=technician' },
+  { type: 'designer', title: 'Professional', category: 'STUDIO PRO & ATELIER', description: 'Leads, projects, proposals and clients', benefit: 'Client pipeline included', icon: 'briefcase', route: '/professional/dashboard', setupRoute: '/become-professional?type=designer' },
+  { type: 'realtor', title: 'Realtor / Developer', category: 'PRIME REAL ESTATE', description: 'Projects, listings, media and leads', benefit: 'Portfolio verification', icon: 'building', route: '/realtor/dashboard', setupRoute: '/realtor/register' },
+  { type: 'merchant', title: 'Marketplace seller', category: 'CURATED MATERIAL SUPPLY', description: 'Products, enquiries and quotations', benefit: 'Enquiry-based B2B marketplace', icon: 'tag', route: '/store', setupRoute: '/store/register' },
 ];
 
 export default function PartnerHomeScreen() {
@@ -126,9 +127,54 @@ export default function PartnerHomeScreen() {
     catch { setConfigError('Kraftnex could not open that destination. Check the configured site URL.'); }
   }
 
+  // What each workspace tile says and does, from the server's saved state (never guessed).
+  type Tone = 'green' | 'amber' | 'blue' | 'red' | 'grey';
+  type Status = { label: string; tone: Tone; action: string; ready: boolean; resume: boolean };
+  const checking: Status = { label: 'Checking…', tone: 'grey', action: 'Open', ready: false, resume: false };
+  const [launch, setLaunch] = useState<{ uid: string; designer?: Status; technician?: Status }>({ uid: '' });
+  useEffect(() => {
+    if (!user || loading) return;
+    const uid = user.id;
+    let live = true;
+    const fromLaunch = (target: LaunchTarget): Status => target.kind === 'open' ? { label: 'Active', tone: 'green', action: 'Open', ready: true, resume: false }
+      : target.kind === 'resume' ? { label: 'Setup in progress', tone: 'blue', action: 'Continue', ready: false, resume: true }
+      : target.kind === 'blocked' ? { label: 'Not approved', tone: 'red', action: 'Details', ready: false, resume: false }
+      : target.kind === 'error' ? { label: 'Could not check', tone: 'grey', action: 'Retry', ready: false, resume: false }
+      : { label: 'Not set up', tone: 'grey', action: 'Set up', ready: false, resume: false };
+    void resolveStudioLaunch().then(t => { if (live) setLaunch(prev => ({ ...(prev.uid === uid ? prev : { uid }), designer: fromLaunch(t) })); });
+    void resolveTechnicianLaunch().then(t => { if (live) setLaunch(prev => ({ ...(prev.uid === uid ? prev : { uid }), technician: fromLaunch(t) })); });
+    return () => { live = false; };
+  }, [user, loading]);
+
+  function statusOf(item: Workspace): Status {
+    if (loading) return checking;
+    if (!user) return { label: 'Sign in to start', tone: 'grey', action: 'Sign in', ready: false, resume: false };
+    if (item.type === 'designer' || item.type === 'technician') return (launch.uid === user.id ? launch[item.type] : undefined) ?? checking;
+    if (item.type === 'merchant') {
+      if (merchant?.canAccessDashboard) return { label: 'Active', tone: 'green', action: 'Open', ready: true, resume: false };
+      if (merchant?.isMerchant) return { label: 'Under review', tone: 'amber', action: 'View status', ready: false, resume: false };
+      return { label: 'Not set up', tone: 'grey', action: 'Set up', ready: false, resume: false };
+    }
+    const role = user.roles?.find(entry => entry.type === item.type);
+    if (!role) return { label: 'Not set up', tone: 'grey', action: 'Set up', ready: false, resume: false };
+    if (role.status === 'active') return { label: 'Active', tone: 'green', action: 'Open', ready: true, resume: false };
+    if (role.status === 'rejected' || role.status === 'suspended') return { label: 'Not approved', tone: 'red', action: 'Details', ready: false, resume: false };
+    return { label: 'Under review', tone: 'amber', action: 'View status', ready: false, resume: false };
+  }
+  const tones: Record<Tone, { bg: string; fg: string }> = {
+    green: { bg: '#dff5ec', fg: '#07623f' }, amber: { bg: '#fff1cf', fg: '#8a5a00' }, blue: { bg: '#e3ecff', fg: '#2650b0' },
+    red: { bg: '#ffe4e1', fg: '#a3322b' }, grey: { bg: '#eef1f0', fg: '#5d6d66' },
+  };
+  const accents: Record<string, string> = { technician: '#dff5ec', designer: '#e8e8ff', realtor: '#e5efff', merchant: '#fff2cb' };
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const ordered = [...workspaces].sort((a, b) => Number(statusOf(b).ready) - Number(statusOf(a).ready));
+  const featured = user ? ordered.find(item => statusOf(item).ready || statusOf(item).resume) : undefined;
+  const featuredStatus = featured ? statusOf(featured) : null;
+
   /** Follows a launch decision. A failure to tell is shown, never turned into a setup wizard. */
   function follow(target: LaunchTarget, signedOutPath: string) {
-    if (target.kind === 'error') { setApiError(target.message); return; }
+    if (target.kind === 'error' || target.kind === 'blocked') { setApiError(target.message); return; }
     setApiError('');
     router.push((target.kind === 'signedOut' ? signedOutPath : target.path) as never);
   }
@@ -175,46 +221,50 @@ export default function PartnerHomeScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <PartnerBrand compact />
-        {/* Website link hidden for now:
-        <Pressable onPress={() => void openConfigured(publicSite, '', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to open Kraftnex.com.')} accessibilityRole="link"><Text style={styles.siteLink}>KraftNex.com ↗</Text></Pressable> */}
         <Pressable style={user ? styles.avatar : styles.signInButton} onPress={() => { if (user) { setLoginError(''); setModalOpen(true); } else router.push('/login' as never); }} accessibilityLabel={user ? 'Open account' : 'Sign in'}><Text style={user ? styles.avatarText : styles.signInText}>{user ? initials : 'Sign in'}</Text></Pressable>
       </View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadSession(true)} tintColor="#07523e" />}>
         <View style={styles.hero}>
-          {/* Connection status banner hidden:
-          <View style={styles.banner}><Text style={styles.bannerIcon}>⌁</Text><Text style={styles.bannerText}>{loading ? 'CONNECTING TO KRAFTNEX' : apiError ? 'CONNECTION NEEDS ATTENTION' : 'WORKSPACE ACTIVATION'}</Text><View style={[styles.dot, apiError ? styles.dotError : loading ? styles.dotLoading : styles.dotOk]} /></View> */}
-          <Text style={styles.title}>{welcomeName ? `Welcome, ${welcomeName}` : 'Welcome, Partner'}</Text>
-          <Text style={styles.intro}>Set up your first workspace to start receiving jobs, leads, enquiries and orders. You can add more later from the account menu.</Text>
-          <Text style={styles.sectionTitle}>Choose Your Workspace</Text>
-          <Text style={styles.helper}>Select the type of business you want to manage on KraftNex.</Text>
+          <Text style={styles.title}>{user ? `${greeting}${welcomeName ? `, ${welcomeName}` : ''}` : 'One login for every way you work'}</Text>
+          <Text style={styles.intro}>{user ? 'Pick a workspace to manage jobs, leads, listings and orders.' : 'Sign in to open your Kraftnex workspaces, or create an account to get started.'}</Text>
         </View>
-        {workspaces.map(item => {
-          const role = user?.roles?.find(entry => entry.type === item.type);
-          const isVerifiedMerchant = item.type === 'merchant' && merchant?.isMerchant;
-          const state = loading ? 'Checking access…' : role?.status === 'active' || (item.type === 'merchant' && merchant?.canAccessDashboard) ? 'Workspace active' : role?.status === 'pending' || isVerifiedMerchant ? 'Application in progress' : user ? 'Deployment ready' : 'Sign in to get started';
-          return <View key={item.type} style={styles.card}>
-            <View style={styles.cardTop}>
-              <View style={[styles.iconBox, item.type === 'designer' && styles.iconPurple, item.type === 'realtor' && styles.iconBlue, item.type === 'merchant' && styles.iconYellow]}><Text style={styles.iconText}>{item.icon}</Text></View>
-              <View style={styles.cardHeading}><Text style={styles.cardTitle}>{item.title}</Text><Text style={styles.category}>{item.category}</Text></View>
-              <View style={[styles.radio, (role?.status === 'active' || (item.type === 'merchant' && merchant?.canAccessDashboard)) && styles.radioSelected]} />
-            </View>
-            <Text style={styles.description}>{item.description}</Text>
-            <View style={styles.cardBottom}><Text style={styles.benefit}>{state === 'Deployment ready' ? item.benefit : state}</Text><Pressable style={styles.setupButton} onPress={() => void openWorkspace(item)} disabled={loading}><Text style={styles.setupText}>{role?.status === 'active' || (item.type === 'merchant' && merchant?.canAccessDashboard) ? 'Open' : 'Set up'}  →</Text></Pressable></View>
-          </View>;
-        })}
-        {!!user && !loading && !user.roles?.some(entry => entry.type === 'designer') && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Already have a Kraftnex account?</Text>
-            <Text style={styles.description}>Add a studio workspace to this same login in a minute — no new account needed.</Text>
-            <View style={styles.cardBottom}><Text style={styles.benefit}>Interior professional</Text><Pressable style={styles.setupButton} onPress={() => router.push('/professional/become' as never)}><Text style={styles.setupText}>Add studio  →</Text></Pressable></View>
+
+        {featured && featuredStatus ? (
+          <View style={styles.featured}>
+            <Text style={styles.featuredEyebrow}>{featuredStatus.resume ? 'FINISH YOUR SETUP' : 'JUMP BACK IN'}</Text>
+            <Text style={styles.featuredTitle}>{featured.title}</Text>
+            <View style={styles.featuredChip}><Text style={styles.featuredChipText}>{featuredStatus.label}</Text></View>
+            <Pressable style={styles.featuredButton} onPress={() => void openWorkspace(featured)} accessibilityRole="button"><Text style={styles.featuredButtonText}>{featuredStatus.resume ? 'Continue setup' : 'Open dashboard'}  →</Text></Pressable>
           </View>
-        )}
-        <View style={styles.securityCard}><Text style={styles.securityIcon}>◉</Text><View style={styles.securityCopy}><Text style={styles.securityTitle}>Bespoke Multi-Tenant Architecture</Text><Text style={styles.securityText}>Your data and commercial telemetry remain encrypted and strictly isolated within your organization’s perimeter.</Text></View></View>
-        {/* Client-dashboard website card hidden for now:
-        <View style={styles.portalCard}><Text style={styles.portalEyebrow}>⌁  Looking for your client dashboard?</Text><View style={styles.portalRow}><Pressable style={styles.portalButton} onPress={() => void openConfigured(publicSite, '/client/dashboard', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to open the client dashboard.')}><Text style={styles.portalButtonText}>Open it on KraftNex.com</Text></Pressable><Pressable onPress={() => void openConfigured(publicSite, '/client/dashboard', 'Set EXPO_PUBLIC_PUBLIC_SITE_URL to switch portals.')}><Text style={styles.switchText}>SWITCH PORTAL ↗</Text></Pressable></View></View> */}
-        {!!apiError && <View style={styles.errorCard}><Text style={styles.errorTitle}>Partner connection unavailable</Text><Text style={styles.errorText}>{apiError}</Text><Pressable onPress={() => void loadSession(true)}><Text style={styles.retry}>Try again</Text></Pressable></View>}
+        ) : !user ? (
+          <View style={styles.featured}>
+            <Text style={styles.featuredTitle}>Welcome to Kraftnex Partner</Text>
+            <Text style={styles.featuredCopy}>Technicians, studios, realtors and sellers all sign in with one account.</Text>
+            <Pressable style={styles.featuredButton} onPress={() => router.push('/login' as never)} accessibilityRole="button"><Text style={styles.featuredButtonText}>Sign in  →</Text></Pressable>
+            <Pressable onPress={() => router.push('/signup' as never)}><Text style={styles.featuredLink}>Create a Kraftnex account</Text></Pressable>
+          </View>
+        ) : null}
+
+        <Text style={styles.sectionTitle}>Your workspaces</Text>
+        <View style={styles.grid}>
+          {ordered.map(item => {
+            const status = statusOf(item);
+            const tone = tones[status.tone];
+            return (
+              <Pressable key={item.type} style={styles.tile} onPress={() => void openWorkspace(item)} disabled={loading} accessibilityRole="button" accessibilityLabel={`${item.title}, ${status.label}`}>
+                <View style={[styles.iconBox, { backgroundColor: accents[item.type] }]}><Icon name={item.icon} size={22} color="#07523e" /></View>
+                <Text style={styles.tileTitle}>{item.title}</Text>
+                <Text style={styles.tileDesc}>{item.description}</Text>
+                <View style={[styles.chip, { backgroundColor: tone.bg }]}><Text style={[styles.chipText, { color: tone.fg }]}>{status.label}</Text></View>
+                <View style={styles.tileButton}><Text style={styles.tileButtonText}>{status.action}  →</Text></View>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {!!apiError && <View style={styles.errorCard}><Text style={styles.errorTitle}>Something needs attention</Text><Text style={styles.errorText}>{apiError}</Text><Pressable onPress={() => void loadSession(true)}><Text style={styles.retry}>Try again</Text></Pressable></View>}
         {!!configError && <View style={styles.configError}><Text style={styles.configErrorText}>{configError}</Text></View>}
-        <View style={styles.footer}><Text style={styles.footerText}>♧  Encrypted Gateway</Text><Text style={styles.footerText}>KRAFTNEX V2.4</Text></View>
+        {user ? <View style={styles.footer}><Pressable onPress={() => void signOut()} hitSlop={10}><Text style={styles.footerLink}>Sign out</Text></Pressable></View> : null}
       </ScrollView>
 
       <Modal visible={modalOpen} transparent animationType="fade" onRequestClose={() => setModalOpen(false)}>
@@ -238,19 +288,43 @@ export default function PartnerHomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f7f6fc' },
-  header: { height: 62, paddingHorizontal: 18, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e8ecea' },
-  signInButton: { height: 32, paddingHorizontal: 16, borderRadius: 16, backgroundColor: '#064a38', alignItems: 'center', justifyContent: 'center' },
-  signInText: { color: '#fff', fontWeight: '800', fontSize: 12.5 },
-  siteLink: { color: '#73808b', fontSize: 11, fontWeight: '600' },
-  avatar: { width: 29, height: 29, borderRadius: 16, backgroundColor: '#064a38', alignItems: 'center', justifyContent: 'center' }, avatarText: { color: '#fff', fontWeight: '800', fontSize: 12 },
-  scroll: { flex: 1 }, content: { paddingBottom: 20 },
-  hero: { backgroundColor: '#edf9f7', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 22, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
-  banner: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 5, backgroundColor: '#e3f4ee', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 5 }, bannerIcon: { color: '#17644c', fontSize: 11 }, bannerText: { color: '#426c5d', fontSize: 7, fontWeight: '800', letterSpacing: 0.6 }, dot: { width: 7, height: 7, borderRadius: 4, marginLeft: 8 }, dotOk: { backgroundColor: '#43a781' }, dotError: { backgroundColor: '#d16a63' }, dotLoading: { backgroundColor: '#d3a64a' },
-  title: { fontSize: 28, lineHeight: 34, color: '#082f29', fontWeight: '900', letterSpacing: -0.55 }, intro: { marginTop: 8, color: '#65766f', fontSize: 13, lineHeight: 19 }, sectionTitle: { color: '#122f29', fontSize: 19, fontWeight: '800', marginTop: 20 }, helper: { color: '#89948f', fontSize: 11, marginTop: 4 },
-  card: { marginHorizontal: 16, marginTop: 12, backgroundColor: '#fff', borderRadius: 17, borderWidth: 1, borderColor: '#edf0f1', paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12, minHeight: 120, shadowColor: '#123c30', shadowOpacity: 0.055, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, cardTop: { flexDirection: 'row', alignItems: 'center' }, iconBox: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#dff5ec', alignItems: 'center', justifyContent: 'center' }, iconPurple: { backgroundColor: '#e8e8ff' }, iconBlue: { backgroundColor: '#e5efff' }, iconYellow: { backgroundColor: '#fff2cb' }, iconText: { color: '#07523e', fontSize: 15, fontWeight: '800' }, cardHeading: { marginLeft: 8, flex: 1 }, cardTitle: { color: '#17352e', fontSize: 14, fontWeight: '800' }, category: { color: '#667a72', fontSize: 8, fontWeight: '700', marginTop: 2, letterSpacing: 0.3 }, radio: { width: 8, height: 8, borderRadius: 5, borderWidth: 1, borderColor: '#77908a', marginRight: 1 }, radioSelected: { backgroundColor: '#087754', borderColor: '#087754' }, description: { color: '#61746e', fontSize: 11, marginTop: 11 }, cardBottom: { marginTop: 7, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, benefit: { color: '#70817b', fontSize: 9, flex: 1 }, setupButton: { backgroundColor: '#f0f6f3', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 11 }, setupText: { color: '#164338', fontSize: 10, fontWeight: '800' },
-  securityCard: { marginHorizontal: 16, marginTop: 12, borderRadius: 16, borderWidth: 1, borderColor: '#edf0f1', backgroundColor: '#f8fafb', padding: 14, flexDirection: 'row', alignItems: 'center' }, securityIcon: { width: 23, height: 23, textAlign: 'center', textAlignVertical: 'center', backgroundColor: '#fff', borderRadius: 12, color: '#477466', marginRight: 7, overflow: 'hidden' }, securityCopy: { flex: 1 }, securityTitle: { color: '#344a44', fontSize: 9, fontWeight: '800' }, securityText: { color: '#788680', fontSize: 7, lineHeight: 10, marginTop: 2 },
-  portalCard: { marginHorizontal: 16, marginTop: 14, borderRadius: 15, backgroundColor: '#f0f1ff', padding: 13 }, portalEyebrow: { color: '#677582', fontSize: 8, marginBottom: 6 }, portalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, portalButton: { borderRadius: 7, backgroundColor: '#fff', paddingVertical: 7, paddingHorizontal: 9 }, portalButtonText: { color: '#24443c', fontSize: 8, fontWeight: '700' }, switchText: { color: '#74818b', fontSize: 7, fontWeight: '800' },
-  errorCard: { backgroundColor: '#fff0ef', margin: 12, padding: 12, borderRadius: 11 }, errorTitle: { color: '#a7403c', fontSize: 12, fontWeight: '800' }, errorText: { color: '#a7403c', fontSize: 10, marginTop: 5 }, retry: { color: '#07523e', fontSize: 12, fontWeight: '800', marginTop: 7 }, configError: { marginHorizontal: 12, marginTop: 8, backgroundColor: '#fff0ef', padding: 8, borderRadius: 8 }, configErrorText: { color: '#aa4a44', fontSize: 9 }, footer: { marginHorizontal: 14, marginTop: 22, flexDirection: 'row', justifyContent: 'space-between' }, footerText: { color: '#71817a', fontSize: 7 },
+  header: { height: 64, paddingHorizontal: 18, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e8ecea' },
+  signInButton: { height: 38, paddingHorizontal: 20, borderRadius: 19, backgroundColor: '#064a38', alignItems: 'center', justifyContent: 'center' },
+  signInText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#064a38', alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  scroll: { flex: 1 },
+  content: { paddingBottom: 28 },
+  hero: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 6 },
+  title: { fontSize: 27, lineHeight: 34, color: '#082f29', fontWeight: '900', letterSpacing: -0.4 },
+  intro: { marginTop: 8, color: '#5c6e67', fontSize: 15, lineHeight: 22 },
+  featured: { marginHorizontal: 16, marginTop: 18, backgroundColor: '#064a38', borderRadius: 22, padding: 20, shadowColor: '#064a38', shadowOpacity: 0.22, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5 },
+  featuredEyebrow: { color: '#9fd8c3', fontSize: 12, fontWeight: '800', letterSpacing: 0.9 },
+  featuredTitle: { color: '#fff', fontSize: 22, lineHeight: 28, fontWeight: '900', marginTop: 6 },
+  featuredCopy: { color: '#cfe8de', fontSize: 14.5, lineHeight: 21, marginTop: 6 },
+  featuredChip: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 5, marginTop: 10 },
+  featuredChipText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  featuredButton: { backgroundColor: '#fff', borderRadius: 14, minHeight: 50, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  featuredButtonText: { color: '#064a38', fontSize: 15.5, fontWeight: '800' },
+  featuredLink: { color: '#cfe8de', fontSize: 14, fontWeight: '700', textAlign: 'center', marginTop: 14 },
+  sectionTitle: { color: '#122f29', fontSize: 19, fontWeight: '800', marginTop: 26, marginHorizontal: 20 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, marginTop: 12 },
+  tile: { flexGrow: 1, flexBasis: '46%', backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#edf0f1', padding: 14, shadowColor: '#123c30', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  iconBox: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  tileTitle: { color: '#17352e', fontSize: 16.5, fontWeight: '800', marginTop: 12 },
+  tileDesc: { color: '#5c6e67', fontSize: 13, lineHeight: 18, marginTop: 4, minHeight: 36 },
+  chip: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 },
+  chipText: { fontSize: 12.5, fontWeight: '800' },
+  tileButton: { backgroundColor: '#f0f6f3', borderRadius: 12, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
+  tileButtonText: { color: '#164338', fontSize: 14, fontWeight: '800' },
+  errorCard: { backgroundColor: '#fff0ef', marginHorizontal: 16, marginTop: 16, padding: 14, borderRadius: 14 },
+  errorTitle: { color: '#a7403c', fontSize: 15, fontWeight: '800' },
+  errorText: { color: '#a7403c', fontSize: 13.5, lineHeight: 19, marginTop: 5 },
+  retry: { color: '#07523e', fontSize: 14.5, fontWeight: '800', marginTop: 9 },
+  configError: { marginHorizontal: 16, marginTop: 10, backgroundColor: '#fff0ef', padding: 12, borderRadius: 10 },
+  configErrorText: { color: '#aa4a44', fontSize: 13 },
+  footer: { marginTop: 26, alignItems: 'center' },
+  footerLink: { color: '#5c6e67', fontSize: 14.5, fontWeight: '700', paddingVertical: 8 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(8,35,29,0.4)', justifyContent: 'center', padding: 22 }, modalCard: { backgroundColor: '#fff', borderRadius: 18, padding: 18 }, modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, close: { fontSize: 26, color: '#64746c' }, modalTitle: { color: '#123b30', fontSize: 20, fontWeight: '900', marginTop: 18 }, modalCopy: { color: '#687a73', fontSize: 12, lineHeight: 18, marginTop: 5 }, input: { borderWidth: 1, borderColor: '#dfe7e3', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, marginTop: 12, color: '#183c31', fontSize: 14 }, primaryButton: { backgroundColor: '#064a38', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 14 }, primaryText: { color: '#fff', fontSize: 13, fontWeight: '800' }, disabled: { opacity: 0.55 }, loginError: { color: '#ad4941', fontSize: 11, marginTop: 9 }, register: { color: '#17634c', fontSize: 11, fontWeight: '700', textAlign: 'center', marginTop: 14 },
   splash: { ...StyleSheet.absoluteFill, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', zIndex: 10 }, splashCaption: { color: '#55756a', fontSize: 8, fontWeight: '800', letterSpacing: 1.7, marginTop: 13 },
 });
