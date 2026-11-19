@@ -1,4 +1,5 @@
 import {
+  FILE_TOO_LARGE,
   partnerApi,
   PartnerApiError,
   ProfessionalGstDetails,
@@ -327,6 +328,10 @@ export function stageProblems(stage: number, data: OnboardingData): string[] {
   }
   if (stage === 2) return data.primaryExpertise.length ? [] : ['pick at least one area of expertise'];
   if (stage === 3) return [!data.services.length && 'select at least one service', !data.tier && 'choose your tier'].filter(Boolean) as string[];
+  if (stage === 7) {
+    // Required documents (PAN always, GST and business registration unless an individual / GST is live-verified) must be uploaded.
+    return documentTypes(data).filter(doc => doc.required && !doc.autoVerified && !data.verifiedDocs?.[doc.id]).map(doc => `upload your ${doc.name}`);
+  }
   return [];
 }
 
@@ -382,4 +387,16 @@ export function normalizeUrl(value: string): string | null {
   } catch {
     return null;
   }
+}
+
+/** Direct upload of one verification document. Unlike uploadStudioFile this keeps the image id, which the profile
+ *  documents endpoint needs to attach the file to the studio. There is no server-side fallback because it has no image id. */
+export async function uploadStudioDocument(file: PickedFile): Promise<{ url: string; imageId: string }> {
+  if (file.mimeType !== 'application/pdf' && !IMAGE_TYPES.includes(file.mimeType)) throw new Error('Only JPG, PNG, WEBP images and PDF files are supported.');
+  const init = await partnerApi.initImageUpload({ entityType: 'designerPortfolioDocument', fileName: file.name, fileType: file.mimeType, fileSize: file.size ?? undefined });
+  const blob = await (await fetch(file.uri)).blob();
+  const response = await fetch(init.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.mimeType }, body: blob });
+  if (!response.ok) throw new Error(response.status === 413 ? FILE_TOO_LARGE : `Upload failed (status ${response.status}). Please try again.`);
+  const done = await partnerApi.completeImageUpload(init.imageId);
+  return { url: done.image.url, imageId: init.imageId };
 }

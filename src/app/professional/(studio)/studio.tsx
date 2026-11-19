@@ -36,6 +36,15 @@ export default function StudioHubScreen() {
         </View>
       </View>
 
+      <Pressable style={[s.card, s.row]} onPress={() => router.navigate('/professional/profile' as never)} accessibilityRole="button">
+        <View style={s.glyphBox}><Icon name="edit" size={19} color={c.green} /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.label}>Edit profile</Text>
+          <Text style={s.hint}>Update your studio details and portfolio</Text>
+        </View>
+        <Text style={s.chevron}>›</Text>
+      </Pressable>
+
       {STUDIO_SECTIONS.map(group => (
         <View key={group.group}>
           <Text style={s.group}>{group.group.toUpperCase()}</Text>

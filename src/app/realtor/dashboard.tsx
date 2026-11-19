@@ -163,7 +163,8 @@ export default function RealtorDashboardScreen() {
     { key: 'leads', label: 'Buyer leads', icon: 'users', onPress: () => goTab('leads') },
     { key: 'notifications', label: 'Notifications', icon: 'bell', onPress: () => goTab('notifications'), badge: unread },
     ...(isBuilder ? [{ key: 'developer', label: 'Developer profile', icon: 'briefcase', onPress: () => router.push('/realtor/developer') }] : []),
-    { key: 'kyc', label: 'Verification & profile', icon: 'shield', onPress: () => router.push('/realtor/onboarding') },
+    { key: 'edit', label: 'Edit profile', icon: 'edit', onPress: () => router.push('/realtor/profile' as never) },
+    { key: 'kyc', label: 'Verification (KYC)', icon: 'shield', onPress: () => router.push('/realtor/onboarding') },
     { key: 'switch', label: 'Switch workspace', icon: 'layers', onPress: () => router.replace('/') },
   ];
   const verification = !profile ? null : profile.approvalStatus === 'rejected'

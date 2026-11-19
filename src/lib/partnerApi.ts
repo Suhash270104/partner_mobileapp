@@ -231,6 +231,9 @@ export const KYC_SUPPORT_REASONS: { value: KycSupportReason; label: string }[] =
   { value: 'other', label: 'Something else' },
 ];
 
+/** Shown whenever the server (or the proxy in front of it) refuses a file for being too large: HTTP 413. */
+export const FILE_TOO_LARGE = 'This file is too large to upload. Please choose a smaller image or reduce its size (for example under 2 MB) and try again.';
+
 /** The backend refuses unapproved studios with 403 DESIGNER_NOT_APPROVED. Say so plainly instead of showing a raw error. */
 export function isNotApprovedError(error: unknown): boolean {
   return error instanceof PartnerApiError && error.status === 403 && (error.code === 'DESIGNER_NOT_APPROVED' || /not approved|approval/i.test(error.message));
@@ -303,7 +306,7 @@ async function uploadFormData<T>(path: string, formData: FormData, skipRefresh: 
       }
       if (xhr.status < 200 || xhr.status >= 300) {
         reject(new PartnerApiError(
-          typeof body.message === 'string' ? body.message : `Kraftnex request failed (${xhr.status}).`,
+          xhr.status === 413 ? FILE_TOO_LARGE : typeof body.message === 'string' ? body.message : `Kraftnex request failed (${xhr.status}).`,
           xhr.status,
           typeof body.code === 'string' ? body.code : undefined,
         ));
@@ -359,7 +362,7 @@ async function request<T>(path: string, init: RequestInit = {}, skipRefresh = fa
   }
 
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new PartnerApiError(body?.message || `Kraftnex request failed (${response.status}).`, response.status, body?.code, body?.data ?? body);
+  if (!response.ok) throw new PartnerApiError(response.status === 413 ? FILE_TOO_LARGE : body?.message || `Kraftnex request failed (${response.status}).`, response.status, body?.code, body?.data ?? body);
   await captureTokens(body);
   return body as T;
 }

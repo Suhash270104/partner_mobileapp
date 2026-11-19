@@ -2,12 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/AppText';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { partnerApi } from '../../../lib/partnerApi';
 import {
   AVAILABLE_CITIES, BUDGET_OPTIONS, COMM_OPTIONS, DIFFERENTIATOR_OPTIONS, ENGAGEMENT_OPTIONS, establishedYears, EXPERTISE_OPTIONS,
   generatedFileName, INDUSTRY_OPTIONS, INVOLVEMENT_OPTIONS, normalizeMime, OPERATING_CITIES, OPERATION_TYPES, PROJECT_CAPACITY_OPTIONS,
   PROPERTY_OPTIONS, ROLES, SERVICE_OPTIONS, SIZE_OPTIONS, SPECIALIZATION_OPTIONS, SUPPORT_OPTIONS, TEAM_FIELDS, TIER_OPTIONS,
-  TIMELINE_OPTIONS, uploadStudioFile, WORK_MODELS, WORK_MODES,
+  TIMELINE_OPTIONS, uploadStudioDocument, uploadStudioFile, WORK_MODELS, WORK_MODES,
 } from '../../../lib/professionalOnboarding';
 import { c, ErrorText, Field } from '../../../components/professional/onboardingUi';
 import { EditableRow } from '../../../components/studio/EditableRow';
@@ -30,6 +31,8 @@ export default function ProfileScreen() {
   const [data, setData] = useState<Doc>(() => ({ ...((profile.onboardingData || {}) as Doc), ...(profile as unknown as Doc) }));
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [docBusy, setDocBusy] = useState('');
+  const [docError, setDocError] = useState('');
 
   const get = <T,>(key: string) => data[key] as T | undefined;
   const studioName = (get<string>('businessName') || get<string>('companyName') || contextName || 'Professional Studio');
@@ -52,8 +55,34 @@ export default function ProfileScreen() {
     <EditableRow key={field + label} label={label} type={type} value={extra.value !== undefined ? extra.value : data[field]} options={extra.options} optionLabels={extra.optionLabels} placeholder={extra.placeholder} onSave={value => save(extra.saveAs || field, value)} />
   );
 
+  // Adds or replaces one verification document. PAN, GST and business registration, once uploaded, are not replaceable here.
+  async function uploadDocument(docId: string) {
+    const photoOnly = docId === 'officePhotos' || docId === 'teamPhotos';
+    let file: { uri: string; name: string; mimeType: string; size?: number | null } | null = null;
+    if (photoOnly) {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      const name = asset.fileName || generatedFileName(docId);
+      file = { uri: asset.uri, name, mimeType: normalizeMime(asset.mimeType, name), size: asset.fileSize };
+    } else {
+      const result = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/png', 'image/jpeg'], multiple: false, copyToCacheDirectory: true });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      file = { uri: asset.uri, name: asset.name, mimeType: normalizeMime(asset.mimeType, asset.name), size: asset.size };
+    }
+    setDocBusy(docId); setDocError('');
+    try {
+      const uploaded = await uploadStudioDocument(file);
+      const response = await partnerApi.call<{ documents?: Record<string, unknown> }>('/partner/profile/documents', 'POST', { documentType: docId, imageId: uploaded.imageId, fileName: file.name });
+      setData(previous => ({ ...previous, verifiedDocs: response.documents ?? { ...verified, [docId]: { fileName: file.name, url: uploaded.url } } }));
+    } catch (e) {
+      setDocError(e instanceof Error ? e.message : 'Could not upload the document. Please try again.');
+    } finally { setDocBusy(''); }
+  }
+
   async function addImages() {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, quality: 0.85 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, quality: 0.7 });
     if (result.canceled) return;
     setUploading(true);
     setError('');
@@ -61,7 +90,8 @@ export default function ProfileScreen() {
       const urls: string[] = [];
       for (const asset of result.assets) {
         const name = asset.fileName || generatedFileName('portfolio');
-        urls.push((await partnerApi.uploadMedia({ uri: asset.uri, name, mimeType: normalizeMime(asset.mimeType, name) }, 'portfolios')).publicUrl);
+        // Direct-to-storage upload, as onboarding does. The old multipart route goes through the API proxy, which rejects large phone photos with 413.
+        urls.push(await uploadStudioFile({ uri: asset.uri, name, mimeType: normalizeMime(asset.mimeType, name), size: asset.fileSize }, 'designerPortfolio'));
       }
       await save('portfolioImages', [...images, ...urls]);
     } catch (e) {
@@ -178,17 +208,23 @@ export default function ProfileScreen() {
 
       <View style={s.card}>
         <Text style={s.cardTitle}>Verification</Text>
-        <Text style={s.hint}>Document status only — managed separately from admin-reviewed verification, not editable here.</Text>
-        <View style={s.docGrid}>
-          {VERIFICATION_DOCS.map(doc => {
-            const uploaded = Boolean(verified[doc.id]);
-            return (
-              <View key={doc.id} style={[s.doc, uploaded && s.docOn]}>
-                <Text style={[s.docText, uploaded && { color: c.greenText }]}>{uploaded ? '✓' : '○'} {doc.name}{doc.required && !uploaded ? ' *' : ''}</Text>
-              </View>
-            );
-          })}
-        </View>
+        <Text style={s.hint}>Upload or replace your certificates here. PAN, GST and business registration can&apos;t be replaced once uploaded.</Text>
+        {VERIFICATION_DOCS.map(doc => {
+          const uploaded = Boolean(verified[doc.id]);
+          const locked = uploaded && ['gst', 'pan', 'registration'].includes(doc.id);
+          const busy = docBusy === doc.id;
+          return (
+            <View key={doc.id} style={[s.docRow, uploaded && s.docOn]}>
+              <Text style={[s.docText, { flex: 1 }, uploaded && { color: c.greenText }]}>{uploaded ? '✓' : '○'} {doc.name}{doc.required && !uploaded ? ' *' : ''}</Text>
+              {locked ? <Text style={s.docLocked}>Verified</Text> : (
+                <Pressable style={[s.docButton, !!docBusy && { opacity: 0.5 }]} disabled={!!docBusy} onPress={() => void uploadDocument(doc.id)} accessibilityRole="button" accessibilityLabel={`${uploaded ? 'Replace' : 'Upload'} ${doc.name}`}>
+                  {busy ? <ActivityIndicator color={c.green} /> : <Text style={s.docButtonText}>{uploaded ? 'Replace' : 'Upload'}</Text>}
+                </Pressable>
+              )}
+            </View>
+          );
+        })}
+        {!!docError && <ErrorText>{docError}</ErrorText>}
       </View>
 
       <SubmissionsPanel />
@@ -392,6 +428,10 @@ const s = StyleSheet.create({
   label: { color: c.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6 },
   value: { color: c.ink, fontSize: 13.5, fontWeight: '700', marginTop: 2, lineHeight: 20 },
   docGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
+  docRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: c.line, marginTop: 8 },
+  docButton: { minHeight: 40, minWidth: 84, paddingHorizontal: 14, borderRadius: 12, backgroundColor: c.greenSoft, alignItems: 'center', justifyContent: 'center' },
+  docButtonText: { color: c.green, fontSize: 13.5, fontWeight: '800' },
+  docLocked: { color: c.greenText, fontSize: 13, fontWeight: '800' },
   doc: { width: '48.5%', borderRadius: 11, borderWidth: 1, borderColor: c.line, backgroundColor: '#f6f8f7', padding: 10 },
   docOn: { backgroundColor: c.greenSoft, borderColor: '#bfe0cf' },
   docText: { color: c.muted, fontSize: 11.5, fontWeight: '700' },

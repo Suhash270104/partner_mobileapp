@@ -42,6 +42,7 @@ export default function MoreScreen() {
       {can('sales') ? <NavCard icon="barChart" tone="blue" title="Analytics & reports" detail="Sales, order volume and top products" onPress={() => router.push('/store/analytics' as never)} /> : null}
       {can('sales') ? <NavCard icon="fileText" tone="violet" title="Enquiry form" detail="Questions buyers answer when they enquire" onPress={() => router.push('/store/questions' as never)} /> : null}
       {showOrders ? <NavCard icon="clipboard" tone="amber" title="Orders & fulfilment" detail="Earlier orders and returns" onPress={() => router.push('/store/orders' as never)} /> : null}
+      <NavCard icon="edit" tone="green" title="Edit profile" detail={can('settingsEdit') ? 'Update your store details' : 'View your store details'} onPress={() => router.push('/store/settings' as never)} />
       <NavCard icon="settings" tone="green" title="Store settings" detail={can('settingsEdit') ? 'Profile, hours, alerts and payout' : 'View your store details'} onPress={() => router.push('/store/settings' as never)} />
       {can('staff') ? <NavCard icon="users" tone="blue" title="Team & roles" detail="Invite staff and manage access" onPress={() => router.push('/store/staff' as never)} /> : null}
       {/* Signed-in devices is switched off for now. Re-enable by uncommenting:
