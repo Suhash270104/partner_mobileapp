@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { partnerApi, studioApprovalState, StudioDashboardResponse, StudioProposalRecord } from '../../../lib/partnerApi';
 import { c, Card, ErrorText } from '../../../components/professional/onboardingUi';
 import { RecommendedProjects } from '../../../components/studio/RecommendedProjects';
+import { openProposalProject } from '../../../lib/proposalProject';
 import { useStudio } from '../../../components/studio/StudioContext';
 
 type ProposalFilter = 'all' | 'awarded' | 'shortlisted' | 'pending';
@@ -193,7 +194,7 @@ export default function DashboardScreen() {
                 {!!item.scopeText && item.scopeText.length > 5 && <Text style={s.scope} numberOfLines={2}>&ldquo;{item.scopeText}&rdquo;</Text>}
                 <View style={s.proposalActions}>
                   <Pressable style={s.actionGhost} onPress={() => go('/professional/messages')}><Text style={s.actionGhostText}>Chat</Text></Pressable>
-                  <Pressable style={s.actionSolid} onPress={() => go('/professional/proposals')}><Text style={s.actionSolidText}>View Details →</Text></Pressable>
+                  <Pressable style={s.actionSolid} onPress={() => { if (!openProposalProject(item)) go('/professional/proposals'); }}><Text style={s.actionSolidText}>View Details →</Text></Pressable>
                 </View>
               </View>
             );

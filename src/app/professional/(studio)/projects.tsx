@@ -132,8 +132,10 @@ export default function ProjectsScreen() {
         {shown.map(row => (
           <Pressable key={row.id} style={s.card} onPress={() => router.navigate({ pathname: '/professional/project-details', params: { id: row.id } } as never)}>
             {!!row.img && <Image source={{ uri: row.img }} style={s.image} />}
-            <View style={s.badgeWrap}><Text style={[s.badge, row.status === 'Completed' ? s.badgeDone : row.status === 'Draft' ? s.badgeDraft : s.badgeLive]}>{row.status}</Text></View>
+            {/* On a photo the badge floats over it; without one it sits above the title, never on top of it. */}
+            {!!row.img && <View style={s.badgeWrap}><Text style={[s.badge, row.status === 'Completed' ? s.badgeDone : row.status === 'Draft' ? s.badgeDraft : s.badgeLive]}>{row.status}</Text></View>}
             <View style={s.cardBody}>
+              {!row.img && <View style={s.badgeInline}><Text style={[s.badge, row.status === 'Completed' ? s.badgeDone : row.status === 'Draft' ? s.badgeDraft : s.badgeLive]}>{row.status}</Text></View>}
               <Text style={s.cardTitle} numberOfLines={2}>{row.title}</Text>
               {!!row.client && <Text style={s.meta}>Client: {row.client}</Text>}
               {!!row.location && <Text style={s.meta} numberOfLines={1}>{row.location}</Text>}
@@ -313,6 +315,7 @@ const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: c.line, marginBottom: 14, overflow: 'hidden' },
   image: { width: '100%', height: 170, backgroundColor: '#eef1ef' },
   badgeWrap: { position: 'absolute', top: 10, left: 10 },
+  badgeInline: { alignSelf: 'flex-start', marginBottom: 2 },
   badge: { overflow: 'hidden', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, fontSize: 10.5, fontWeight: '800', color: '#fff' },
   badgeLive: { backgroundColor: '#c0562c' },
   badgeDone: { backgroundColor: c.green },

@@ -2,17 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState, RefreshControl, ScrollView, StyleSheet, View, Pressable } from 'react-native';
 import { Text, TextInput } from '../../../components/AppText';
 import { partnerApi } from '../../../lib/partnerApi';
+import { openProposalProject, proposalProjectId } from '../../../lib/proposalProject';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
 
 interface Proposal {
   id: string;
+  projectId?: { _id?: string; id?: string } | string | null;
   status?: string;
   priceEst?: string;
   timeline?: string;
   scopeText?: string;
   matchScore?: number | null;
   createdAt?: string;
-  project?: { title?: string; location?: string; budgetRange?: string };
+  project?: { _id?: string; id?: string; title?: string; location?: string; budgetRange?: string };
   customer?: { name?: string };
 }
 
@@ -103,7 +105,7 @@ export default function ProposalsScreen() {
             const project = p.project || {};
             const initials = (project.title || p.customer?.name || 'PR').trim().slice(0, 2).toUpperCase();
             return (
-              <View key={p.id} style={s.card}>
+              <Pressable key={p.id} style={s.card} onPress={() => openProposalProject(p)} accessibilityRole="button" accessibilityLabel={`Open project ${project.title || ''}`}>
                 <View style={s.top}>
                   <View style={s.avatar}><Text style={s.avatarText}>{initials}</Text></View>
                   <View style={{ flex: 1 }}>
@@ -122,7 +124,8 @@ export default function ProposalsScreen() {
                 </View>
                 {!!project.budgetRange && project.budgetRange !== p.priceEst && <Text style={s.meta}>Client budget: {project.budgetRange}</Text>}
                 {!!p.scopeText && <Text style={s.scope} numberOfLines={3}>{p.scopeText}</Text>}
-              </View>
+                {!!proposalProjectId(p) && <Text style={s.open}>View project details →</Text>}
+              </Pressable>
             );
           })}
         </>
@@ -158,4 +161,5 @@ const s = StyleSheet.create({
   moneyLabel: { color: c.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6 },
   moneyValue: { color: c.ink, fontSize: 12.5, fontWeight: '800', marginTop: 2 },
   scope: { color: c.body, fontSize: 12.5, lineHeight: 18, fontStyle: 'italic' },
+  open: { color: c.green, fontSize: 12.5, fontWeight: '800' },
 });

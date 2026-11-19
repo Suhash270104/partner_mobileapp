@@ -671,8 +671,8 @@ export interface StudioProposalRecord {
   city?: string;
   customerId?: { name?: string };
   customer?: { name?: string };
-  projectId?: { _id?: string; title?: string; clientName?: string; location?: string; city?: string } | string;
-  project?: { title?: string; location?: string; city?: string; budgetRange?: string; timeline?: string };
+  projectId?: { _id?: string; id?: string; title?: string; clientName?: string; location?: string; city?: string } | string;
+  project?: { _id?: string; id?: string; title?: string; location?: string; city?: string; budgetRange?: string; timeline?: string };
 }
 
 export interface StudioDashboardResponse {

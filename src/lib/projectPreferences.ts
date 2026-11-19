@@ -109,6 +109,24 @@ export async function loadStoredPreferences(designerId: string): Promise<Project
   }
 }
 
+const skippedKey = (designerId: string) => `kraftnex_project_prefs_skipped_${designerId}`;
+
+// Whether this studio already chose "Skip for now" in the preferences wizard, so it is not asked again.
+export async function wasPreferencesSkipped(designerId: string): Promise<boolean> {
+  if (!designerId) return false;
+  try { return (await AsyncStorage.getItem(skippedKey(designerId))) === '1'; } catch { return false; }
+}
+
+export async function rememberPreferencesSkipped(designerId: string) {
+  if (!designerId) return;
+  try { await AsyncStorage.setItem(skippedKey(designerId), '1'); } catch { /* storage unavailable: asked again next time */ }
+}
+
+// True when a studio has told us something the matching can use (a budget range, a city or a project type).
+export function hasPreferenceAnswers(prefs: ProjectPreferences): boolean {
+  return prefs.budgetTiers.length > 0 || prefs.cities.length > 0 || prefs.projectTypes.length > 0 || prefs.radius === 'Anywhere';
+}
+
 async function storePreferences(designerId: string, prefs: ProjectPreferences) {
   try { await AsyncStorage.setItem(storageKey(designerId), JSON.stringify(prefs)); } catch { /* device storage unavailable: the profile copy still saved */ }
 }
