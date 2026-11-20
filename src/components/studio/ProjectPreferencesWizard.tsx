@@ -139,8 +139,22 @@ export function ProjectPreferencesWizard({ visible, designerId, initial, profile
               {tierLabels.length > 0 && <KaiCard title="KAI INSIGHT" message={`You'll be matched with client projects in the ${tierLabels.join(' and ')} range${tierLabels.length > 1 ? 's' : ''}.`} />}
 
               <Text style={[s.q, { marginTop: 8 }]}>Do you have a minimum project value in mind?</Text>
-              <View style={s.wrap}>
-                {MIN_PROJECT_VALUES.map(option => <Chip key={option.value || 'none'} label={option.label} selected={prefs.minProjectValue === option.value} onPress={() => set('minProjectValue', option.value)} />)}
+              <View style={s.radioGroup}>
+                {MIN_PROJECT_VALUES.map(option => {
+                  const selected = prefs.minProjectValue === option.value;
+                  return (
+                    <Pressable
+                      key={option.value || 'none'}
+                      style={[s.radioOption, selected && s.radioOptionOn]}
+                      onPress={() => set('minProjectValue', option.value)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                    >
+                      <Text style={[s.radioLabel, selected && s.radioLabelOn]}>{option.label}</Text>
+                      <Mark selected={selected} />
+                    </Pressable>
+                  );
+                })}
               </View>
               <Text style={s.hint}>Optional.</Text>
 
@@ -272,6 +286,11 @@ const s = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
   half: { width: '48.5%' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  radioGroup: { gap: 8 },
+  radioOption: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: c.line, paddingHorizontal: 14, paddingVertical: 10 },
+  radioOptionOn: { borderColor: c.green, backgroundColor: c.greenSoft },
+  radioLabel: { color: c.body, fontSize: 14, fontWeight: '700' },
+  radioLabelOn: { color: c.greenText },
   tier: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1.5, borderColor: c.line, padding: 14 },
   tierOn: { borderColor: c.green, backgroundColor: c.greenSoft },
   tierName: { color: c.ink, fontSize: 16, fontWeight: '800' },
