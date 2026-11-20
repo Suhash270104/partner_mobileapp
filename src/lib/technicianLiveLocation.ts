@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { AppState, type NativeEventSubscription } from 'react-native';
 import * as Location from 'expo-location';
 import { partnerApi } from './partnerApi';
+import { startBackgroundLocation, stopBackgroundLocation } from './technicianBackgroundLocation';
 
 // Shares the technician's position while they're online so dispatch measures from where they
 // actually are (backend only trusts a fix for 10 minutes). Nothing runs while offline.
@@ -27,6 +29,7 @@ export function useLiveLocationSharing(online: boolean): LiveLocationState {
     let last: { lat: number; lng: number; at: number } | null = null;
     let subscription: Location.LocationSubscription | undefined;
     let keepAlive: ReturnType<typeof setInterval> | undefined;
+    let appState: NativeEventSubscription | undefined;
 
     const send = (position: Location.LocationObject) => {
       const here = { lat: position.coords.latitude, lng: position.coords.longitude };
@@ -42,11 +45,16 @@ export function useLiveLocationSharing(online: boolean): LiveLocationState {
         const permission = await Location.requestForegroundPermissionsAsync();
         if (!active) return;
         if (!permission.granted) { setState('denied'); return; }
+        // Best effort: keeps sharing while the app is in the background. If the technician declines
+        // "Allow all the time" (or this is Expo Go), sharing simply works while the app is open.
+        void startBackgroundLocation();
         subscription = await Location.watchPositionAsync({ accuracy: Location.Accuracy.High, timeInterval: MIN_INTERVAL_MS, distanceInterval: MIN_MOVE_M }, send);
         if (!active) { subscription.remove(); return; }
-        keepAlive = setInterval(() => {
-          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).then(send).catch(() => {});
-        }, KEEPALIVE_MS);
+        const refresh = () => { Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).then(send).catch(() => {}); };
+        keepAlive = setInterval(refresh, KEEPALIVE_MS);
+        // Android pauses the app in the background, so the last fix goes stale (dispatch only
+        // trusts one for 10 minutes). Send a fresh one the moment the app is opened again.
+        appState = AppState.addEventListener('change', (next) => { if (next === 'active') refresh(); });
       } catch {
         if (active) setState('unsupported');
       }
@@ -55,6 +63,8 @@ export function useLiveLocationSharing(online: boolean): LiveLocationState {
     return () => {
       active = false;
       subscription?.remove();
+      appState?.remove();
+      void stopBackgroundLocation();
       if (keepAlive) clearInterval(keepAlive);
     };
   }, [online]);

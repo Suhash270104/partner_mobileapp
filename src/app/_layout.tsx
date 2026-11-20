@@ -6,6 +6,8 @@ import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import type * as NotificationsTypes from 'expo-notifications';
 import { isExpoGo } from '../lib/runtime';
+// Registers the background location task as soon as the app loads (Android can start it headless).
+import '../lib/technicianBackgroundLocation';
 import { fontAssets } from '../theme/typography';
 
 // Keep the splash up until the app fonts are ready so no screen flashes in the system font.

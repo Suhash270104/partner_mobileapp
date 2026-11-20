@@ -64,7 +64,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow Kraftnex Partner to set your technician dispatch base."
+          "locationWhenInUsePermission": "Allow Kraftnex Partner to set your technician dispatch base.",
+          "locationAlwaysAndWhenInUsePermission": "Allow Kraftnex Partner to share your location while you are online so nearby jobs can reach you, even when the app is in the background.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true
         }
       ],
       [
