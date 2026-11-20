@@ -1,23 +1,24 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PartnerBrand } from '../PartnerBrand';
-import { Avatar, Icon, Text, palette } from '../ui';
+import { Avatar, Icon, palette } from '../ui';
 
-/** Top bar of the seller workspace: brand, store name with role, quick "add product", and the menu avatar. */
-export function StoreHeader({ storeName, roleLabel, onAdd, onMenu }: { storeName: string; roleLabel: string; onAdd?: () => void; onMenu: () => void }) {
+/** Compact marketplace bar with brand and actions; store identity stays in the More screen. */
+export function StoreHeader({ storeName, onAdd, onMenu }: { storeName: string; roleLabel: string; onAdd?: () => void; onMenu: () => void }) {
   return <SafeAreaView edges={['top']} style={s.safe}>
     <View style={s.row}>
-      <PartnerBrand compact />
-      <View style={s.title}><Text numberOfLines={1} style={s.name}>{storeName}</Text><Text numberOfLines={1} style={s.role}>{roleLabel}</Text></View>
-      {onAdd ? <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add product" hitSlop={8} style={s.add}><Icon name="plus" size={20} color="#fff" /></Pressable> : null}
-      <Pressable onPress={onMenu} accessibilityRole="button" accessibilityLabel="Open store menu" hitSlop={8}><Avatar label={storeName} size={36} /></Pressable>
+      <PartnerBrand small />
+      <View style={s.actions}>
+        {onAdd ? <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add product" hitSlop={8} style={s.add}><Icon name="plus" size={20} color="#fff" /></Pressable> : null}
+        <Pressable onPress={onMenu} accessibilityRole="button" accessibilityLabel="Open store menu" hitSlop={8}><Avatar label={storeName} size={34} /></Pressable>
+      </View>
     </View>
   </SafeAreaView>;
 }
 
 const s = StyleSheet.create({
   safe: { backgroundColor: '#fff', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line },
-  row: { minHeight: 58, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  title: { flex: 1, minWidth: 0 }, name: { color: palette.ink, fontSize: 13.5, fontWeight: '800' }, role: { color: palette.muted, fontSize: 10.5, marginTop: 1 },
-  add: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0d4a38', alignItems: 'center', justifyContent: 'center' },
+  row: { minHeight: 54, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  add: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#0d4a38', alignItems: 'center', justifyContent: 'center' },
 });

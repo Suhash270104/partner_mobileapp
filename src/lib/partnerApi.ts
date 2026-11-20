@@ -440,7 +440,8 @@ export const partnerApi = {
   }>('/kyc/status'),
   createTechnicianKycSession: () => request<{ url: string; sessionId: string; reused: boolean }>('/kyc/session', {
     method: 'POST',
-    body: '{}',
+    // returnTo: 'app' makes Didit finish on a page that opens this app again, not the website's result page.
+    body: JSON.stringify({ returnTo: 'app' }),
   }),
   syncTechnicianKyc: (sessionId?: string) => request<{ action: string; kyc: TechnicianKycState }>('/kyc/sync', {
     method: 'POST',
@@ -547,7 +548,7 @@ export const partnerApi = {
   clientProjectFull: (projectId: string) => request<StudioProjectDetail>(`/client-projects/${projectId}`),
   // Thin typed pass-through for studio screens that call a handful of REST endpoints each.
   call: <T = Record<string, unknown>>(path: string, method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET', body?: unknown) =>
-    request<T>(path, { method, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }),
+    request<T>(path, { method, ...(body !== undefined ? { body: typeof FormData !== 'undefined' && body instanceof FormData ? body : JSON.stringify(body) } : {}) }),
   studioChatRooms: () => request<unknown[] | { rooms?: unknown[] }>('/chat/rooms/professional/me'),
   sendChatMessage: (roomId: string, message: Record<string, unknown>) => request<{ message?: Record<string, unknown> }>('/chat/message', { method: 'POST', body: JSON.stringify({ roomId, message }) }),
   myProposals: () => request<unknown[]>('/proposals/my-proposals'),

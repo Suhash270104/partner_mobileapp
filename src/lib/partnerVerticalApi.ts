@@ -1,5 +1,4 @@
-import { partnerApi, PartnerApiError } from './partnerApi';
-import { credentialsFor, nativeHeaders } from './sessionTokens';
+import { partnerApi } from './partnerApi';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 const realtorPath = (path: string) => `/realestate/realtor${path}`;
@@ -35,8 +34,6 @@ export const realtorApi = {
     setPrimary: (id: string) => partnerApi.call<Record<string, unknown>>(`${realtorPath('/media')}/${encodeURIComponent(id)}/primary`, 'POST', {}),
   },
   uploadMedia: (file: { uri: string; name: string; mimeType: string }, target: { resourceType: string; resourceId: string; type: string; isPrimary?: boolean; sortOrder?: number }) => {
-    const base = process.env.EXPO_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, '');
-    if (!base) return Promise.reject(new PartnerApiError('Set EXPO_PUBLIC_API_BASE_URL to upload realtor media.', 0, 'API_URL_MISSING'));
     const form = new FormData();
     form.append('file', { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
     form.append('resourceType', target.resourceType);
@@ -44,17 +41,6 @@ export const realtorApi = {
     form.append('type', target.type);
     if (target.isPrimary) form.append('isPrimary', 'true');
     if (target.sortOrder != null) form.append('sortOrder', String(target.sortOrder));
-    const send = async () => fetch(`${base}/realestate/realtor/media`, { method: 'POST', body: form, credentials: credentialsFor('/realestate/realtor/media'), headers: { Accept: 'application/json', ...(await nativeHeaders()) } });
-    const parse = async (response: Response) => {
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new PartnerApiError(body?.message || `Media upload failed (${response.status}).`, response.status, body?.code);
-      return body as Record<string, unknown>;
-    };
-    // A 401 means the access cookie expired: renew the session once (partnerApi.session refreshes) and retry once.
-    return send().then(async response => {
-      if (response.status !== 401) return parse(response);
-      await partnerApi.session();
-      return parse(await send());
-    });
+    return partnerApi.call<Record<string, unknown>>('/realestate/realtor/media', 'POST', form);
   },
 };

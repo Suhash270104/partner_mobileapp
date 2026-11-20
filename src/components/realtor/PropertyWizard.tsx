@@ -228,13 +228,14 @@ export function PropertyWizard({ mode, propertyId, initial, onNeedCredits }: { m
       const id = str(property._id || property.id);
       if (!id) throw new Error('The server created the property without returning its ID.');
       let failed = 0;
+      let uploadError = '';
       for (const [index, photo] of photos.entries()) {
         setProgress(`Uploading photo ${index + 1} of ${photos.length}…`);
         try { await realtorApi.uploadMedia({ uri: photo.uri, name: photo.name, mimeType: photo.mimeType }, { resourceType: 'property', resourceId: id, type: 'gallery', isPrimary: index === 0, sortOrder: index }); }
-        catch { failed += 1; }
+        catch (cause) { failed += 1; if (!uploadError && cause instanceof Error) uploadError = cause.message; }
       }
       dirty.current = false;
-      if (failed) Alert.alert('Property created', `${failed} of ${photos.length} photos could not be uploaded. Add them from Edit before submitting for review.`);
+      if (failed) Alert.alert('Property created, photos need attention', `${failed} of ${photos.length} photos could not be uploaded.${uploadError ? ` ${uploadError}` : ''} Add them from Edit before submitting for review.`);
       router.replace('/realtor/dashboard?tab=properties' as never);
     } catch (cause) {
       if (cause instanceof PartnerApiError && (cause.status === 402 || cause.code === 'LISTING_QUOTA_EXCEEDED')) { setError("You're out of listing credits. Buy a pack to post this property — nothing was created."); onNeedCredits?.(); }

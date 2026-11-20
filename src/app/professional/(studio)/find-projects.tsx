@@ -101,11 +101,16 @@ export default function FindProjectsScreen() {
     return true;
   }), [projects]);
 
+  const locationProjects = useMemo(
+    () => recommendedOnly && prefs ? open.filter(project => projectMatchesPreferences(project, prefs)) : open,
+    [open, prefs, recommendedOnly],
+  );
+
   const locations = useMemo(() => {
     const counts = new Map<string, number>();
-    open.forEach(project => { const city = project.city || placeOf(project); if (city) counts.set(city, (counts.get(city) || 0) + 1); });
+    locationProjects.forEach(project => { const city = project.city || placeOf(project); if (city) counts.set(city, (counts.get(city) || 0) + 1); });
     return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  }, [open]);
+  }, [locationProjects]);
 
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const usePrefs = Boolean(prefs && recommendedOnly);
@@ -186,7 +191,7 @@ export default function FindProjectsScreen() {
         <TextInput style={s.search} value={query} onChangeText={setQuery} placeholder="Search by project, area, budget…" placeholderTextColor="#98a59f" />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
-          {[[ALL, open.length] as [string, number], ...locations].map(([name, count]) => (
+          {[[ALL, locationProjects.length] as [string, number], ...locations].map(([name, count]) => (
             <Pressable key={name} style={[s.chip, location === name && s.chipOn]} onPress={() => setLocation(name)}>
               <Text style={[s.chipText, location === name && { color: '#fff' }]}>{name} {count}</Text>
             </Pressable>

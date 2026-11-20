@@ -106,7 +106,7 @@ export function DataRow({ title, detail, status, onPress, trailing }: { title: s
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: palette.bg },
   header: { minHeight: 58, paddingHorizontal: 12, gap: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line },
-  brand: { minWidth: 92 }, back: { width: 36, alignItems: 'center' }, backText: { color: palette.ink, fontSize: 34, lineHeight: 36 },
+  brand: { minWidth: 92, flexShrink: 0 }, back: { width: 36, alignItems: 'center' }, backText: { color: palette.ink, fontSize: 34, lineHeight: 36 },
   headerTitle: { flex: 1 }, headerName: { color: palette.ink, fontSize: 13.5, fontWeight: '800' }, headerSub: { color: palette.muted, fontSize: 10.5, marginTop: 1 },
   avatar: { width: 34, height: 34, borderRadius: 17, backgroundColor: palette.green, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: '#fff', fontSize: 13.5, fontWeight: '800' },
   scroll: { flex: 1 }, content: { padding: 16, paddingBottom: 26, gap: 12 },
