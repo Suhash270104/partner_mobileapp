@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Animated, AppState, Linking, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, Linking, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -36,9 +36,6 @@ export default function PartnerHomeScreen() {
   const [password, setPassword] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [splashVisible, setSplashVisible] = useState(true);
-  const [splashOpacity] = useState(() => new Animated.Value(1));
-  const [splashScale] = useState(() => new Animated.Value(0.92));
 
   const loadSession = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
@@ -78,14 +75,6 @@ export default function PartnerHomeScreen() {
     const timer = setTimeout(() => { void loadSession(); }, 0);
     return () => clearTimeout(timer);
   }, [loadSession]);
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(splashOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
-      Animated.spring(splashScale, { toValue: 1, useNativeDriver: true, speed: 1.2, bounciness: 4 }),
-    ]).start();
-    const timer = setTimeout(() => Animated.timing(splashOpacity, { toValue: 0, duration: 420, useNativeDriver: true }).start(() => setSplashVisible(false)), 1200);
-    return () => clearTimeout(timer);
-  }, [splashOpacity, splashScale]);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', state => { if (state === 'active') void loadSession(true); });
     return () => subscription.remove();
@@ -226,7 +215,7 @@ export default function PartnerHomeScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadSession(true)} tintColor="#07523e" />}>
         <View style={styles.hero}>
           <Text style={styles.title}>{user ? `${greeting}${welcomeName ? `, ${welcomeName}` : ''}` : 'One login for every way you work'}</Text>
-          <Text style={styles.intro}>{user ? 'Pick a workspace to manage jobs, leads, listings and orders.' : 'Sign in to open your Kraftnex workspaces, or create an account to get started.'}</Text>
+          <Text style={styles.intro}>{user ? 'Pick a workspace to manage jobs, leads, listings and orders.' : 'Choose a workspace to get started. Sign in from the header to continue.'}</Text>
         </View>
 
         {featured && featuredStatus ? (
@@ -236,27 +225,20 @@ export default function PartnerHomeScreen() {
             <View style={styles.featuredChip}><Text style={styles.featuredChipText}>{featuredStatus.label}</Text></View>
             <Pressable style={styles.featuredButton} onPress={() => void openWorkspace(featured)} accessibilityRole="button"><Text style={styles.featuredButtonText}>{featuredStatus.resume ? 'Continue setup' : 'Open dashboard'}  →</Text></Pressable>
           </View>
-        ) : !user ? (
-          <View style={styles.featured}>
-            <Text style={styles.featuredTitle}>Welcome to Kraftnex Partner</Text>
-            <Text style={styles.featuredCopy}>Technicians, studios, realtors and sellers all sign in with one account.</Text>
-            <Pressable style={styles.featuredButton} onPress={() => router.push('/login' as never)} accessibilityRole="button"><Text style={styles.featuredButtonText}>Sign in  →</Text></Pressable>
-            <Pressable onPress={() => router.push('/signup' as never)}><Text style={styles.featuredLink}>Create a Kraftnex account</Text></Pressable>
-          </View>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Your workspaces</Text>
+        <Text style={styles.sectionTitle}>{user ? 'Your workspaces' : 'Workspaces'}</Text>
         <View style={styles.grid}>
           {ordered.map(item => {
             const status = statusOf(item);
             const tone = tones[status.tone];
             return (
-              <Pressable key={item.type} style={styles.tile} onPress={() => void openWorkspace(item)} disabled={loading} accessibilityRole="button" accessibilityLabel={`${item.title}, ${status.label}`}>
+              <Pressable key={item.type} style={styles.tile} onPress={() => void openWorkspace(item)} disabled={loading} accessibilityRole="button" accessibilityLabel={user ? `${item.title}, ${status.label}` : item.title}>
                 <View style={[styles.iconBox, { backgroundColor: accents[item.type] }]}><Icon name={item.icon} size={22} color="#07523e" /></View>
                 <Text style={styles.tileTitle}>{item.title}</Text>
                 <Text style={styles.tileDesc}>{item.description}</Text>
-                <View style={[styles.chip, { backgroundColor: tone.bg }]}><Text style={[styles.chipText, { color: tone.fg }]}>{status.label}</Text></View>
-                <View style={styles.tileButton}><Text style={styles.tileButtonText}>{status.action}  →</Text></View>
+                {user && <View style={[styles.chip, { backgroundColor: tone.bg }]}><Text style={[styles.chipText, { color: tone.fg }]}>{status.label}</Text></View>}
+                {user && <View style={styles.tileButton}><Text style={styles.tileButtonText}>{status.action}  →</Text></View>}
               </Pressable>
             );
           })}
@@ -281,7 +263,6 @@ export default function PartnerHomeScreen() {
           </>}
         </View></View>
       </Modal>
-      {splashVisible && <Animated.View pointerEvents="none" style={[styles.splash, { opacity: splashOpacity }]}><Animated.View style={{ transform: [{ scale: splashScale }] }}><PartnerBrand /></Animated.View><Text style={styles.splashCaption}>PARTNER WORKSPACE</Text></Animated.View>}
     </SafeAreaView>
   );
 }
@@ -296,22 +277,22 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingBottom: 28 },
   hero: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 6 },
-  title: { fontSize: 27, lineHeight: 34, color: '#082f29', fontWeight: '900', letterSpacing: -0.4 },
-  intro: { marginTop: 8, color: '#5c6e67', fontSize: 15, lineHeight: 22 },
+  title: { fontSize: 20, lineHeight: 27, color: '#082f29', fontWeight: '900', letterSpacing: -0.25 },
+  intro: { marginTop: 7, color: '#5c6e67', fontSize: 14, lineHeight: 20 },
   featured: { marginHorizontal: 16, marginTop: 18, backgroundColor: '#064a38', borderRadius: 22, padding: 20, shadowColor: '#064a38', shadowOpacity: 0.22, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5 },
   featuredEyebrow: { color: '#9fd8c3', fontSize: 12, fontWeight: '800', letterSpacing: 0.9 },
-  featuredTitle: { color: '#fff', fontSize: 22, lineHeight: 28, fontWeight: '900', marginTop: 6 },
+  featuredTitle: { color: '#fff', fontSize: 18, lineHeight: 24, fontWeight: '900', marginTop: 6 },
   featuredCopy: { color: '#cfe8de', fontSize: 14.5, lineHeight: 21, marginTop: 6 },
   featuredChip: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 5, marginTop: 10 },
   featuredChipText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   featuredButton: { backgroundColor: '#fff', borderRadius: 14, minHeight: 50, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   featuredButtonText: { color: '#064a38', fontSize: 15.5, fontWeight: '800' },
   featuredLink: { color: '#cfe8de', fontSize: 14, fontWeight: '700', textAlign: 'center', marginTop: 14 },
-  sectionTitle: { color: '#122f29', fontSize: 19, fontWeight: '800', marginTop: 26, marginHorizontal: 20 },
+  sectionTitle: { color: '#122f29', fontSize: 16, fontWeight: '800', marginTop: 22, marginHorizontal: 20 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, marginTop: 12 },
   tile: { flexGrow: 1, flexBasis: '46%', backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#edf0f1', padding: 14, shadowColor: '#123c30', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   iconBox: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  tileTitle: { color: '#17352e', fontSize: 16.5, fontWeight: '800', marginTop: 12 },
+  tileTitle: { color: '#17352e', fontSize: 16, fontWeight: '800', marginTop: 12 },
   tileDesc: { color: '#5c6e67', fontSize: 13, lineHeight: 18, marginTop: 4, minHeight: 36 },
   chip: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 },
   chipText: { fontSize: 12.5, fontWeight: '800' },
@@ -326,5 +307,4 @@ const styles = StyleSheet.create({
   footer: { marginTop: 26, alignItems: 'center' },
   footerLink: { color: '#5c6e67', fontSize: 14.5, fontWeight: '700', paddingVertical: 8 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(8,35,29,0.4)', justifyContent: 'center', padding: 22 }, modalCard: { backgroundColor: '#fff', borderRadius: 18, padding: 18 }, modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, close: { fontSize: 26, color: '#64746c' }, modalTitle: { color: '#123b30', fontSize: 20, fontWeight: '900', marginTop: 18 }, modalCopy: { color: '#687a73', fontSize: 12, lineHeight: 18, marginTop: 5 }, input: { borderWidth: 1, borderColor: '#dfe7e3', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, marginTop: 12, color: '#183c31', fontSize: 14 }, primaryButton: { backgroundColor: '#064a38', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 14 }, primaryText: { color: '#fff', fontSize: 13, fontWeight: '800' }, disabled: { opacity: 0.55 }, loginError: { color: '#ad4941', fontSize: 11, marginTop: 9 }, register: { color: '#17634c', fontSize: 11, fontWeight: '700', textAlign: 'center', marginTop: 14 },
-  splash: { ...StyleSheet.absoluteFill, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', zIndex: 10 }, splashCaption: { color: '#55756a', fontSize: 8, fontWeight: '800', letterSpacing: 1.7, marginTop: 13 },
 });

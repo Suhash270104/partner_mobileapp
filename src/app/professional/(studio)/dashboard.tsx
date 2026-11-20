@@ -194,7 +194,7 @@ export default function DashboardScreen() {
                 {!!item.scopeText && item.scopeText.length > 5 && <Text style={s.scope} numberOfLines={2}>&ldquo;{item.scopeText}&rdquo;</Text>}
                 <View style={s.proposalActions}>
                   <Pressable style={s.actionGhost} onPress={() => go('/professional/messages')}><Text style={s.actionGhostText}>Chat</Text></Pressable>
-                  <Pressable style={s.actionSolid} onPress={() => { if (!openProposalProject(item)) go('/professional/proposals'); }}><Text style={s.actionSolidText}>View Details →</Text></Pressable>
+                  <Pressable style={s.actionSolid} onPress={() => { openProposalProject(item); }}><Text style={s.actionSolidText}>View Details →</Text></Pressable>
                 </View>
               </View>
             );

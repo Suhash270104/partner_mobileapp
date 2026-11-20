@@ -18,6 +18,8 @@ export interface StudioContextValue {
   profile: StudioProfile;
   studioName: string;
   ownerName: string;
+  chatOpen: boolean;
+  setChatOpen: (open: boolean) => void;
   refresh: () => Promise<void>;
   patchProfile: (fields: Partial<StudioProfile>) => void;
 }

@@ -173,7 +173,7 @@ export default function RealtorDashboardScreen() {
 
   const newProperty = () => router.push('/realtor/property/new' as never);
 
-  return <VerticalFrame title="Realtor workspace" initials={company.trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0).toUpperCase()).join('')} onAvatar={() => setMenuOpen(true)}
+  return <VerticalFrame title="" initials={company.trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0).toUpperCase()).join('')} onAvatar={() => setMenuOpen(true)}
     tabs={phase === 'ready' ? tabs : []} activeTab={tab === 'listings' ? 'more' : tab} onTab={key => key === 'more' ? setMenuOpen(true) : goTab(key as Tab)}
     refreshing={refreshing} onRefresh={phase === 'ready' ? () => void refresh() : undefined} badges={{ notifications: unread }}>
     {phase === 'loading' ? <StatePanel title="Loading your workspace" message="Connecting to the realtor workspace…" /> : null}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Modal, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -168,8 +168,9 @@ export default function ProjectDetailsScreen() {
   const proposalContext: ProposalContext = { projectId: realId, clientName: project.clientName, projectTitle: project.title, location: project.city || project.location, budget: project.budgetRange, timeline: project.timeline };
 
   return (
+    <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
     <View style={s.flex}>
-      <ScrollView style={s.flex} contentContainerStyle={s.content}>
+      <ScrollView style={s.flex} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         <View style={s.topRow}>
           <Pressable onPress={() => (router.canGoBack() ? router.back() : router.navigate('/professional/find-projects' as never))}><Text style={s.back}>← Back</Text></Pressable>
           {!!siteBase && <Pressable onPress={() => void share()}><Text style={s.link}>Share ↗</Text></Pressable>}
@@ -386,6 +387,7 @@ export default function ProjectDetailsScreen() {
       />
       <ProposalSheet context={proposalTarget} onClose={() => setProposalTarget(null)} onSubmitted={() => { void load(); }} />
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

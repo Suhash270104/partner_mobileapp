@@ -18,6 +18,7 @@ export default function StudioLayout() {
   const [phase, setPhase] = useState<Phase>('loading');
   const [error, setError] = useState('');
   const [profile, setProfile] = useState<StudioProfile | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setPhase('loading');
@@ -64,10 +65,12 @@ export default function StudioLayout() {
       profile,
       studioName,
       ownerName: profile.name || '',
+      chatOpen,
+      setChatOpen,
       refresh: () => load(true),
       patchProfile: (fields: Partial<StudioProfile>) => setProfile(previous => (previous ? { ...previous, ...fields } : previous)),
     };
-  }, [profile, load]);
+  }, [profile, load, chatOpen]);
 
   if (phase !== 'ready' || !value) {
     return (
@@ -103,7 +106,7 @@ export default function StudioLayout() {
 
         <View style={s.body}><Slot /></View>
 
-        <View style={s.bar}>
+        {!chatOpen && <View style={s.bar}>
           {TAB_BAR.map(tab => {
             const active = tab.key === activeKey;
             return (
@@ -113,7 +116,7 @@ export default function StudioLayout() {
               </Pressable>
             );
           })}
-        </View>
+        </View>}
       </SafeAreaView>
     </StudioContext.Provider>
   );

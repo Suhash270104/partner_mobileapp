@@ -89,7 +89,7 @@ interface RawRoom {
 }
 
 export default function MessagesScreen() {
-  const { profile, studioName } = useStudio();
+  const { profile, studioName, setChatOpen } = useStudio();
   const params = useLocalSearchParams<{ room?: string }>();
   const studioId = profile._id || '';
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -175,6 +175,11 @@ export default function MessagesScreen() {
   }, [roomKey, studioId]);
 
   const active = threads.find(thread => thread.id === openId) || null;
+
+  useEffect(() => {
+    setChatOpen(true);
+    return () => setChatOpen(false);
+  }, [setChatOpen]);
 
   useEffect(() => {
     if (!active) return;
