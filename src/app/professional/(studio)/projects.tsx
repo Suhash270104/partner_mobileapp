@@ -102,7 +102,7 @@ export default function ProjectsScreen() {
             <Text style={s.title}>Projects</Text>
             <Text style={s.sub}>{rows.length} total · {inProgress} in progress, {completed} completed{drafts > 0 ? `, ${drafts} draft${drafts === 1 ? '' : 's'}` : ''}</Text>
           </View>
-          <Pressable style={s.add} onPress={() => setAdding(true)}><Text style={s.addText}>＋ New Project</Text></Pressable>
+          <Pressable style={s.add} onPress={() => setAdding(true)} accessibilityRole="button"><Text style={s.addText} numberOfLines={1}>＋ New Project</Text></Pressable>
         </View>
 
         <TextInput style={s.search} value={query} onChangeText={setQuery} placeholder="Search by project, client or place…" placeholderTextColor="#98a59f" />
@@ -132,8 +132,9 @@ export default function ProjectsScreen() {
         {shown.map(row => (
           <Pressable key={row.id} style={s.card} onPress={() => router.navigate({ pathname: '/professional/project-details', params: { id: row.id } } as never)}>
             {!!row.img && <Image source={{ uri: row.img }} style={s.image} />}
-            <View style={s.badgeWrap}><Text style={[s.badge, row.status === 'Completed' ? s.badgeDone : row.status === 'Draft' ? s.badgeDraft : s.badgeLive]}>{row.status}</Text></View>
+            {!!row.img && <View style={s.badgeWrap}><Text style={[s.badge, row.status === 'Completed' ? s.badgeDone : row.status === 'Draft' ? s.badgeDraft : s.badgeLive]}>{row.status}</Text></View>}
             <View style={s.cardBody}>
+              {!row.img && <Text style={[s.badge, s.badgeInline, row.status === 'Completed' ? s.badgeDone : row.status === 'Draft' ? s.badgeDraft : s.badgeLive]}>{row.status}</Text>}
               <Text style={s.cardTitle} numberOfLines={2}>{row.title}</Text>
               {!!row.client && <Text style={s.meta}>Client: {row.client}</Text>}
               {!!row.location && <Text style={s.meta} numberOfLines={1}>{row.location}</Text>}
@@ -294,49 +295,50 @@ const s = StyleSheet.create({
   flex: { flex: 1 },
   content: { padding: 16, paddingBottom: 30 },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  title: { color: c.ink, fontSize: 22, fontWeight: '800' },
-  sub: { color: c.body, fontSize: 12.5, marginTop: 2 },
-  add: { backgroundColor: c.green, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  title: { color: c.ink, fontSize: 24, fontWeight: '800' },
+  sub: { color: c.body, fontSize: 13.5, lineHeight: 19, marginTop: 2 },
+  add: { backgroundColor: c.green, borderRadius: 14, paddingHorizontal: 16, minHeight: 46, justifyContent: 'center', flexShrink: 0 },
   addSolid: { height: 48, borderRadius: 13, backgroundColor: c.green, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
-  addText: { color: '#fff', fontSize: 12.5, fontWeight: '800' },
-  search: { height: 48, borderRadius: 13, borderWidth: 1.5, borderColor: c.line, backgroundColor: '#fff', paddingHorizontal: 14, color: c.ink, fontSize: 14.5 },
+  addText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  search: { height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: c.line, backgroundColor: '#fff', paddingHorizontal: 14, color: c.ink, fontSize: 15 },
   tabs: { gap: 8, paddingVertical: 14 },
-  tab: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#fff', borderWidth: 1, borderColor: c.line },
+  tab: { borderRadius: 999, paddingHorizontal: 16, minHeight: 40, justifyContent: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: c.line },
   tabOn: { backgroundColor: c.green, borderColor: c.green },
-  tabText: { color: c.body, fontSize: 12.5, fontWeight: '700' },
-  stats: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  stat: { flex: 1, borderRadius: 12, padding: 10, minHeight: 64, justifyContent: 'space-between' },
-  statValue: { color: c.ink, fontSize: 20, fontWeight: '800' },
-  statLabel: { color: c.body, fontSize: 10.5, fontWeight: '700' },
+  tabText: { color: c.body, fontSize: 14, fontWeight: '700' },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+  stat: { flexGrow: 1, flexBasis: '46%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, minHeight: 72, justifyContent: 'space-between' },
+  statValue: { color: c.ink, fontSize: 24, fontWeight: '800' },
+  statLabel: { color: c.body, fontSize: 13, fontWeight: '700' },
   empty: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: c.line, padding: 24, alignItems: 'center', gap: 12 },
-  emptyTitle: { color: c.ink, fontSize: 14.5, fontWeight: '800' },
+  emptyTitle: { color: c.ink, fontSize: 16, fontWeight: '800' },
   card: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: c.line, marginBottom: 14, overflow: 'hidden' },
   image: { width: '100%', height: 170, backgroundColor: '#eef1ef' },
   badgeWrap: { position: 'absolute', top: 10, left: 10 },
-  badge: { overflow: 'hidden', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, fontSize: 10.5, fontWeight: '800', color: '#fff' },
+  badge: { overflow: 'hidden', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, fontSize: 12, fontWeight: '800', color: '#fff' },
+  badgeInline: { alignSelf: 'flex-start' },
   badgeLive: { backgroundColor: '#c0562c' },
   badgeDone: { backgroundColor: c.green },
   badgeDraft: { backgroundColor: c.amber },
-  cardBody: { padding: 14, gap: 6 },
-  cardTitle: { color: c.ink, fontSize: 16, fontWeight: '800', lineHeight: 21 },
-  meta: { color: c.body, fontSize: 12.5 },
-  facts: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  fact: { flex: 1, backgroundColor: '#f1f5f3', borderRadius: 11, padding: 9 },
-  factLabel: { color: c.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6 },
-  factValue: { color: c.ink, fontSize: 12.5, fontWeight: '800', marginTop: 2 },
-  tags: { color: c.greenText, fontSize: 11.5, fontWeight: '700' },
-  formLabel: { color: c.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.7, marginBottom: 6 },
+  cardBody: { padding: 16, gap: 8 },
+  cardTitle: { color: c.ink, fontSize: 17.5, fontWeight: '800', lineHeight: 23 },
+  meta: { color: c.body, fontSize: 14, lineHeight: 20 },
+  facts: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  fact: { flex: 1, minWidth: 0, backgroundColor: '#f1f5f3', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  factLabel: { color: c.muted, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.6 },
+  factValue: { color: c.ink, fontSize: 14, fontWeight: '800', marginTop: 3 },
+  tags: { color: c.greenText, fontSize: 13, fontWeight: '700' },
+  formLabel: { color: c.muted, fontSize: 12, fontWeight: '800', letterSpacing: 0.7, marginBottom: 8 },
   optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  option: { borderRadius: 999, borderWidth: 1.5, borderColor: c.line, paddingHorizontal: 13, paddingVertical: 8, backgroundColor: '#fff' },
+  option: { borderRadius: 999, borderWidth: 1.5, borderColor: c.line, paddingHorizontal: 14, minHeight: 40, justifyContent: 'center', backgroundColor: '#fff' },
   optionOn: { backgroundColor: c.green, borderColor: c.green },
-  optionText: { color: c.body, fontSize: 12.5, fontWeight: '700' },
+  optionText: { color: c.body, fontSize: 14, fontWeight: '700' },
   thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  thumb: { width: '31%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: '#eef1ef' },
+  thumb: { width: '30%', flexGrow: 1, aspectRatio: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: '#eef1ef' },
   thumbImg: { width: '100%', height: '100%' },
   thumbRemove: { position: 'absolute', top: 5, right: 5, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center' },
   thumbRemoveText: { color: '#fff', fontSize: 14.5, lineHeight: 18 },
-  thumbAdd: { width: '31%', aspectRatio: 1, borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#b9c7c1', alignItems: 'center', justifyContent: 'center' },
+  thumbAdd: { width: '30%', flexGrow: 1, aspectRatio: 1, borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#b9c7c1', alignItems: 'center', justifyContent: 'center' },
   thumbAddText: { color: c.green, fontSize: 20 },
   cancel: { height: 48, borderRadius: 13, borderWidth: 1.5, borderColor: c.line, alignItems: 'center', justifyContent: 'center' },
-  cancelText: { color: c.green, fontSize: 13.5, fontWeight: '800' },
+  cancelText: { color: c.green, fontSize: 14.5, fontWeight: '800' },
 });

@@ -440,7 +440,8 @@ export const partnerApi = {
   }>('/kyc/status'),
   createTechnicianKycSession: () => request<{ url: string; sessionId: string; reused: boolean }>('/kyc/session', {
     method: 'POST',
-    body: '{}',
+    // returnTo: 'app' makes Didit finish on a page that opens this app again, not the website's result page.
+    body: JSON.stringify({ returnTo: 'app' }),
   }),
   syncTechnicianKyc: (sessionId?: string) => request<{ action: string; kyc: TechnicianKycState }>('/kyc/sync', {
     method: 'POST',

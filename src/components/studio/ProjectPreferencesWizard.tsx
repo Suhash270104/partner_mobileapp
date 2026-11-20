@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import type { ScrollViewInstance } from 'react-native';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
@@ -9,7 +9,7 @@ import {
   ProjectPreferences, PrefsProfile, projectMatchesPreferences, RADIUS_OPTIONS, savePreferences, SERVICE_OPTIONS,
 } from '../../lib/projectPreferences';
 
-const STEPS = ['Services', 'Budget', 'Location & Type', 'Availability'];
+const STEPS = ['Services', 'Budget', 'Location', 'Availability'];
 
 const toggleIn = (list: string[], value: string) => (list.includes(value) ? list.filter(item => item !== value) : [...list, value]);
 
@@ -114,7 +114,7 @@ export function ProjectPreferencesWizard({ visible, designerId, initial, profile
               <Text style={s.q}>1. What services do you offer?</Text>
               <Text style={s.hint}>Select all that apply.</Text>
               <View style={s.grid}>
-                {SERVICE_OPTIONS.map(service => <View key={service} style={s.half}><OptionTile label={service} selected={prefs.services.includes(service)} onPress={() => set('services', toggleIn(prefs.services, service))} /></View>)}
+                {SERVICE_OPTIONS.map(service => <React.Fragment key={service}><OptionTile label={service} selected={prefs.services.includes(service)} onPress={() => set('services', toggleIn(prefs.services, service))} /></React.Fragment>)}
               </View>
               <KaiCard title="KAI INSIGHT" message="KAI uses your services to match you with client projects that need them." />
             </>
@@ -180,7 +180,7 @@ export function ProjectPreferencesWizard({ visible, designerId, initial, profile
               <Text style={[s.q, { marginTop: 8 }]}>4. What type of projects are you interested in?</Text>
               <Text style={s.hint}>Select all that apply.</Text>
               <View style={s.grid}>
-                {PROJECT_TYPE_OPTIONS.map(option => <View key={option.value} style={s.half}><OptionTile label={option.value} selected={prefs.projectTypes.includes(option.value)} onPress={() => set('projectTypes', toggleIn(prefs.projectTypes, option.value))} /></View>)}
+                {PROJECT_TYPE_OPTIONS.map(option => <React.Fragment key={option.value}><OptionTile label={option.value} selected={prefs.projectTypes.includes(option.value)} onPress={() => set('projectTypes', toggleIn(prefs.projectTypes, option.value))} /></React.Fragment>)}
               </View>
               <KaiCard
                 title="KAI INSIGHT"
@@ -196,7 +196,7 @@ export function ProjectPreferencesWizard({ visible, designerId, initial, profile
               <Text style={s.q}>5. When can you take a new project?</Text>
               <Text style={s.hint}>Let clients know your availability.</Text>
               <View style={s.grid}>
-                {AVAILABILITY_OPTIONS.map(option => <View key={option} style={s.half}><OptionTile label={option} multi={false} selected={prefs.availability === option} onPress={() => set('availability', option)} /></View>)}
+                {AVAILABILITY_OPTIONS.map(option => <React.Fragment key={option}><OptionTile label={option} multi={false} selected={prefs.availability === option} onPress={() => set('availability', option)} /></React.Fragment>)}
               </View>
 
               <Text style={[s.q, { marginTop: 8 }]}>Project Duration Preference (Optional)</Text>
@@ -258,23 +258,23 @@ export function ProjectPreferencesWizard({ visible, designerId, initial, profile
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#faf8f5' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },
-  back: { color: c.green, fontSize: 20, fontWeight: '700' },
-  title: { color: c.ink, fontSize: 20, fontWeight: '800' },
-  sub: { color: c.body, fontSize: 12.5, marginTop: 1 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },
+  back: { color: c.green, fontSize: 24, fontWeight: '700', paddingTop: 2 },
+  title: { color: c.ink, fontSize: 24, fontWeight: '800' },
+  sub: { color: c.body, fontSize: 14, lineHeight: 20, marginTop: 2 },
   steps: { flexDirection: 'row', gap: 6, paddingHorizontal: 16, paddingBottom: 6 },
   bar: { height: 4, borderRadius: 2, backgroundColor: '#dfe6e2' },
   barOn: { backgroundColor: c.green },
-  stepName: { color: c.muted, fontSize: 10.5, fontWeight: '700' },
-  content: { padding: 16, paddingBottom: 24, gap: 12 },
-  q: { color: c.ink, fontSize: 16, fontWeight: '800', lineHeight: 21 },
-  hint: { color: c.body, fontSize: 12.5, lineHeight: 18 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  stepName: { color: c.muted, fontSize: 12.5, fontWeight: '700' },
+  content: { padding: 16, paddingBottom: 24, gap: 14 },
+  q: { color: c.ink, fontSize: 20, fontWeight: '800', lineHeight: 26 },
+  hint: { color: c.body, fontSize: 14, lineHeight: 20 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
   half: { width: '48.5%' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tier: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1.5, borderColor: c.line, padding: 14 },
   tierOn: { borderColor: c.green, backgroundColor: c.greenSoft },
-  tierName: { color: c.ink, fontSize: 14.5, fontWeight: '800' },
+  tierName: { color: c.ink, fontSize: 16, fontWeight: '800' },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   addRow: { flexDirection: 'row', gap: 8 },
   input: { flex: 1, minHeight: 48, borderRadius: 13, borderWidth: 1.5, borderColor: c.line, backgroundColor: '#fff', paddingHorizontal: 14, color: c.ink, fontSize: 14.5 },
@@ -283,13 +283,13 @@ const s = StyleSheet.create({
   summary: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: c.line, padding: 14, gap: 8 },
   summaryHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-  summaryValue: { color: c.ink, fontSize: 12.5, fontWeight: '700', flexShrink: 1, textAlign: 'right' },
-  edit: { color: c.green, fontSize: 12.5, fontWeight: '800' },
+  summaryValue: { color: c.ink, fontSize: 14, fontWeight: '700', flexShrink: 1, textAlign: 'right' },
+  edit: { color: c.green, fontSize: 14, fontWeight: '800' },
   footer: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line, backgroundColor: '#faf8f5' },
   backBtn: { height: 52, paddingHorizontal: 22, borderRadius: 26, backgroundColor: '#eef1ef', alignItems: 'center', justifyContent: 'center' },
-  backText: { color: c.ink, fontSize: 14.5, fontWeight: '800' },
+  backText: { color: c.ink, fontSize: 16, fontWeight: '800' },
   nextBtn: { flex: 1, height: 52, borderRadius: 26, backgroundColor: c.green, alignItems: 'center', justifyContent: 'center' },
-  nextText: { color: '#fff', fontSize: 14.5, fontWeight: '800' },
+  nextText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   skip: { alignItems: 'center', paddingVertical: 10 },
-  skipText: { color: c.muted, fontSize: 12.5, fontWeight: '700' },
+  skipText: { color: c.muted, fontSize: 14, fontWeight: '700' },
 });

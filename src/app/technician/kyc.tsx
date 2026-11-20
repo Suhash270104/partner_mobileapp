@@ -3,6 +3,7 @@ import { ActivityIndicator, AppState, Linking, Pressable, RefreshControl, Scroll
 import { Text, TextInput } from '../../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { PartnerBrand } from '../../components/PartnerBrand';
 import {
   KYC_SUPPORT_REASONS,
@@ -95,8 +96,12 @@ export default function TechnicianKycScreen() {
     try {
       const session = await partnerApi.createTechnicianKycSession();
       sessionIdRef.current = session.sessionId;
-      await Linking.openURL(session.url);
-      setNotice('Secure verification opened. Return to this app after completing the ID and face checks.');
+      // Opens Didit in an in-app browser that closes itself when the website sends the person back to
+      // kraftnex-partner://technician/kyc, or when they tap Done. Either way the result is pulled straight away.
+      setNotice('Secure verification opened. You will return here automatically when it is finished.');
+      await WebBrowser.openAuthSessionAsync(session.url, 'kraftnex-partner://technician/kyc');
+      setNotice('');
+      await loadStatus(true);
     } catch (startError) {
       setError(errorText(startError));
       void loadStatus();

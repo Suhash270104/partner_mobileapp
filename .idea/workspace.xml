@@ -6,10 +6,14 @@
   <component name="ChangeListManager">
     <list default="true" id="43dbcfda-944a-4288-ab5a-e63cada77c0e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/index.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/professional/(studio)/dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/professional/(studio)/dashboard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/professional/(studio)/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/professional/(studio)/profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/professional/(studio)/projects.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/professional/(studio)/projects.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/technician/kyc.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/technician/kyc.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/professional/onboardingUi.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/professional/onboardingUi.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/studio/EditableRow.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/studio/EditableRow.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/studio/ProjectPreferencesWizard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/studio/ProjectPreferencesWizard.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/lib/partnerApi.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib/partnerApi.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib/workspaceLaunch.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib/workspaceLaunch.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

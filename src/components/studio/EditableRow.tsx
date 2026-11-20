@@ -50,7 +50,7 @@ export function EditableRow({ label, value, type, options = [], optionLabels = {
   return (
     <>
       <Pressable style={s.row} onPress={start} accessibilityLabel={`Edit ${label}`}>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={s.label}>{label.toUpperCase()}</Text>
           {shown ? <Text style={s.value}>{shown}</Text> : <Text style={s.empty}>Not set</Text>}
         </View>
@@ -93,14 +93,14 @@ export function EditableRow({ label, value, type, options = [], optionLabels = {
 }
 
 const s = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line },
-  label: { color: c.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6 },
-  value: { color: c.ink, fontSize: 13.5, fontWeight: '700', marginTop: 2, lineHeight: 19 },
-  empty: { color: c.muted, fontSize: 13.5, fontStyle: 'italic', marginTop: 2 },
-  edit: { color: c.green, fontSize: 12.5, fontWeight: '800' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line },
+  label: { color: c.muted, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.6 },
+  value: { color: c.ink, fontSize: 14.5, fontWeight: '700', marginTop: 3, lineHeight: 21 },
+  empty: { color: c.muted, fontSize: 14.5, fontStyle: 'italic', marginTop: 3 },
+  edit: { color: c.green, fontSize: 14, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 8 },
   option: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 13, borderWidth: 1.5, borderColor: c.line, padding: 12 },
   optionOn: { borderColor: c.green, backgroundColor: c.greenSoft },
-  optionText: { flex: 1, color: c.ink, fontSize: 13.5, fontWeight: '700' },
+  optionText: { flex: 1, color: c.ink, fontSize: 14.5, fontWeight: '700' },
   solid: { flex: 1.4, height: 48, borderRadius: 13, backgroundColor: c.green, alignItems: 'center', justifyContent: 'center' },
   solidText: { color: '#fff', fontSize: 13.5, fontWeight: '800' },
   outline: { flex: 1, height: 48, borderRadius: 13, borderWidth: 1.5, borderColor: c.line, alignItems: 'center', justifyContent: 'center' },
