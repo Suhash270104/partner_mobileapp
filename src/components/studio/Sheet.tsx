@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ReactNode, useEffect, useState } from 'react';
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { c } from '../professional/onboardingUi';
 
@@ -14,9 +14,20 @@ export function Sheet({ visible, title, eyebrow, onClose, locked, children }: {
   children: ReactNode;
 }) {
   const close = () => { if (!locked) onClose(); };
+  // While the keyboard is up the form gets extra room at the bottom, so the last field can be scrolled
+  // fully into view instead of sitting under the keyboard.
+  const [typing, setTyping] = useState(false);
+  useEffect(() => {
+    const ios = Platform.OS === 'ios';
+    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () => setTyping(true));
+    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setTyping(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
-      <KeyboardAvoidingView style={s.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* 'padding' on both platforms: it measures how much the keyboard actually overlaps the sheet, so it
+          lifts the sheet only as far as needed (nothing extra when the window already resized). */}
+      <KeyboardAvoidingView style={s.fill} behavior="padding">
         <Pressable style={s.backdrop} onPress={close} />
         <View style={s.sheet}>
           <View style={s.grabber} />
@@ -27,7 +38,7 @@ export function Sheet({ visible, title, eyebrow, onClose, locked, children }: {
             </View>
             <Pressable onPress={close} disabled={locked} style={[s.close, locked && { opacity: 0.4 }]} accessibilityLabel="Close"><Text style={s.closeText}>×</Text></Pressable>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>{children}</ScrollView>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: typing ? 56 : 24 }}>{children}</ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>

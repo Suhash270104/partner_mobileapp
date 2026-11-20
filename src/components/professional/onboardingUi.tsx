@@ -172,9 +172,11 @@ export function Mark({ selected, square }: { selected: boolean; square?: boolean
 }
 
 // Compact option tile used in two-column grids.
-export function OptionTile({ label, selected, onPress, multi = true }: { label: string; selected: boolean; onPress: () => void; multi?: boolean }) {
+// `fill` makes the tile take the whole width of its parent. Use it when the tile is already inside a
+// half-width grid cell; otherwise its own 48.5% would be taken from that cell and it ends up tiny.
+export function OptionTile({ label, selected, onPress, multi = true, fill = false }: { label: string; selected: boolean; onPress: () => void; multi?: boolean; fill?: boolean }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole={multi ? 'checkbox' : 'radio'} accessibilityState={{ selected }} style={[s.tile, selected && s.tileOn]}>
+    <Pressable onPress={onPress} accessibilityRole={multi ? 'checkbox' : 'radio'} accessibilityState={{ selected }} style={[s.tile, fill && { width: '100%' }, selected && s.tileOn]}>
       <Text style={[s.tileText, selected && s.tileTextOn]} numberOfLines={3}>{label}</Text>
       <Mark selected={selected} square={multi} />
     </Pressable>

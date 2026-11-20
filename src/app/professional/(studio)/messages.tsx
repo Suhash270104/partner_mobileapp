@@ -253,7 +253,7 @@ export default function MessagesScreen() {
         <View style={s.threadHead}>
           <Pressable onPress={() => { setThreads(previous => previous.map(thread => (thread.id === active.id ? { ...thread, unreadCount: 0 } : thread))); setOpenId(''); }} hitSlop={10}><Text style={s.back}>←</Text></Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={s.threadName} numberOfLines={1}>{active.clientName}</Text>
+            <Text style={s.threadHeadName} numberOfLines={1}>{active.clientName}</Text>
             <Text style={s.threadSub} numberOfLines={1}>{[active.projectTitle, active.budget && active.budget !== '—' ? active.budget : ''].filter(Boolean).join(' • ')}</Text>
           </View>
           {awarded ? <View style={[s.status, { backgroundColor: c.green }]}><Text style={s.statusText}>Accepted ✓</Text></View>
@@ -373,9 +373,10 @@ const s = StyleSheet.create({
   preview: { color: c.body, fontSize: 12.5, marginTop: 2 },
   badge: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: c.green, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badgeText: { color: '#fff', fontSize: 10.5, fontWeight: '800' },
-  threadHead: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: '#fff', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line },
+  threadHead: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: 60, backgroundColor: '#fff', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line },
   back: { color: c.ink, fontSize: 20 },
-  threadSub: { color: c.body, fontSize: 11.5, marginTop: 1 },
+  threadHeadName: { color: c.ink, fontSize: 15.5, lineHeight: 21, fontWeight: '800' },
+  threadSub: { color: c.body, fontSize: 11.5, lineHeight: 16, marginTop: 1 },
   status: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
   statusText: { color: '#fff', fontSize: 10.5, fontWeight: '800' },
   messages: { padding: 14, gap: 8, flexGrow: 1 },

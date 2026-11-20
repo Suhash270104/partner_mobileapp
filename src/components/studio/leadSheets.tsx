@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import * as Clipboard from 'expo-clipboard';
@@ -28,6 +28,17 @@ const BLOCKED_HINTS: Record<string, string> = {
   PROJECT_REJECTED: 'This project was removed after review. Nothing has been charged.',
 };
 
+// How long the unlock sheet needs to finish sliding away before the next sheet may open. Showing two
+// modals at the same moment makes both flicker (and iOS drops the second one).
+const SHEET_HANDOFF_MS = 380;
+
+// Keeps showing the last non-empty value so a sheet's content does not blank out while it slides closed.
+function useHeld<T>(value: T | null): T | null {
+  const [held, setHeld] = useState<T | null>(value);
+  if (value !== null && value !== held) setHeld(value);
+  return value !== null ? value : held;
+}
+
 const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
 const whatsappHref = (phone: string) => {
   const digits = phone.replace(/\D/g, '');
@@ -43,10 +54,17 @@ export function UnlockSheet({ project, onClose, onUnlocked, onSubmitProposal }: 
   onUnlocked: (result: { projectId: string; leadCredits?: number; bonusLeadCredits?: number }) => void;
   onSubmitProposal: (project: LeadProject) => void;
 }) {
-  // Keyed by project so every open starts from a fresh quote and no stale contact.
+  // Keyed by project so every open starts from a fresh quote and no stale contact. The last project is
+  // held while the sheet slides closed so its title and body do not flash empty.
+  const shown = useHeld(project);
+  // Close this sheet first, then open the proposal sheet once it has gone.
+  const handoff = useCallback((next: LeadProject) => {
+    onClose();
+    setTimeout(() => onSubmitProposal(next), SHEET_HANDOFF_MS);
+  }, [onClose, onSubmitProposal]);
   return (
-    <Sheet visible={!!project} title={project?.title || 'Client project'} eyebrow="UNLOCK PROJECT LEAD" onClose={onClose}>
-      {project && <UnlockBody key={project.id} project={project} onClose={onClose} onUnlocked={onUnlocked} onSubmitProposal={onSubmitProposal} />}
+    <Sheet visible={!!project} title={shown?.title || 'Client project'} eyebrow="UNLOCK PROJECT LEAD" onClose={onClose}>
+      {shown && <UnlockBody key={shown.id} project={shown} onClose={onClose} onUnlocked={onUnlocked} onSubmitProposal={handoff} />}
     </Sheet>
   );
 }
@@ -70,6 +88,11 @@ function UnlockBody({ project, onClose, onUnlocked, onSubmitProposal }: {
   const [needPhone, setNeedPhone] = useState(false);
   const [checkoutPhone, setCheckoutPhone] = useState('');
   const [copied, setCopied] = useState('');
+  // Parents pass new inline callbacks on every render. Held in a ref so a parent re-render (which the
+  // unlock itself causes) cannot restart this sheet's quote request and make it flash back to "loading".
+  const onUnlockedRef = useRef(onUnlocked);
+  useEffect(() => { onUnlockedRef.current = onUnlocked; });
+  const announced = useRef(false);
 
   const loadContact = useCallback(async () => {
     setContactError(false);
@@ -84,9 +107,12 @@ function UnlockBody({ project, onClose, onUnlocked, onSubmitProposal }: {
   const showSuccess = useCallback((leadCredits?: number, bonusLeadCredits?: number) => {
     setStep('success');
     setWelcomeLeft(typeof bonusLeadCredits === 'number' ? bonusLeadCredits : null);
-    onUnlocked({ projectId, leadCredits, bonusLeadCredits });
+    if (!announced.current) {
+      announced.current = true;
+      onUnlockedRef.current({ projectId, leadCredits, bonusLeadCredits });
+    }
     void loadContact();
-  }, [loadContact, onUnlocked, projectId]);
+  }, [loadContact, projectId]);
 
   const applyQuote = useCallback((q: StudioUnlockQuote) => {
     setQuote(q);
@@ -216,7 +242,7 @@ function UnlockBody({ project, onClose, onUnlocked, onSubmitProposal }: {
         </View>
       )}
 
-      {step === 'loading' && <View style={s.center}><ActivityIndicator color={c.green} /><Text style={s.muted}>Checking your unlock options…</Text></View>}
+      {step === 'loading' && <View style={[s.center, { minHeight: 180 }]}><ActivityIndicator color={c.green} /><Text style={s.muted}>Checking your unlock options…</Text></View>}
 
       {(step === 'choose' || step === 'processing') && quote && (
         <View style={{ gap: 12 }}>
@@ -327,9 +353,10 @@ export interface ProposalContext {
 }
 
 export function ProposalSheet({ context, onClose, onSubmitted }: { context: ProposalContext | null; onClose: () => void; onSubmitted?: () => void }) {
+  const shown = useHeld(context);
   return (
-    <Sheet visible={!!context} title={context?.projectTitle || 'Client Project'} eyebrow="SUBMIT PROPOSAL" onClose={onClose}>
-      {context && <ProposalBody key={context.projectId} context={context} onClose={onClose} onSubmitted={onSubmitted} />}
+    <Sheet visible={!!context} title={shown?.projectTitle || 'Client Project'} eyebrow="SUBMIT PROPOSAL" onClose={onClose}>
+      {shown && <ProposalBody key={shown.projectId} context={shown} onClose={onClose} onSubmitted={onSubmitted} />}
     </Sheet>
   );
 }

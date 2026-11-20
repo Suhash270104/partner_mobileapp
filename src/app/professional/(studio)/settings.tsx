@@ -99,12 +99,6 @@ export default function SettingsScreen() {
       </View>
 
       <View style={s.card}>
-        <Text style={s.cardTitle}>9-Stage Profile DNA</Text>
-        <Text style={s.hint}>Re-run your studio&apos;s onboarding to refresh how KAI matches you to new briefs — style, budget range, team size, and more.</Text>
-        <Pressable style={s.solid} onPress={() => router.push({ pathname: '/professional/onboarding', params: { edit: 'true' } } as never)}><Text style={s.solidText}>Edit Profile DNA  →</Text></Pressable>
-      </View>
-
-      <View style={s.card}>
         <Text style={s.cardTitle}>Account</Text>
         {rows.map(([label, value]) => <View key={label} style={s.accountRow}><Text style={s.hint}>{label}</Text><Text style={s.rowTitle}>{value}</Text></View>)}
       </View>

@@ -114,7 +114,7 @@ export function ProjectPreferencesWizard({ visible, designerId, initial, profile
               <Text style={s.q}>1. What services do you offer?</Text>
               <Text style={s.hint}>Select all that apply.</Text>
               <View style={s.grid}>
-                {SERVICE_OPTIONS.map(service => <React.Fragment key={service}><OptionTile label={service} selected={prefs.services.includes(service)} onPress={() => set('services', toggleIn(prefs.services, service))} /></React.Fragment>)}
+                {SERVICE_OPTIONS.map(service => <View key={service} style={s.half}><OptionTile fill label={service} selected={prefs.services.includes(service)} onPress={() => set('services', toggleIn(prefs.services, service))} /></View>)}
               </View>
               <KaiCard title="KAI INSIGHT" message="KAI uses your services to match you with client projects that need them." />
             </>
@@ -180,7 +180,7 @@ export function ProjectPreferencesWizard({ visible, designerId, initial, profile
               <Text style={[s.q, { marginTop: 8 }]}>4. What type of projects are you interested in?</Text>
               <Text style={s.hint}>Select all that apply.</Text>
               <View style={s.grid}>
-                {PROJECT_TYPE_OPTIONS.map(option => <React.Fragment key={option.value}><OptionTile label={option.value} selected={prefs.projectTypes.includes(option.value)} onPress={() => set('projectTypes', toggleIn(prefs.projectTypes, option.value))} /></React.Fragment>)}
+                {PROJECT_TYPE_OPTIONS.map(option => <View key={option.value} style={s.half}><OptionTile fill label={option.value} selected={prefs.projectTypes.includes(option.value)} onPress={() => set('projectTypes', toggleIn(prefs.projectTypes, option.value))} /></View>)}
               </View>
               <KaiCard
                 title="KAI INSIGHT"
@@ -196,7 +196,7 @@ export function ProjectPreferencesWizard({ visible, designerId, initial, profile
               <Text style={s.q}>5. When can you take a new project?</Text>
               <Text style={s.hint}>Let clients know your availability.</Text>
               <View style={s.grid}>
-                {AVAILABILITY_OPTIONS.map(option => <React.Fragment key={option}><OptionTile label={option} multi={false} selected={prefs.availability === option} onPress={() => set('availability', option)} /></React.Fragment>)}
+                {AVAILABILITY_OPTIONS.map(option => <View key={option} style={s.half}><OptionTile fill label={option} multi={false} selected={prefs.availability === option} onPress={() => set('availability', option)} /></View>)}
               </View>
 
               <Text style={[s.q, { marginTop: 8 }]}>Project Duration Preference (Optional)</Text>
@@ -204,7 +204,7 @@ export function ProjectPreferencesWizard({ visible, designerId, initial, profile
               <View style={s.grid}>
                 {DURATION_OPTIONS.map(option => (
                   <View key={option.value} style={s.half}>
-                    <OptionTile label={option.sub ? `${option.value} (${option.sub})` : option.value} multi={false} selected={prefs.duration === option.value} onPress={() => set('duration', prefs.duration === option.value ? '' : option.value)} />
+                    <OptionTile fill label={option.sub ? `${option.value} (${option.sub})` : option.value} multi={false} selected={prefs.duration === option.value} onPress={() => set('duration', prefs.duration === option.value ? '' : option.value)} />
                   </View>
                 ))}
               </View>

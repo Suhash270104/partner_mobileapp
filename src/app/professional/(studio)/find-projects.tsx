@@ -9,8 +9,8 @@ import { LeadProject, ProposalContext, ProposalSheet, UnlockSheet } from '../../
 import { ProjectPreferencesWizard } from '../../../components/studio/ProjectPreferencesWizard';
 import { useStudio } from '../../../components/studio/StudioContext';
 import {
-  loadStoredPreferences, MIN_PROJECT_VALUES, preferenceCriteria, PROJECT_VALUE_TIERS, ProjectPreferences,
-  preferencesFromProfile, projectMatchesPreferences,
+  hasPreferenceAnswers, loadStoredPreferences, MIN_PROJECT_VALUES, preferenceCriteria, PROJECT_VALUE_TIERS, ProjectPreferences,
+  preferencesFromProfile, projectMatchesPreferences, rememberPreferencesSkipped, wasPreferencesSkipped,
 } from '../../../lib/projectPreferences';
 
 const ALL = 'All locations';
@@ -72,16 +72,26 @@ export default function FindProjectsScreen() {
     return () => clearTimeout(timer);
   }, [load]);
 
-  // A studio that has not set preferences on this device starts with the wizard, pre-filled from its profile.
+  // Preferences are asked for once. After that they come from this device, or, on a new phone or after a
+  // reinstall, from what the studio already saved on its profile. The wizard only opens by itself for a
+  // studio that has never answered and has not skipped it.
   useEffect(() => {
     if (!designerId) return;
     let cancelled = false;
-    void loadStoredPreferences(designerId).then(stored => {
+    void (async () => {
+      const stored = await loadStoredPreferences(designerId);
       if (cancelled) return;
-      if (stored) setPrefs(stored); else setWizardOpen(true);
+      if (stored) { setPrefs(stored); setPrefsReady(true); return; }
+      const fromProfile = preferencesFromProfile(studio);
+      if (hasPreferenceAnswers(fromProfile)) { setPrefs(fromProfile); setPrefsReady(true); return; }
+      const skipped = await wasPreferencesSkipped(designerId);
+      if (cancelled) return;
+      if (!skipped) setWizardOpen(true);
       setPrefsReady(true);
-    });
+    })();
     return () => { cancelled = true; };
+    // `studio` is read once when the profile first loads; later edits go through the wizard itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [designerId]);
 
   // Only open client briefs: no studio-posted projects, nothing already awarded or closed.
@@ -253,7 +263,7 @@ export default function FindProjectsScreen() {
           popularCities={popularCities}
           save={body => partnerApi.updateStudioProfile(body).then(() => { patchProfile(body as never); })}
           onDone={next => { setPrefs(next); setRecommendedOnly(true); setWizardOpen(false); }}
-          onSkip={() => setWizardOpen(false)}
+          onSkip={() => { setWizardOpen(false); void rememberPreferencesSkipped(designerId); }}
         />
       )}
       <ProposalSheet
