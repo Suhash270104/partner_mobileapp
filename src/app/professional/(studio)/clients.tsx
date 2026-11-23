@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Text } from '../../../components/AppText';
+import { Text, TextInput } from '../../../components/AppText';
 import { Icon } from '../../../components/Icon';
 import { router } from 'expo-router';
 import { partnerApi, StudioAvailableLead, StudioLead } from '../../../lib/partnerApi';
@@ -34,6 +34,14 @@ function leadSource(lead: StudioLead) {
   return { origin, payment };
 }
 
+const LEAD_STATUS_FILTERS = ['New', 'Proposal Sent', 'Awarded', 'Not Selected'] as const;
+const CITY_FILTER_LIMIT = 6;
+
+const matchesQuery = (query: string, fields: unknown[]) => {
+  const q = query.trim().toLowerCase();
+  return !q || fields.some(field => String(field ?? '').toLowerCase().includes(q));
+};
+
 export default function ClientsScreen() {
   const { profile } = useStudio();
   const [leads, setLeads] = useState<StudioLead[]>([]);
@@ -51,6 +59,9 @@ export default function ClientsScreen() {
   const [proposalTarget, setProposalTarget] = useState<ProposalContext | null>(null);
   const [refundTarget, setRefundTarget] = useState<StudioLead | null>(null);
   const [plansOpen, setPlansOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | (typeof LEAD_STATUS_FILTERS)[number]>('all');
+  const [cityFilter, setCityFilter] = useState('all');
 
   const flash = useCallback((text: string, bad = false) => {
     setToast({ text, bad });
@@ -131,6 +142,15 @@ export default function ClientsScreen() {
     };
   }
 
+  // Search and filters apply to the tab being viewed. The tab counts above stay the totals.
+  const visibleLeads = projectLeads.filter(lead => (statusFilter === 'all' || leadStatus(lead).label === statusFilter)
+    && matchesQuery(query, [lead.customer?.name, lead.project?.title, lead.project?.location, lead.project?.city, lead.project?.propertyType, lead.project?.budgetRange]));
+  const cities = Array.from(new Set(available.map(project => String(project.city || project.location || '').trim()).filter(Boolean))).slice(0, CITY_FILTER_LIMIT);
+  const visibleAvailable = available.filter(project => (cityFilter === 'all' || String(project.city || project.location || '').trim() === cityFilter)
+    && matchesQuery(query, [project.title, project.location, project.city, project.propertyType, project.budgetRange]));
+  const visibleRefunded = refunded.filter(lead => matchesQuery(query, [lead.project?.title, lead.project?.location, lead.customer?.name]));
+  const filtering = query.trim() !== '' || (tab === 'unlocked' && statusFilter !== 'all') || (tab === 'available' && cityFilter !== 'all');
+
   const tabs: [Tab, string][] = [['unlocked', `Unlocked (${projectLeads.length})`], ['available', `New Leads (${available.length})`], ['refunded', `Refunded (${refunded.length})`]];
 
   return (
@@ -174,6 +194,26 @@ export default function ClientsScreen() {
           ))}
         </ScrollView>
 
+        <TextInput style={s.search} value={query} onChangeText={setQuery} placeholder="Search by client, project or city…" placeholderTextColor="#98a59f" returnKeyType="search" clearButtonMode="while-editing" />
+        {tab === 'unlocked' && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+            {(['all', ...LEAD_STATUS_FILTERS] as const).map(id => (
+              <Pressable key={id} style={[s.chip, statusFilter === id && s.chipOn]} onPress={() => setStatusFilter(id)}>
+                <Text style={[s.chipText, statusFilter === id && { color: '#fff' }]}>{id === 'all' ? 'All statuses' : id}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+        {tab === 'available' && cities.length > 1 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+            {['all', ...cities].map(id => (
+              <Pressable key={id} style={[s.chip, cityFilter === id && s.chipOn]} onPress={() => setCityFilter(id)}>
+                <Text style={[s.chipText, cityFilter === id && { color: '#fff' }]}>{id === 'all' ? 'All cities' : id}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+
         {loading && <ActivityIndicator color={c.green} style={{ marginTop: 24 }} />}
         {!loading && !!error && (
           <View style={s.emptyCard}>
@@ -182,12 +222,12 @@ export default function ClientsScreen() {
           </View>
         )}
 
-        {!loading && !error && tab === 'unlocked' && (projectLeads.length === 0 ? (
+        {!loading && !error && tab === 'unlocked' && (visibleLeads.length === 0 ? (
           <View style={s.emptyCard}>
-            <Text style={s.emptyTitle}>No active unlocked leads</Text>
-            <Text style={s.emptyCopy}>When clients unlock your profile or request proposals for their projects, they will appear here.</Text>
+            <Text style={s.emptyTitle}>{filtering ? 'No leads match your search' : 'No active unlocked leads'}</Text>
+            <Text style={s.emptyCopy}>{filtering ? 'Try a different name or clear the filters.' : 'When clients unlock your profile or request proposals for their projects, they will appear here.'}</Text>
           </View>
-        ) : projectLeads.map(lead => {
+        ) : visibleLeads.map(lead => {
           const project = lead.project || {};
           const customer = lead.customer || {};
           const key = String(lead.id || lead._id);
@@ -267,9 +307,9 @@ export default function ClientsScreen() {
           );
         }))}
 
-        {!loading && !error && tab === 'available' && (available.length === 0 ? (
-          <View style={s.emptyCard}><Text style={s.emptyTitle}>No new leads right now</Text><Text style={s.emptyCopy}>New client projects that match your studio will appear here to unlock.</Text></View>
-        ) : available.map(project => {
+        {!loading && !error && tab === 'available' && (visibleAvailable.length === 0 ? (
+          <View style={s.emptyCard}><Text style={s.emptyTitle}>{filtering ? 'No leads match your search' : 'No new leads right now'}</Text><Text style={s.emptyCopy}>{filtering ? 'Try a different search or choose another city.' : 'New client projects that match your studio will appear here to unlock.'}</Text></View>
+        ) : visibleAvailable.map(project => {
           const meta = [project.location || project.city, project.budgetRange, project.propertyType, project.timeline].filter(Boolean).join(' · ');
           return (
             <View key={project.id} style={s.lockedCard}>
@@ -284,9 +324,9 @@ export default function ClientsScreen() {
           );
         }))}
 
-        {!loading && !error && tab === 'refunded' && (refunded.length === 0 ? (
-          <View style={s.emptyCard}><Text style={s.emptyTitle}>No refunded leads</Text><Text style={s.emptyCopy}>Approved refund requests show up here.</Text></View>
-        ) : refunded.map(lead => (
+        {!loading && !error && tab === 'refunded' && (visibleRefunded.length === 0 ? (
+          <View style={s.emptyCard}><Text style={s.emptyTitle}>{filtering ? 'No leads match your search' : 'No refunded leads'}</Text><Text style={s.emptyCopy}>{filtering ? 'Try a different search.' : 'Approved refund requests show up here.'}</Text></View>
+        ) : visibleRefunded.map(lead => (
           <View key={String(lead.id)} style={s.lead}>
             <View style={s.leadHead}>
               <Text style={[s.leadName, { flex: 1 }]} numberOfLines={1}>{lead.project?.title || 'Interior project'}</Text>
@@ -327,6 +367,11 @@ export default function ClientsScreen() {
 }
 
 const s = StyleSheet.create({
+  search: { height: 46, borderRadius: 13, borderWidth: 1.5, borderColor: c.line, backgroundColor: '#fff', paddingHorizontal: 14, color: c.ink, fontSize: 13.5, marginBottom: 10 },
+  chips: { gap: 8, paddingBottom: 10 },
+  chip: { borderRadius: 999, paddingHorizontal: 13, paddingVertical: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: c.line },
+  chipOn: { backgroundColor: c.green, borderColor: c.green },
+  chipText: { color: c.body, fontSize: 12, fontWeight: '700' },
   flex: { flex: 1 },
   content: { padding: 16, paddingBottom: 30 },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

@@ -8,6 +8,7 @@ import { partnerApi } from '../../../lib/partnerApi';
 import { generatedFileName, normalizeMime } from '../../../lib/professionalOnboarding';
 import { c, ErrorText, Field } from '../../professional/onboardingUi';
 import { Sheet } from '../Sheet';
+import { DateField, TimeField } from '../DateTimeFields';
 
 // The designer side of the desktop ExecutionWorkspace (isDesignerViewer = true): task board, site
 // visits & audits, site progress feed and design documents. Talks only to /execution/*.
@@ -342,7 +343,7 @@ function TaskSheet({ visible, projectId, onClose, onCreated }: { visible: boolea
     <Sheet visible={visible} title="New task" eyebrow="TASK & EXECUTION BOARD" onClose={onClose} locked={busy}>
       <Field label="TASK TITLE *" value={title} onChangeText={setTitle} placeholder="e.g. Install master bedroom custom wardrobes" />
       <Field label="PHASE" value={phase} onChangeText={setPhase} placeholder="e.g. Carpentry / Civil" />
-      <Field label="DUE DATE (DD-MM-YYYY)" value={due} onChangeText={setDue} placeholder="25-12-2026" keyboardType="numbers-and-punctuation" />
+      <DateField label="DUE DATE" value={due} onChange={setDue} placeholder="Select a due date (optional)" />
       <Text style={s.label}>ASSIGNED TO</Text>
       <View style={s.optionRow}>
         {([['', 'Unassigned'], ['professional', 'Studio (Designer / Execution)'], ['client', 'Client (Homeowner)']] as const).map(([value, label]) => (
@@ -365,7 +366,7 @@ function VisitSheet({ visible, projectId, onClose, onCreated }: { visible: boole
 
   async function save() {
     const when = parseWhen(date, time);
-    if (!when) { setError('Enter the date as DD-MM-YYYY and the time as HH:MM (24-hour).'); return; }
+    if (!when) { setError('Pick the date and the time of the visit.'); return; }
     setBusy(true);
     setError('');
     try {
@@ -380,8 +381,8 @@ function VisitSheet({ visible, projectId, onClose, onCreated }: { visible: boole
 
   return (
     <Sheet visible={visible} title="Schedule a site visit" eyebrow="SITE VISITS & AUDITS" onClose={onClose} locked={busy}>
-      <Field label="DATE (DD-MM-YYYY) *" value={date} onChangeText={setDate} placeholder="25-12-2026" keyboardType="numbers-and-punctuation" />
-      <Field label="TIME (HH:MM, 24-HOUR) *" value={time} onChangeText={setTime} placeholder="14:30" keyboardType="numbers-and-punctuation" />
+      <DateField label="DATE" value={date} onChange={setDate} required />
+      <TimeField label="TIME" value={time} onChange={setTime} required />
       <Field label="PURPOSE" value={purpose} onChangeText={setPurpose} placeholder="e.g. Electrical conduit inspection & woodwork measurements" />
       <Text style={s.label}>REPEATS</Text>
       <View style={s.optionRow}>

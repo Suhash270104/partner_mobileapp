@@ -25,6 +25,7 @@ export const STUDIO_SECTIONS: { group: string; items: StudioSection[] }[] = [
   { group: 'Growth', items: [
     { key: 'reviews', label: 'Reviews', hint: 'Client ratings & replies', path: '/professional/reviews', glyph: 'star', built: true },
     { key: 'analytics', label: 'Analytics', hint: 'Funnel, earnings & margins', path: '/professional/analytics', glyph: 'trendingUp', built: true },
+    { key: 'revenue', label: 'Revenue', hint: 'What makes up your earnings', path: '/professional/revenue', glyph: 'rupee', built: true },
     { key: 'insights', label: 'AI Insights', hint: 'KAI score, profile strength & trust', path: '/professional/insights', glyph: 'zap', built: true },
   ] },
   { group: 'Studio', items: [

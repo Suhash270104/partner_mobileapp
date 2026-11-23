@@ -9,6 +9,8 @@ import { ExecutionTab } from '../../../components/studio/pms/ExecutionTab';
 import { ProcurementTab } from '../../../components/studio/pms/ProcurementTab';
 import { QuotationTab } from '../../../components/studio/pms/QuotationTab';
 import { ReportTab } from '../../../components/studio/pms/ReportTab';
+import { openProjectChat } from '../../../lib/projectChat';
+import { isWonStatus } from '../../../lib/studioMoney';
 
 type PmsTab = 'tasks' | 'quotations' | 'procurement' | 'report' | 'client';
 
@@ -32,6 +34,8 @@ interface PmsProject {
   projectStory?: string;
   customerId?: { name?: string; email?: string; phone?: string };
   hasAwarded?: boolean;
+  awardedToAnotherStudio?: boolean;
+  proposalStatus?: string | null;
   selectedProfessionalId?: string;
   designerId?: string;
   awardedProfessional?: unknown;
@@ -40,14 +44,27 @@ interface PmsProject {
 
 // Only awarded projects have a workspace (same rule as desktop).
 function isAwarded(p: PmsProject, designerId?: string): boolean {
+  if (p.awardedToAnotherStudio) return false;
   if (p.hasAwarded) return true;
+  if (p.proposalStatus && isWonStatus(p.proposalStatus)) return true;
   if (p.selectedProfessionalId || p.designerId || p.awardedProfessional || p.awardedDesignerId) return true;
   if (designerId && (String(p.selectedProfessionalId || '') === designerId || String(p.designerId || '') === designerId)) return true;
   const status = String(p.status || '').toLowerCase().replace(/[\s_-]+/g, '');
   return ['awarded', 'inprogress', 'completed', 'execution'].includes(status);
 }
 
-const TABS: [PmsTab, string][] = [['tasks', 'Tasks & Milestones'], ['quotations', 'Quotations & Estimates'], ['procurement', 'Procurement & POs'], ['report', 'Project Report'], ['client', 'Client & Details']];
+// The server says per project whether it really is assigned to this studio (older servers do not say,
+// and then the project is treated as workable). The task board, visits and quotations only open for
+// projects assigned to the studio; a project it merely has a "Won" proposal on stays read-only.
+const isLocked = (p?: PmsProject | null) => p?.hasAwarded === false;
+
+function statusBadge(p: PmsProject): { label: string; locked: boolean } {
+  if (isLocked(p)) return { label: 'Not awarded yet', locked: true };
+  const status = String(p.status || '');
+  return { label: ['In Progress', 'Work in Progress'].includes(status) ? 'Active' : status || 'Active', locked: false };
+}
+
+const TABS: [PmsTab, string][] =[['tasks', 'Tasks & Milestones'], ['quotations', 'Quotations & Estimates'], ['procurement', 'Procurement & POs'], ['report', 'Project Report'], ['client', 'Client & Details']];
 
 export default function ProjectManagementScreen() {
   const { profile } = useStudio();
@@ -61,7 +78,21 @@ export default function ProjectManagementScreen() {
   const [tab, setTab] = useState<PmsTab>('tasks');
   const [picker, setPicker] = useState(false);
   const [version, setVersion] = useState(0);
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatError, setChatError] = useState('');
   const designerId = profile._id || '';
+
+  async function openChat() {
+    setChatBusy(true);
+    setChatError('');
+    try {
+      await openProjectChat(selectedId);
+    } catch (e) {
+      setChatError(e instanceof Error ? e.message : 'Could not open the conversation. Please try again.');
+    } finally {
+      setChatBusy(false);
+    }
+  }
 
   const loadProjects = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
@@ -102,6 +133,7 @@ export default function ProjectManagementScreen() {
   const clientName = current?.clientName || current?.customerId?.name || '';
   const clientEmail = current?.clientEmail || current?.customerId?.email;
   const clientPhone = current?.clientPhone || current?.customerId?.phone;
+  const locked = isLocked(projects.find(p => p.id === selectedId));
 
   if (loading) return <View style={s.center}><ActivityIndicator color={c.green} size="large" /></View>;
 
@@ -131,7 +163,7 @@ export default function ProjectManagementScreen() {
               {projects.map(project => (
                 <Pressable key={project.id} style={[s.pickerItem, project.id === selectedId && { backgroundColor: c.greenSoft }]} onPress={() => { setSelectedId(project.id); setPicker(false); setDetails(null); }}>
                   <Text style={[s.pickerItemText, project.id === selectedId && { color: c.green }]} numberOfLines={1}>{project.title || 'Untitled'}</Text>
-                  <Text style={s.active}>Active</Text>
+                  <Text style={[s.active, statusBadge(project).locked && { color: c.amber }]}>{statusBadge(project).label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -143,10 +175,11 @@ export default function ProjectManagementScreen() {
         <View style={s.avatar}><Text style={s.avatarText}>{(clientName || 'C').trim().charAt(0).toUpperCase()}</Text></View>
         <View style={{ flex: 1 }}>
           <Text style={s.clientName}>{clientName || 'Client'}</Text>
-          <Text style={s.meta}>Project Owner · Awarded Client</Text>
+          <Text style={s.meta}>{locked ? 'Project Owner' : 'Project Owner · Awarded Client'}</Text>
         </View>
-        <Pressable style={s.chat} onPress={() => router.navigate('/professional/messages' as never)}><Text style={s.chatText}>Chat</Text></Pressable>
+        <Pressable style={s.chat} disabled={chatBusy} onPress={() => void openChat()}>{chatBusy ? <ActivityIndicator color="#fff" /> : <Text style={s.chatText}>Chat</Text>}</Pressable>
       </View>
+      {!!chatError && <ErrorText>{chatError}</ErrorText>}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>
         {TABS.map(([key, label]) => (
@@ -154,10 +187,20 @@ export default function ProjectManagementScreen() {
         ))}
       </ScrollView>
 
-      {tab === 'tasks' && <ExecutionTab key={`${selectedId}-${version}`} projectId={selectedId} />}
-      {tab === 'quotations' && <QuotationTab key={`${selectedId}-${version}`} projectId={selectedId} />}
-      {tab === 'procurement' && <ProcurementTab key={`${selectedId}-${version}`} projectId={selectedId} />}
-      {tab === 'report' && <ReportTab key={`${selectedId}-${version}`} projectId={selectedId} />}
+      {tab !== 'client' && locked && (
+        <View style={s.lockCard}>
+          <Text style={s.lockTitle}>This project is not assigned to your studio yet</Text>
+          <Text style={s.copy}>
+            The task board, site visits, quotations and purchase orders open once the client awards this project to your studio.
+            Until then you can chat with the client and read the project brief.
+          </Text>
+          <Pressable style={s.solid} onPress={() => void openChat()} disabled={chatBusy}><Text style={s.solidText}>Chat with the client</Text></Pressable>
+        </View>
+      )}
+      {!locked && tab === 'tasks' && <ExecutionTab key={`${selectedId}-${version}`} projectId={selectedId} />}
+      {!locked && tab === 'quotations' && <QuotationTab key={`${selectedId}-${version}`} projectId={selectedId} />}
+      {!locked && tab === 'procurement' && <ProcurementTab key={`${selectedId}-${version}`} projectId={selectedId} />}
+      {!locked && tab === 'report' && <ReportTab key={`${selectedId}-${version}`} projectId={selectedId} />}
       {tab === 'client' && (
         <View style={{ gap: 12 }}>
           <View style={s.card}>
@@ -165,7 +208,7 @@ export default function ProjectManagementScreen() {
             <Text style={s.value}>{clientName || 'Not provided'}</Text>
             {!!clientPhone && <Pressable onPress={() => void Linking.openURL(`tel:${clientPhone}`)}><Text style={s.link}>{clientPhone}</Text></Pressable>}
             {!!clientEmail && <Pressable onPress={() => void Linking.openURL(`mailto:${clientEmail}`)}><Text style={s.link}>{clientEmail}</Text></Pressable>}
-            <Pressable style={s.solid} onPress={() => router.navigate('/professional/messages' as never)}><Text style={s.solidText}>Open Direct Chat</Text></Pressable>
+            <Pressable style={s.solid} onPress={() => void openChat()} disabled={chatBusy}>{chatBusy ? <ActivityIndicator color="#fff" /> : <Text style={s.solidText}>Open Direct Chat</Text>}</Pressable>
           </View>
           <View style={s.card}>
             <Text style={s.label}>PROJECT BRIEF</Text>
@@ -204,6 +247,8 @@ const s = StyleSheet.create({
   tabOn: { backgroundColor: c.green, borderColor: c.green },
   tabText: { color: c.body, fontSize: 12.5, fontWeight: '700' },
   card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: c.line, padding: 14, gap: 8 },
+  lockCard: { backgroundColor: c.amberSoft, borderRadius: 16, borderWidth: 1, borderColor: c.amber, padding: 14, gap: 10 },
+  lockTitle: { color: c.ink, fontSize: 14.5, fontWeight: '800' },
   label: { color: c.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.7 },
   value: { color: c.ink, fontSize: 14.5, fontWeight: '800' },
   link: { color: c.green, fontSize: 13.5, fontWeight: '800' },

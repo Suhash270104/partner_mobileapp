@@ -85,6 +85,19 @@ export default function TechnicianJobScreen() {
     }
   }
 
+  // Sends the phone's current position; the server accepts it only near the booking address.
+  async function reachLocation() {
+    setError('');
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) throw new Error('Location permission is off. Allow it so we can confirm you are at the address.');
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      await run(() => partnerApi.markTechnicianReached(bookingId, { lat: position.coords.latitude, lng: position.coords.longitude }));
+    } catch (e) {
+      setError(errorMessage(e, 'Could not get your location.'));
+    }
+  }
+
   async function captureSelfie() {
     setError('');
     try {
@@ -195,7 +208,15 @@ export default function TechnicianJobScreen() {
         </Pressable>
       </View>}
 
-      {status === 'EN_ROUTE' && <>
+      {status === 'EN_ROUTE' && !job.technicianReachedAt && <View style={styles.card}>
+        <Text style={styles.cardTitle}>Reached the address?</Text>
+        <Text style={styles.muted}>Tap this when you are at the customer&apos;s door. We tell {job.customerDetails?.name || 'the customer'} you have arrived and send them the arrival code, which you then ask them for. Your phone&apos;s location must be near the address.</Text>
+        <Pressable disabled={busy} style={[styles.primary, busy && styles.disabled]} onPress={() => void reachLocation()}>
+          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>I&apos;ve reached the location  →</Text>}
+        </Pressable>
+      </View>}
+
+      {status === 'EN_ROUTE' && !!job.technicianReachedAt && <>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Liveness check</Text>
           <Text style={styles.muted}>Take a live selfie on arrival. It is attached to this booking with your location as the arrival record.</Text>

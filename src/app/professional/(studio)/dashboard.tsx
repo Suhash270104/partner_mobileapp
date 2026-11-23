@@ -6,12 +6,13 @@ import { router } from 'expo-router';
 import { partnerApi, studioApprovalState, StudioDashboardResponse, StudioProposalRecord } from '../../../lib/partnerApi';
 import { c, Card, ErrorText } from '../../../components/professional/onboardingUi';
 import { RecommendedProjects } from '../../../components/studio/RecommendedProjects';
-import { openProposalProject } from '../../../lib/proposalProject';
+import { openProposalProject, proposalProjectId } from '../../../lib/proposalProject';
+import { openProjectChat } from '../../../lib/projectChat';
+import { formatRevenue } from '../../../lib/studioMoney';
 import { useStudio } from '../../../components/studio/StudioContext';
 
 type ProposalFilter = 'all' | 'awarded' | 'shortlisted' | 'pending';
 
-const formatRevenue = (lakhs: number) => (lakhs >= 100 ? `₹${(lakhs / 100).toFixed(2)} Cr` : lakhs > 0 ? `₹${lakhs.toFixed(2).replace(/\.00$/, '')}L` : '₹0');
 const go = (path: string) => router.navigate(path as never);
 
 function nameOf(item: StudioProposalRecord) {
@@ -42,6 +43,22 @@ export default function DashboardScreen() {
   const [availability, setAvailability] = useState(profile.availability || 'Available');
   const [savingAvailability, setSavingAvailability] = useState(false);
   const [availabilityError, setAvailabilityError] = useState('');
+  const [chatting, setChatting] = useState('');
+  const [chatError, setChatError] = useState('');
+
+  // "Chat" on a proposal opens that client's conversation, not the list of all conversations.
+  async function chatAbout(item: StudioProposalRecord) {
+    const key = String(item._id || item.id || '');
+    setChatting(key);
+    setChatError('');
+    try {
+      await openProjectChat(proposalProjectId(item));
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : 'Could not open the conversation. Please try again.');
+    } finally {
+      setChatting('');
+    }
+  }
 
   const load = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
@@ -96,14 +113,16 @@ export default function DashboardScreen() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
+  // Every card opens the screen that lists what the number counts.
   const kpis = [
-    { label: 'Profile views', value: Number(data?.professional?.profileViews || 0).toLocaleString('en-IN'), foot: 'Times recommended to clients', glyph: 'eye' },
-    { label: 'Project invitations', value: String(Number(stats.leads || 0)), foot: 'Clients unlocked you', glyph: 'send' },
-    { label: 'Proposals submitted', value: String(submitted), foot: 'Total sent', glyph: 'fileText' },
-    { label: 'Shortlisted', value: String(Number(stats.shortlisted || 0)), foot: 'From client shortlists', glyph: 'star' },
-    { label: 'Projects won', value: String(won), foot: 'Awarded to you', glyph: 'award' },
-    { label: 'Revenue earned', value: revenue, foot: 'From won projects', glyph: 'rupee' },
+    { label: 'Profile views', value: Number(data?.professional?.profileViews || 0).toLocaleString('en-IN'), foot: 'Times recommended to clients', glyph: 'eye', to: { pathname: '/professional/analytics' } },
+    { label: 'Project invitations', value: String(Number(stats.leads || 0)), foot: 'Clients unlocked you', glyph: 'send', to: { pathname: '/professional/clients' } },
+    { label: 'Proposals submitted', value: String(submitted), foot: 'Total sent', glyph: 'fileText', to: { pathname: '/professional/proposals' } },
+    { label: 'Shortlisted', value: String(Number(stats.shortlisted || 0)), foot: 'From client shortlists', glyph: 'star', to: { pathname: '/professional/shortlisted' } },
+    { label: 'Projects won', value: String(won), foot: 'Awarded to you', glyph: 'award', to: { pathname: '/professional/proposals', params: { filter: 'Won' } } },
+    { label: 'Revenue earned', value: revenue, foot: 'From won projects', glyph: 'rupee', to: { pathname: '/professional/revenue' } },
   ];
+  const averageDeal = won > 0 ? formatRevenue(Number(data?.revenueEarned || 0) / won) : '₹0';
 
   return (
     <ScrollView style={s.flex} contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={c.green} />}>
@@ -140,12 +159,15 @@ export default function DashboardScreen() {
       <Text style={s.section}>Studio Performance</Text>
       <View style={s.kpiGrid}>
         {kpis.map(kpi => (
-          <View key={kpi.label} style={s.kpi}>
-            <View style={s.kpiIcon}><Icon name={kpi.glyph} size={18} color={c.green} /></View>
+          <Pressable key={kpi.label} style={s.kpi} onPress={() => router.navigate(kpi.to as never)} accessibilityRole="button" accessibilityLabel={`${kpi.label}: ${kpi.value}. Open details`}>
+            <View style={s.kpiTop}>
+              <View style={s.kpiIcon}><Icon name={kpi.glyph} size={18} color={c.green} /></View>
+              <Icon name="chevronRight" size={16} color={c.muted} />
+            </View>
             <Text style={s.kpiValue}>{kpi.value}</Text>
             <Text style={s.kpiLabel}>{kpi.label}</Text>
             <Text style={s.kpiFoot}>{kpi.foot}</Text>
-          </View>
+          </Pressable>
         ))}
       </View>
 
@@ -193,7 +215,9 @@ export default function DashboardScreen() {
                 </View>
                 {!!item.scopeText && item.scopeText.length > 5 && <Text style={s.scope} numberOfLines={2}>&ldquo;{item.scopeText}&rdquo;</Text>}
                 <View style={s.proposalActions}>
-                  <Pressable style={s.actionGhost} onPress={() => go('/professional/messages')}><Text style={s.actionGhostText}>Chat</Text></Pressable>
+                  <Pressable style={s.actionGhost} disabled={chatting === String(item._id || item.id || '')} onPress={() => void chatAbout(item)}>
+                    {chatting === String(item._id || item.id || '') ? <ActivityIndicator color={c.green} /> : <Text style={s.actionGhostText}>Chat</Text>}
+                  </Pressable>
                   <Pressable style={s.actionSolid} onPress={() => { openProposalProject(item); }}><Text style={s.actionSolidText}>View Details →</Text></Pressable>
                 </View>
               </View>
@@ -202,6 +226,7 @@ export default function DashboardScreen() {
           {shown.length === 0 && <Text style={s.sub}>No proposals in this filter.</Text>}
         </ScrollView>
       )}
+      {!!chatError && <ErrorText>{chatError}</ErrorText>}
 
       <RecommendedProjects />
 
@@ -214,9 +239,13 @@ export default function DashboardScreen() {
       <Text style={s.section}>Revenue Overview</Text>
       <Card>
         <Text style={s.revenue}>{revenue}</Text>
-        <Text style={s.sub}>Total earned from won projects</Text>
-        <View style={s.activityRow}><Text style={s.activityLabel}>Paid invoices</Text><Text style={s.activityValue}>{revenue}</Text></View>
-        <View style={s.activityRow}><Text style={s.activityLabel}>Pending</Text><Text style={s.activityValue}>₹0</Text></View>
+        <Text style={s.sub}>Total value of the proposals clients accepted</Text>
+        <View style={s.activityRow}><Text style={s.activityLabel}>Won projects</Text><Text style={s.activityValue}>{won}</Text></View>
+        <View style={s.activityRow}><Text style={s.activityLabel}>Average per project</Text><Text style={s.activityValue}>{averageDeal}</Text></View>
+        <Pressable style={s.detailsLink} onPress={() => go('/professional/revenue')} accessibilityRole="button">
+          <Text style={s.detailsLinkText}>View full revenue details</Text>
+          <Icon name="chevronRight" size={16} color={c.green} />
+        </Pressable>
       </Card>
 
       <Text style={s.section}>Upcoming Deadlines</Text>
@@ -238,7 +267,7 @@ export default function DashboardScreen() {
       </View>
       <Card>
         {(data?.recentMessages || []).length === 0 ? <Text style={s.sub}>No recent messages.</Text> : (data?.recentMessages || []).map((message, index) => (
-          <Pressable key={String(message.id ?? index)} style={s.deadline} onPress={() => go('/professional/messages')}>
+          <Pressable key={String(message.id ?? index)} style={s.deadline} onPress={() => router.navigate({ pathname: '/professional/messages', params: message.roomId ? { room: String(message.roomId) } : {} } as never)}>
             <Text style={s.deadlineTitle} numberOfLines={1}>{message.clientName || 'Client'}</Text>
             <Text style={s.sub} numberOfLines={2}>{message.text}</Text>
             {!!message.time && <Text style={s.time}>{new Date(message.time).toLocaleString()}</Text>}
@@ -273,6 +302,9 @@ const s = StyleSheet.create({
   sub: { color: c.body, fontSize: 12.5, lineHeight: 18 },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   kpi: { width: '48.5%', backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: c.line, padding: 14 },
+  kpiTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  detailsLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 10, paddingVertical: 10, borderRadius: 12, backgroundColor: c.greenSoft },
+  detailsLinkText: { color: c.green, fontSize: 13, fontWeight: '800' },
   kpiIcon: { width: 30, height: 30, borderRadius: 9, backgroundColor: c.greenSoft, alignItems: 'center', justifyContent: 'center' },
   kpiGlyph: { color: c.green, fontSize: 14, fontWeight: '800' },
   kpiValue: { color: c.ink, fontSize: 20, fontWeight: '800', marginTop: 10 },

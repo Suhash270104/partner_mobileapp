@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, RefreshControl, ScrollView, StyleSheet, View, Pressable } from 'react-native';
 import { Text, TextInput } from '../../../components/AppText';
+import { useLocalSearchParams } from 'expo-router';
 import { partnerApi } from '../../../lib/partnerApi';
 import { openProposalProject, proposalProjectId } from '../../../lib/proposalProject';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
@@ -36,12 +37,16 @@ const STATUS: Record<string, { label: string; bg: string; fg: string }> = {
   Rejected: { label: 'Rejected', bg: c.redSoft, fg: c.red },
 };
 
+const FILTER_TABS: FilterTab[] = ['all', 'Submitted', 'Under Review', 'Shortlisted', 'Won', 'Not Selected'];
+
 export default function ProposalsScreen() {
+  // The dashboard's "Projects won" card opens this list already filtered (?filter=Won).
+  const params = useLocalSearchParams<{ filter?: string }>();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<FilterTab>('all');
+  const [filter, setFilter] = useState<FilterTab>(FILTER_TABS.find(tab => tab === params.filter) || 'all');
   const [query, setQuery] = useState('');
 
   const load = useCallback(async (manual = false) => {

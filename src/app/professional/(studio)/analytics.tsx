@@ -5,24 +5,12 @@ import { router } from 'expo-router';
 import { partnerApi, StudioDashboardResponse, StudioProposalRecord } from '../../../lib/partnerApi';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
 import { useStudio } from '../../../components/studio/StudioContext';
+import { formatRevenue, isWonStatus, lakhsOf } from '../../../lib/studioMoney';
 
 type Range = '7d' | '30d' | '90d' | '1y';
 const RANGES: [Range, string, number][] = [['7d', '7 Days', 7], ['30d', '30 Days', 30], ['90d', '3 Months', 90], ['1y', '1 Year', 365]];
 
 type Proposal = StudioProposalRecord & { matchScore?: number | null; updatedAt?: string; project?: { title?: string } };
-
-// Same parsing as the desktop analytics: "₹45 L", "1.2 Cr" or a plain rupee number -> lakhs.
-const lakhsOf = (priceEst?: string) => {
-  const raw = String(priceEst || '').replace(/[₹,\s]/g, '');
-  const cr = raw.match(/([\d.]+)\s*[Cc][Rr]/);
-  const l = raw.match(/([\d.]+)\s*[Ll]/);
-  if (cr) return parseFloat(cr[1]) * 100;
-  if (l) return parseFloat(l[1]);
-  const n = parseFloat(raw);
-  return Number.isNaN(n) ? 0 : n / 100000;
-};
-const isWonStatus = (status?: string) => ['Won', 'Awarded', 'Accepted', 'Completed', 'In Progress', 'Work in Progress'].includes(status || '');
-const formatRevenue = (lakhs: number) => (lakhs >= 100 ? `₹${(lakhs / 100).toFixed(2)} Cr` : lakhs > 0 ? `₹${lakhs.toFixed(2).replace(/\.00$/, '')}L` : '₹0');
 
 function Bar({ pct, color }: { pct: number; color: string }) {
   return <View style={s.track}><View style={[s.fill, { width: `${Math.max(0, Math.min(100, pct))}%`, backgroundColor: color }]} /></View>;

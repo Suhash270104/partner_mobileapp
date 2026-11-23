@@ -126,6 +126,8 @@ export interface TechnicianProfileRecord {
 }
 
 export interface TechnicianBookingRecord {
+  // Set once the technician has said they reached the address; the customer's arrival code is sent then.
+  technicianReachedAt?: string | null;
   id?: string;
   _id?: string;
   bookingNumber?: string;
@@ -471,6 +473,9 @@ export const partnerApi = {
     method: 'PATCH',
     body: '{}',
   }),
+  markTechnicianReached: (bookingId: string, position: { lat: number; lng: number }) => request<{ booking: TechnicianBookingRecord }>(`/technician/jobs/${encodeURIComponent(bookingId)}/reached`, {
+    method: 'PATCH', body: JSON.stringify(position),
+  }),
   markTechnicianArrived: (bookingId: string, input: { otp: string; selfieUrl: string; lat?: number; lng?: number }) => request<{ booking: TechnicianBookingRecord }>(`/technician/jobs/${encodeURIComponent(bookingId)}/arrived`, {
     method: 'PATCH', body: JSON.stringify(input),
   }),
@@ -625,6 +630,9 @@ export interface ProfessionalProfileRecord {
   isApproved?: boolean;
   leadCredits?: number;
   bonusLeadCredits?: number;
+  subscriptionTier?: string;
+  billingInterval?: string;
+  subscriptionStartDate?: string | null;
   unlockedClientProjectIds?: unknown[];
   servicesOffered?: string[];
   availability?: string;
@@ -680,8 +688,9 @@ export interface StudioDashboardResponse {
   stats?: { leads?: number; proposalsSubmitted?: number; shortlisted?: number; projectsWon?: number; conversations?: number };
   professional?: { profileViews?: number };
   proposals?: StudioProposalRecord[];
-  recentMessages?: { id?: string | number; clientName?: string; text?: string; time?: string }[];
+  recentMessages?: { id?: string | number; roomId?: string; clientName?: string; text?: string; time?: string }[];
   revenueEarned?: number;
+  revenueBreakdown?: { id: string; projectId: string; title: string; clientName: string; status?: string; quote: string; amountLakhs: number; basis: 'quote' | 'client budget'; at?: string | null }[];
   kaiMetrics?: { score?: number; responseRate?: number; proposalQuality?: number; clientSatisfaction?: number; onTimeDelivery?: number; ratingLabel?: string; stars?: number; betterThanPercentile?: number };
 }
 
@@ -707,7 +716,7 @@ export interface ExecutionProjectReport {
   onTimeCheckInRate: number | null;
 }
 
-export interface CashfreeOrder { success: boolean; orderId: string; paymentSessionId: string; environment: 'production' | 'sandbox'; amount?: number; message?: string }
+export interface CashfreeOrder { success: boolean; orderId: string; paymentSessionId: string; environment: 'production' | 'sandbox'; amount?: number; message?: string; returnUrl?: string }
 
 export interface PublicPlan {
   id: string;

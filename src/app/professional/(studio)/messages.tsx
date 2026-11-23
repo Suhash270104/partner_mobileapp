@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Linking, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/AppText';
 import type { FlatListInstance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -105,7 +105,10 @@ export default function MessagesScreen() {
   const [proposal, setProposal] = useState<ProposalContext | null>(null);
   const [lightbox, setLightbox] = useState<{ url: string; title: string } | null>(null);
   const listRef = useRef<FlatListInstance>(null);
-  const requestedRoom = useRef(params.room || '');
+  // The conversation another screen asked for (?room=...). `handledRoom` makes sure it opens once, and
+  // `refetchedRoom` that a room created a moment ago is looked for with one extra reload, not a loop.
+  const [handledRoom, setHandledRoom] = useState('');
+  const refetchedRoom = useRef('');
 
   useEffect(() => { openRef.current = openId; }, [openId]);
 
@@ -139,10 +142,6 @@ export default function MessagesScreen() {
       });
       setThreads(built);
       setError('');
-      if (requestedRoom.current && built.some(thread => thread.id === requestedRoom.current)) {
-        setOpenId(requestedRoom.current);
-        requestedRoom.current = '';
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load your messages.');
     } finally {
@@ -177,10 +176,26 @@ export default function MessagesScreen() {
 
   const active = threads.find(thread => thread.id === openId) || null;
 
+  // Open the conversation another screen sent us to, also when this screen is already showing.
+  const wantedRoom = params.room || '';
+  const wantedLoaded = !!wantedRoom && threads.some(thread => thread.id === wantedRoom);
+  if (wantedLoaded && handledRoom !== wantedRoom) {
+    setHandledRoom(wantedRoom);
+    setOpenId(wantedRoom);
+  }
   useEffect(() => {
-    setChatOpen(true);
+    if (!wantedRoom || wantedLoaded || loading || refetchedRoom.current === wantedRoom) return;
+    refetchedRoom.current = wantedRoom;
+    void loadThreads();
+  }, [wantedRoom, wantedLoaded, loading, loadThreads]);
+
+  // The bottom tabs are hidden only inside a conversation (the composer needs the room); the list of
+  // conversations keeps them so there is always a way to another section.
+  const inConversation = !!active;
+  useEffect(() => {
+    setChatOpen(inConversation);
     return () => setChatOpen(false);
-  }, [setChatOpen]);
+  }, [setChatOpen, inConversation]);
 
   useEffect(() => {
     if (!active) return;
@@ -255,7 +270,8 @@ export default function MessagesScreen() {
     const awarded = active.isAwarded || active.proposalStatus === 'Awarded' || active.proposalStatus === 'Won';
     const waiting = active.hasSubmittedProposal || active.proposalStatus === 'Submitted' || active.proposalStatus === 'Under Review';
     return (
-      <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      // 'padding' on both platforms: it lifts the message box only as far as the keyboard actually covers it.
+      <KeyboardAvoidingView style={s.flex} behavior="padding">
         <View style={s.threadHead}>
           <Pressable onPress={() => { setThreads(previous => previous.map(thread => (thread.id === active.id ? { ...thread, unreadCount: 0 } : thread))); setOpenId(''); }} hitSlop={10}><Text style={s.back}>←</Text></Pressable>
           <View style={{ flex: 1 }}>
