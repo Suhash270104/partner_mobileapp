@@ -7,7 +7,7 @@ import type { Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { PartnerApiError, partnerApi, SERVICE_SLOT_OPTIONS, TechnicianProfileRecord, WEEKDAY_LABELS } from '../../lib/partnerApi';
 import { getEquipmentForCategories, getEquipmentLabel } from '../../lib/technicianEquipment';
-import { isExpoGo } from '../../lib/runtime';
+import { mapsAvailable } from '../../lib/runtime';
 import { colors } from '../../components/technician/jobUi';
 
 type MapsModule = typeof import('react-native-maps');
@@ -80,7 +80,7 @@ export default function TechnicianEditProfileScreen() {
   }, []);
 
   useEffect(() => {
-    if (isExpoGo()) return;
+    if (!mapsAvailable()) return;
     let active = true;
     void import('react-native-maps').then(module => { if (active) setMaps(module); }).catch(() => {});
     return () => { active = false; };

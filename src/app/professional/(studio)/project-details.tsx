@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -7,6 +7,7 @@ import * as Clipboard from 'expo-clipboard';
 import { partnerApi, StudioProjectDetail } from '../../../lib/partnerApi';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
 import { ProposalContext, ProposalSheet, UnlockSheet } from '../../../components/studio/leadSheets';
+import { RemoteImage } from '../../../components/RemoteImage';
 
 interface QA { _id?: string; q: string; a?: string }
 interface Attachment { name: string; url?: string; size?: string }
@@ -178,7 +179,7 @@ export default function ProjectDetailsScreen() {
 
         {photos.length > 0 && (
           <Pressable onPress={() => setLightbox(true)} style={s.hero}>
-            <Image source={{ uri: photos[Math.min(photo, photos.length - 1)] }} style={s.heroImage} onError={() => setFailed(previous => new Set(previous).add(photos[Math.min(photo, photos.length - 1)]))} />
+            <RemoteImage uri={photos[Math.min(photo, photos.length - 1)]} style={s.heroImage} onError={() => setFailed(previous => new Set(previous).add(photos[Math.min(photo, photos.length - 1)]))} />
             <View style={s.heroBadges}>
               <Text style={s.status}>● {project.status || 'Open'}</Text>
               {!!project.membershipLevel && <Text style={s.tier}>{project.membershipLevel} Tier</Text>}
@@ -189,7 +190,7 @@ export default function ProjectDetailsScreen() {
         {photos.length > 1 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 8 }}>
             {photos.map((uri, index) => (
-              <Pressable key={uri} onPress={() => setPhoto(index)}><Image source={{ uri }} style={[s.thumb, index === photo && s.thumbOn]} /></Pressable>
+              <Pressable key={uri} onPress={() => setPhoto(index)}><RemoteImage uri={uri} style={[s.thumb, index === photo && s.thumbOn]} /></Pressable>
             ))}
           </ScrollView>
         )}
@@ -372,9 +373,9 @@ export default function ProjectDetailsScreen() {
       <Modal visible={lightbox} transparent animationType="fade" onRequestClose={() => setLightbox(false)}>
         <SafeAreaView style={s.lightbox}>
           <Pressable style={s.close} onPress={() => setLightbox(false)} accessibilityLabel="Close gallery"><Text style={s.closeText}>✕</Text></Pressable>
-          {photos.length > 0 && <Image source={{ uri: photos[Math.min(photo, photos.length - 1)] }} style={s.big} resizeMode="contain" />}
+          {photos.length > 0 && <RemoteImage uri={photos[Math.min(photo, photos.length - 1)]} style={s.big} resizeMode="contain" />}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, padding: 12 }}>
-            {photos.map((uri, index) => <Pressable key={uri} onPress={() => setPhoto(index)}><Image source={{ uri }} style={[s.thumb, index === photo ? s.thumbOn : { opacity: 0.6 }]} /></Pressable>)}
+            {photos.map((uri, index) => <Pressable key={uri} onPress={() => setPhoto(index)}><RemoteImage uri={uri} style={[s.thumb, index === photo ? s.thumbOn : { opacity: 0.6 }]} /></Pressable>)}
           </ScrollView>
         </SafeAreaView>
       </Modal>

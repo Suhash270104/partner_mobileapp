@@ -7,6 +7,7 @@ module.exports = () => {
     ...staticConfig,
     expo: {
       ...staticConfig.expo,
+      extra: { ...staticConfig.expo.extra, googleMapsConfigured: Boolean(googleMapsApiKey) },
       ...(googleMapsApiKey
         ? {
             android: {

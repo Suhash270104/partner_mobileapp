@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Linking, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,7 +37,9 @@ export default function PartnerHomeScreen() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState('');
 
+  const lastLoadAt = useRef(0);
   const loadSession = useCallback(async (refresh = false) => {
+    lastLoadAt.current = Date.now();
     if (refresh) setRefreshing(true);
     else setLoading(true);
     setApiError('');
@@ -76,7 +78,12 @@ export default function PartnerHomeScreen() {
     return () => clearTimeout(timer);
   }, [loadSession]);
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', state => { if (state === 'active') void loadSession(true); });
+    // Coming back to the app refreshes the session, but not more than once a minute: quick app switches
+    // used to fire the session, seller-status and workspace checks every time.
+    const subscription = AppState.addEventListener('change', state => {
+      if (state !== 'active' || Date.now() - lastLoadAt.current < 60_000) return;
+      void loadSession(true);
+    });
     return () => subscription.remove();
   }, [loadSession]);
 
@@ -133,7 +140,9 @@ export default function PartnerHomeScreen() {
     void resolveStudioLaunch().then(t => { if (live) setLaunch(prev => ({ ...(prev.uid === uid ? prev : { uid }), designer: fromLaunch(t) })); });
     void resolveTechnicianLaunch().then(t => { if (live) setLaunch(prev => ({ ...(prev.uid === uid ? prev : { uid }), technician: fromLaunch(t) })); });
     return () => { live = false; };
-  }, [user, loading]);
+  // Keyed on the id, not the session object: a refresh returns a new object for the same person.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, loading]);
 
   function statusOf(item: Workspace): Status {
     if (loading) return checking;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { Icon } from '../Icon';
 import { router } from 'expo-router';
@@ -8,6 +8,7 @@ import { loadStoredPreferences, preferenceCriteria, preferencesFromProfile, Proj
 import { c, Card } from '../professional/onboardingUi';
 import { LeadProject, ProposalContext, ProposalSheet, UnlockSheet } from './leadSheets';
 import { useStudio } from './StudioContext';
+import { RemoteImage } from '../RemoteImage';
 
 const CARD_W = 300;
 const idOf = (project: OpenClientProject) => String(project._id || project.id || '');
@@ -124,7 +125,7 @@ export function RecommendedProjects() {
               <View key={id} style={s.card}>
                 <View style={s.media}>
                   {project.previewThumbnail
-                    ? <Image source={{ uri: project.previewThumbnail }} style={s.image} />
+                    ? <RemoteImage uri={project.previewThumbnail} style={s.image} />
                     : <View style={s.placeholder}><Icon name="image" size={30} color={c.green} strokeWidth={1.5} /></View>}
                   <View style={s.badges}>
                     {allOk && <View style={s.matchBadge}><Icon name="zap" size={11} color={c.greenText} /><Text style={s.matchText}>KAI match</Text></View>}

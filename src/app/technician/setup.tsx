@@ -13,7 +13,7 @@ import { partnerApi, PartnerApiError, TechnicianProfileRecord, TechnicianService
 import { getEquipmentForCategories } from '../../lib/technicianEquipment';
 import { isTechnicianSetupDone } from '../../lib/workspaceLaunch';
 import { getPartnerExpoPushToken, showPartnerNotification } from '../../lib/partnerNotifications';
-import { isExpoGo } from '../../lib/runtime';
+import { mapsAvailable } from '../../lib/runtime';
 type Tier = 'KN_CERTIFIED' | 'INDEPENDENT';
 type MapsModule = typeof import('react-native-maps');
 type Place = { title: string; subtitle: string; lat: number; lng: number; city: string };
@@ -100,7 +100,7 @@ export default function TechnicianSetupScreen() {
   const equipmentReadyCount = useMemo(() => equipmentChecklist.filter(id => requiredEquipment.some(item => item.id === id)).length, [equipmentChecklist, requiredEquipment]);
 
   useEffect(() => {
-    if (isExpoGo()) return;
+    if (!mapsAvailable()) return;
     let active = true;
     void import('react-native-maps')
       .then(module => { if (active) setMaps(module); })

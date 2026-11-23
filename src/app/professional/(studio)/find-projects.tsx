@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/AppText';
 import { Icon } from '../../../components/Icon';
+import { RemoteImage } from '../../../components/RemoteImage';
 import { router } from 'expo-router';
 import { OpenClientProject, partnerApi } from '../../../lib/partnerApi';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
@@ -210,7 +211,7 @@ export default function FindProjectsScreen() {
           const hasProposal = submitted.has(id);
           return (
             <View key={id} style={s.card}>
-              {!!project.previewThumbnail && <Image source={{ uri: project.previewThumbnail }} style={s.image} />}
+              {!!project.previewThumbnail && <RemoteImage uri={project.previewThumbnail} style={s.image} />}
               <View style={s.body}>
                 <Pressable onPress={() => router.navigate({ pathname: '/professional/project-details', params: { id } } as never)}><Text style={s.cardTitle} numberOfLines={2}>{project.title || 'Client Project Brief'}</Text><Text style={s.details}>View Details →</Text></Pressable>
                 <Text style={s.place} numberOfLines={1}>{placeOf(project) || 'Location on unlock'}</Text>

@@ -30,7 +30,7 @@ async function classify(error: unknown, roleType: 'designer' | 'technician'): Pr
 const BLOCKED_COPY = (what: string) => `Your ${what} was not approved or has been suspended by KraftNex. Contact support from the Help section to find out why and what to do next.`;
 const failure = (error: unknown, what: string): LaunchTarget => ({ kind: 'error', message: error instanceof Error && error.message ? error.message : `Could not load your ${what}. Check your connection and try again.` });
 
-export async function resolveStudioLaunch(): Promise<LaunchTarget> {
+async function loadStudioLaunch(): Promise<LaunchTarget> {
   try {
     const studio = await partnerApi.professionalProfile();
     return isProfileComplete(studio)
@@ -45,7 +45,7 @@ export async function resolveStudioLaunch(): Promise<LaunchTarget> {
   }
 }
 
-export async function resolveTechnicianLaunch(): Promise<LaunchTarget> {
+async function loadTechnicianLaunch(): Promise<LaunchTarget> {
   try {
     const { technician } = await partnerApi.technicianProfile();
     return isTechnicianSetupDone(technician)
@@ -59,6 +59,19 @@ export async function resolveTechnicianLaunch(): Promise<LaunchTarget> {
     return failure(error, 'technician profile');
   }
 }
+
+// The home screen asks for the same answer from several places at once (tile status, auto-open, a tap).
+// Calls made while one is already running share its result instead of each hitting the server; nothing
+// is kept afterwards, so a later call always sees fresh data.
+function shareInFlight(load: () => Promise<LaunchTarget>): () => Promise<LaunchTarget> {
+  let pending: Promise<LaunchTarget> | null = null;
+  return () => {
+    if (!pending) pending = load().finally(() => { pending = null; });
+    return pending;
+  };
+}
+export const resolveStudioLaunch = shareInFlight(loadStudioLaunch);
+export const resolveTechnicianLaunch = shareInFlight(loadTechnicianLaunch);
 
 // Remembers, for this app run, which signed-in person the home screen has already sent straight to
 // their workspace. Going back to the home screen afterwards must NOT bounce them in again, and

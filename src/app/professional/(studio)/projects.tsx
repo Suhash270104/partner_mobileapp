@@ -8,6 +8,7 @@ import { generatedFileName, normalizeMime, uploadStudioFile } from '../../../lib
 import { c, ErrorText, Field } from '../../../components/professional/onboardingUi';
 import { Sheet } from '../../../components/studio/Sheet';
 import { useStudio } from '../../../components/studio/StudioContext';
+import { RemoteImage } from '../../../components/RemoteImage';
 
 // Same limits and option lists as the desktop "Add New Project" form.
 const MIN_PROJECT_IMAGES = 5;
@@ -131,7 +132,7 @@ export default function ProjectsScreen() {
 
         {shown.map(row => (
           <Pressable key={row.id} style={s.card} onPress={() => router.navigate({ pathname: '/professional/project-details', params: { id: row.id } } as never)}>
-            {!!row.img && <Image source={{ uri: row.img }} style={s.image} />}
+            {!!row.img && <RemoteImage uri={row.img} style={s.image} />}
             {/* On a photo the badge floats over it; without one it sits above the title, never on top of it. */}
             {!!row.img && <View style={s.badgeWrap}><Text style={[s.badge, row.status === 'Completed' ? s.badgeDone : row.status === 'Draft' ? s.badgeDraft : s.badgeLive]}>{row.status}</Text></View>}
             <View style={s.cardBody}>

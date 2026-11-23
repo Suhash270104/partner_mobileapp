@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/AppText';
 import type { FlatListInstance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +12,7 @@ import { getStudioSocket, joinStudioRoom } from '../../../lib/studioSocket';
 import { c, ErrorText } from '../../../components/professional/onboardingUi';
 import { ProposalContext, ProposalSheet } from '../../../components/studio/leadSheets';
 import { useStudio } from '../../../components/studio/StudioContext';
+import { RemoteImage } from '../../../components/RemoteImage';
 
 interface ChatMessage {
   id: string;
@@ -280,7 +281,7 @@ export default function MessagesScreen() {
                 <View style={[s.bubble, mine ? s.mine : s.theirs]}>
                   {!mine && !!item.senderName && <Text style={s.sender}>{item.senderName}</Text>}
                   {item.attachment?.type === 'image' ? (
-                    <Pressable onPress={() => setLightbox({ url: item.attachment!.url, title: item.attachment!.name })}><Image source={{ uri: item.attachment.url }} style={s.attachImage} /></Pressable>
+                    <Pressable onPress={() => setLightbox({ url: item.attachment!.url, title: item.attachment!.name })}><RemoteImage uri={item.attachment.url} style={s.attachImage} /></Pressable>
                   ) : item.attachment ? (
                     <Pressable onPress={() => void Linking.openURL(item.attachment!.url)}><Text style={[s.file, mine && { color: '#fff' }]}>📄 {item.attachment.name}{item.attachment.size ? ` · ${item.attachment.size}` : ''}</Text></Pressable>
                   ) : null}
@@ -303,7 +304,7 @@ export default function MessagesScreen() {
         <ProposalSheet context={proposal} onClose={() => setProposal(null)} onSubmitted={() => void loadThreads()} />
         <Modal visible={!!lightbox} transparent animationType="fade" onRequestClose={() => setLightbox(null)}>
           <Pressable style={s.lightbox} onPress={() => setLightbox(null)}>
-            {!!lightbox && <Image source={{ uri: lightbox.url }} style={s.lightboxImage} resizeMode="contain" />}
+            {!!lightbox && <RemoteImage uri={lightbox.url} style={s.lightboxImage} resizeMode="contain" />}
             <Text style={s.lightboxTitle}>{lightbox?.title}</Text>
           </Pressable>
         </Modal>
@@ -337,7 +338,7 @@ export default function MessagesScreen() {
             const last = item.messages[item.messages.length - 1];
             return (
               <Pressable style={s.thread} onPress={() => setOpenId(item.id)}>
-                <View style={s.avatar}>{item.clientAvatar ? <Image source={{ uri: item.clientAvatar }} style={s.avatarImg} /> : <Text style={s.avatarText}>{item.clientName.slice(0, 2).toUpperCase()}</Text>}</View>
+                <View style={s.avatar}>{item.clientAvatar ? <RemoteImage uri={item.clientAvatar} style={s.avatarImg} fallback={<Text style={s.avatarText}>{item.clientName.slice(0, 2).toUpperCase()}</Text>} /> : <Text style={s.avatarText}>{item.clientName.slice(0, 2).toUpperCase()}</Text>}</View>
                 <View style={{ flex: 1 }}>
                   <View style={s.rowBetween}>
                     <Text style={s.threadName} numberOfLines={1}>{item.clientName}</Text>
