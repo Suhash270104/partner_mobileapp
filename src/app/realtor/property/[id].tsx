@@ -7,12 +7,13 @@ import { palette } from '../../../components/vertical/VerticalUi';
 import { PillButton } from '../../../components/realtor/RealtorControls';
 import { EmptyState } from '../../../components/realtor/RealtorUi';
 import { PropertyWizard } from '../../../components/realtor/PropertyWizard';
+import { PropertyDetails } from '../../../components/realtor/PropertyDetails';
 import { realtorApi } from '../../../lib/partnerVerticalApi';
 
 type Data = Record<string, any>;
 
 export default function EditRealtorPropertyScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, view } = useLocalSearchParams<{ id: string; view?: string }>();
   const [property, setProperty] = useState<Data | null>(null);
   const [error, setError] = useState('');
 
@@ -27,7 +28,10 @@ export default function EditRealtorPropertyScreen() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
 
-  if (property) return <PropertyWizard mode="edit" propertyId={String(id)} initial={property} />;
+  if (property) {
+    if (view === 'details') return <PropertyDetails property={property} onBack={() => router.canGoBack() ? router.back() : router.replace('/realtor/dashboard?tab=properties' as never)} />;
+    return <PropertyWizard mode="edit" propertyId={String(id)} initial={property} />;
+  }
   return <SafeAreaView style={s.safe}><View style={s.body}>
     {error ? <EmptyState icon="shield" title="Couldn’t load this property" message={error} actionLabel="Try again" onAction={() => void load()} /> : <Text style={s.loading}>Loading property…</Text>}
     <PillButton title="Back" variant="ghost" onPress={() => router.canGoBack() ? router.back() : router.replace('/realtor/dashboard?tab=properties' as never)} />

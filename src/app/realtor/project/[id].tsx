@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { DataRow, Field, PageHeading, Panel, PrimaryButton, SecondaryButton, SectionTitle, SelectChips, StatePanel, VerticalFrame } from '../../../components/vertical/VerticalUi';
 import { Text } from '../../../components/AppText';
 import { Data, MediaManager, REALTOR_TABS, SummaryHeader, asRows, errorText, formatPrice, idOf, locationText, nestedOf, toNum, toText } from '../../../components/realtor/RealtorShared';
+import { useFormError } from '../../../hooks/useFormError';
 import { realtorApi } from '../../../lib/partnerVerticalApi';
 
 const PROJECT_TYPES = ['apartment', 'villa', 'independent_house', 'plot', 'farmhouse', 'commercial'];
@@ -25,7 +26,7 @@ export default function EditRealtorProjectScreen() {
   const [editingConfig, setEditingConfig] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError, errorTick] = useFormError();
   const [notice, setNotice] = useState('');
   const set = (key: keyof typeof form) => (value: string) => { setNotice(''); setForm(current => ({ ...current, [key]: value })); };
   const setCfg = (key: keyof ConfigForm) => (value: string) => setConfigForm(current => ({ ...current, [key]: value }));
@@ -43,7 +44,7 @@ export default function EditRealtorProjectScreen() {
       setConfigs(asRows((await realtorApi.configurations(String(id))).configurations));
     } catch (cause) { setError(errorText(cause, 'Could not load this project.')); }
     finally { setLoading(false); }
-  }, [id]);
+  }, [id, setError]);
   // Pre-fill the form from the server on entry.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
@@ -107,7 +108,7 @@ export default function EditRealtorProjectScreen() {
   }
 
   const priceRange = project?.price ? [formatPrice(project.price.min), formatPrice(project.price.max)].filter(Boolean).join(' – ') : '';
-  return <VerticalFrame title="Edit project" subtitle="REALTY HUB" tabs={REALTOR_TABS} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
+  return <VerticalFrame scrollToTopKey={errorTick} title="Edit project" subtitle="REALTY HUB" tabs={REALTOR_TABS} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="EDIT PROJECT" title={toText(project?.name) || 'Project'} subtitle="Update project details, photos and available configurations." />
     {loading ? <StatePanel title="Loading project" message="Fetching the latest saved details…" /> : null}
     {error ? <StatePanel title={project ? 'Project update failed' : 'Could not load project'} message={error} retry={project ? undefined : () => void load()} /> : null}

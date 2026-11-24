@@ -3,7 +3,7 @@ import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Text } from '../AppText';
 import { Panel, StatePanel, StatusPill, palette } from '../vertical/VerticalUi';
-import { realtorApi } from '../../lib/partnerVerticalApi';
+import { realtorApi, uploadErrorMessage } from '../../lib/partnerVerticalApi';
 
 export type Data = Record<string, any>;
 
@@ -57,8 +57,9 @@ export function MediaManager({ resourceType, resourceId, max = 15 }: { resourceT
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    try { setMedia(asRows((await realtorApi.media.list(resourceType, resourceId)).media)); setError(''); }
+  // `keepError` is used right after a failed upload so reloading the list does not wipe the reason it failed.
+  const load = useCallback(async (keepError = false) => {
+    try { setMedia(asRows((await realtorApi.media.list(resourceType, resourceId)).media)); if (!keepError) setError(''); }
     catch (cause) { setError(errorText(cause, 'Could not load photos.')); }
     finally { setLoading(false); }
   }, [resourceType, resourceId]);
@@ -70,16 +71,22 @@ export function MediaManager({ resourceType, resourceId, max = 15 }: { resourceT
     const room = max - media.length;
     if (room <= 0) { setError(`You can keep up to ${max} photos. Remove one to add another.`); return; }
     setError('');
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: room, quality: 0.9 });
-    if (result.canceled) return;
-    setBusy(true);
+    let result: ImagePicker.ImagePickerResult;
     try {
-      const picked: Picked[] = result.assets.slice(0, room).map(asset => ({ uri: asset.uri, fileName: asset.fileName, mimeType: asset.mimeType }));
-      for (const [index, photo] of picked.entries()) {
-        await realtorApi.uploadMedia({ uri: photo.uri, name: photo.fileName || `${resourceType}-${Date.now()}-${index + 1}.jpg`, mimeType: photo.mimeType || 'image/jpeg' }, { resourceType, resourceId, type: 'gallery' });
-      }
-    } catch (cause) { setError(errorText(cause, 'Photo upload failed.')); }
-    finally { setBusy(false); await load(); }
+      result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: room, quality: 0.9 });
+    } catch (cause) { setError(`Could not open your photo library: ${errorText(cause, 'permission was denied or the picker is unavailable.')}`); return; }
+    if (result.canceled) return;
+    if (!result.assets.length) { setError('No photo was selected.'); return; }
+    setBusy(true);
+    const failures: string[] = [];
+    const picked: Picked[] = result.assets.slice(0, room).map(asset => ({ uri: asset.uri, fileName: asset.fileName, mimeType: asset.mimeType }));
+    for (const [index, photo] of picked.entries()) {
+      const label = photo.fileName || `Photo ${index + 1}`;
+      try { await realtorApi.uploadMedia({ uri: photo.uri, name: photo.fileName || `${resourceType}-${Date.now()}-${index + 1}.jpg`, mimeType: photo.mimeType || 'image/jpeg' }, { resourceType, resourceId, type: 'gallery' }); }
+      catch (cause) { failures.push(`${label}: ${uploadErrorMessage(cause)}`); }
+    }
+    if (failures.length) setError(`${failures.length} of ${picked.length} photo${picked.length === 1 ? '' : 's'} could not be uploaded. ${failures.slice(0, 3).join(' | ')}`);
+    setBusy(false); await load(failures.length > 0);
   }
 
   function remove(item: Data) {

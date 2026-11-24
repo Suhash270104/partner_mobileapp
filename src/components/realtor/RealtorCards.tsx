@@ -1,10 +1,12 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from '../Icon';
 import { Text } from '../AppText';
 import { palette } from '../vertical/VerticalUi';
 import { IconButton, PillButton } from './RealtorControls';
 import { Avatar } from './RealtorUi';
-import { Data, EDITABLE_STATUSES, LIVE_STATUS, StatusTone, areaLine, formatPriceShort, humanize, leadTone, locationLine, priceOf, statusMeta, timeAgo } from './realtorFormat';
+import { realtorApi } from '../../lib/partnerVerticalApi';
+import { Data, EDITABLE_STATUSES, LIVE_STATUS, StatusTone, areaLine, formatDate, formatPriceShort, humanize, leadTone, locationLine, priceOf, statusMeta, timeAgo } from './realtorFormat';
 
 const TONE: Record<StatusTone, { bg: string; fg: string; border: string }> = {
   green: { bg: '#d8f3e6', fg: '#075e3b', border: '#aee3c8' }, amber: { bg: '#ffefd1', fg: '#7a4700', border: '#f3d9a0' }, red: { bg: '#ffe3df', fg: '#8f1d12', border: '#f4bdb6' },
@@ -40,7 +42,7 @@ export function PropertyCard({ item, busy, onOpen, onEdit, onDelete, onSubmit, o
   const chips = [item.bhk ? `${item.bhk} BHK` : '', item.furnishing ? humanize(item.furnishing).replace(/ /g, '-') : '', areaLine(item)].filter(Boolean);
   const canSubmit = !!listing && EDITABLE_STATUSES.includes(status);
   const locked = ['pending_review', 'under_review'].includes(status);
-  return <Pressable onPress={onOpen} disabled={!onOpen} style={s.card}>
+  return <View style={s.card}>
     <View style={s.rowBetween}>
       <View style={s.typeChip}><Text style={s.typeChipText}>{humanize(item.propertyType).toUpperCase() || 'PROPERTY'}</Text></View>
       <Text style={s.price}>{priceOf(item)}</Text>
@@ -53,6 +55,7 @@ export function PropertyCard({ item, busy, onOpen, onEdit, onDelete, onSubmit, o
     {moderationOf(listing)}
     <View style={s.footer}>
       <View style={s.footerLeft}>
+        {onOpen ? <IconButton icon="eye" label="View archived property details" onPress={onOpen} disabled={busy} /> : null}
         <IconButton icon="edit" label="Edit property" onPress={onEdit} disabled={busy || locked} />
         <IconButton icon="trash" label="Delete property" tone="danger" onPress={onDelete} disabled={busy} />
       </View>
@@ -60,25 +63,65 @@ export function PropertyCard({ item, busy, onOpen, onEdit, onDelete, onSubmit, o
         : canSubmit ? <PillButton title="Submit for Review" icon="send" compact onPress={onSubmit} loading={busy} />
           : locked ? <Text style={s.hint}>Editing locked while in review</Text> : null}
     </View>
-  </Pressable>;
+  </View>;
 }
 
-export function ListingCard({ item, busy, onOpen, onSubmit, onDelete, onViewLive }: { item: Data; busy?: boolean; onOpen?: () => void; onSubmit: () => void; onDelete: () => void; onViewLive: () => void }) {
+const photoCache = new Map<string, string>();
+const photoUri = (media: Data | undefined) => { const v = media?.variants; return String(v?.thumbnail || v?.medium || v?.original || media?.url || ''); };
+
+/** Square thumbnail for a listing's property or project. Uses an image already on the record, else its cover photo; shows a placeholder when there is none. */
+function Thumb({ resource, resourceType }: { resource?: Data; resourceType: 'property' | 'project' }) {
+  const id = String(resource?._id || resource?.id || '');
+  const key = `${resourceType}:${id}`;
+  const inline = resource ? photoUri(resource.coverImage || resource.primaryImage || (Array.isArray(resource.images) ? resource.images[0] : undefined)) || String(resource.thumbnail || '') : '';
+  const [fetched, setFetched] = useState(() => photoCache.get(key) || '');
+  useEffect(() => {
+    if (inline || !id || photoCache.has(key)) return;
+    let active = true;
+    realtorApi.media.list(resourceType, id).then(response => {
+      const rows = Array.isArray(response.media) ? response.media as Data[] : [];
+      const uri = photoUri(rows.find(row => row.isPrimary) || rows[0]);
+      photoCache.set(key, uri);
+      if (active) setFetched(uri);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [inline, id, key, resourceType]);
+  const uri = inline || fetched;
+  return uri ? <Image source={{ uri }} style={s.thumb} resizeMode="cover" accessibilityLabel="Property photo" />
+    : <View style={[s.thumb, s.thumbEmpty]}><Icon name={resourceType === 'project' ? 'building' : 'home'} size={26} color="#7b8a83" /></View>;
+}
+
+export function ListingCard({ item, property, busy, onOpen, onSubmit, onDelete, onViewLive }: { item: Data; property?: Data; busy?: boolean; onOpen?: () => void; onSubmit: () => void; onDelete: () => void; onViewLive: () => void }) {
   const status = String(item.status || 'draft');
   const meta = statusMeta(status);
   const editable = EDITABLE_STATUSES.includes(status);
   const subtitle = [humanize(item.listingPurpose), humanize(item.transactionType)].filter(Boolean).join(' · ');
+  // `property` is the linked property or project, matched from data the dashboard already loaded.
+  const isProject = !item.propertyId && !!item.projectId;
+  const name = String(item.title || property?.title || property?.name || item.propertyTitle || item.projectName || 'Listing');
+  const location = property ? locationLine(property) : '';
+  const kind = property ? humanize(isProject ? property.projectType : property.propertyType) : '';
+  const min = formatPriceShort(property?.price?.min), max = formatPriceShort(property?.price?.max);
+  const price = !property ? '' : isProject ? (min && max ? `${min} – ${max}` : min || max) : priceOf(property);
+  const chips = property && !isProject ? [property.bhk ? `${property.bhk} BHK` : '', areaLine(property)].filter(Boolean) : [];
   return <Pressable onPress={onOpen} disabled={!onOpen} style={s.card}>
-    <View style={s.rowBetween}>
-      <Text style={[s.title, { flex: 1 }]} numberOfLines={3}>{String(item.title || item.propertyTitle || item.projectName || 'Listing')}</Text>
-      <Badge label={status === 'published' ? 'Published' : meta.label} tone={meta.tone} />
+    <View style={s.listingTop}>
+      <Thumb resource={property} resourceType={isProject ? 'project' : 'property'} />
+      <View style={s.listingInfo}>
+        <Text style={s.title}>{name}</Text>
+        {location ? <View style={s.locRow}><Icon name="mapPin" size={15} color="#7b8a83" /><Text style={[s.loc, { flex: 1 }]}>{location}</Text></View> : null}
+        {price ? <Text style={s.listingPrice}>{price}</Text> : null}
+      </View>
     </View>
+    <View style={s.statusRow}><Badge label={status === 'published' ? 'Published' : meta.label} tone={meta.tone} icon={meta.icon} /></View>
+    {kind || chips.length ? <View style={s.chips}>{[kind, ...chips].filter(Boolean).map(chip => <View key={chip} style={s.chip}><Text style={s.chipText}>{chip}</Text></View>)}</View> : null}
     {subtitle ? <Text style={s.sub}>{subtitle}</Text> : null}
     {moderationOf(item)}
-    <View style={s.btnRow}>
-      <PillButton title="Submit" icon="send" grow onPress={onSubmit} disabled={!editable || busy} />
-      <PillButton title="Delete" icon="trash" variant="danger" grow onPress={onDelete} disabled={!editable || busy} />
-    </View>
+    {editable ? <View style={s.btnRow}>
+      <PillButton title="Submit" icon="send" grow onPress={onSubmit} disabled={busy} />
+      <PillButton title="Delete" icon="trash" variant="danger" grow onPress={onDelete} disabled={busy} />
+    </View> : null}
+    {['pending_review', 'under_review'].includes(status) ? <Text style={s.hint}>Editing locked while in review</Text> : null}
     {status === LIVE_STATUS ? <PillButton title="View Live" icon="externalLink" variant="soft" compact onPress={onViewLive} /> : null}
   </Pressable>;
 }
@@ -87,11 +130,13 @@ export function LeadCard({ item, onOpen }: { item: Data; onOpen: () => void }) {
   const name = String(item.customerName || item.buyerName || 'Buyer enquiry');
   const listingTitle = String(item.listing?.title || item.propertyTitle || '');
   const status = String(item.status || 'unlocked');
+  const visit = formatDate(item.siteVisit?.scheduledDate);
   return <Pressable onPress={onOpen} style={[s.card, s.leadCard]}>
     <Avatar label={name} size={42} dark={false} />
     <View style={{ flex: 1, minWidth: 0 }}>
-      <Text style={s.leadName} numberOfLines={1}>{name}</Text>
+      <Text style={s.leadName} numberOfLines={2}>{name}</Text>
       {listingTitle ? <Text style={s.leadSub} numberOfLines={2}>{listingTitle}</Text> : null}
+      {visit ? <View style={s.visitRow}><Icon name="calendar" size={14} color={palette.greenText} /><Text style={s.visitText} numberOfLines={1}>Site visit · {visit}</Text></View> : null}
       {item.createdAt || item.unlockedAt ? <Text style={s.time}>{timeAgo(item.unlockedAt || item.createdAt)}</Text> : null}
     </View>
     <Badge label={humanize(status)} tone={leadTone(status)} />
@@ -146,5 +191,9 @@ const s = StyleSheet.create({
   hint: { color: palette.muted, fontSize: 11.5, flexShrink: 1, textAlign: 'right' }, sub: { color: palette.body, fontSize: 14.5 }, btnRow: { flexDirection: 'row', gap: 10 },
   note: { backgroundColor: '#fff9ec', borderColor: '#f1dfb0', borderWidth: 1, borderRadius: 14, padding: 12, gap: 3 }, noteTitle: { color: '#7a4700', fontSize: 12.5, fontWeight: '800' }, noteMsg: { color: '#7a4700', fontSize: 12.5, lineHeight: 18 },
   leadCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20 }, leadName: { color: palette.ink, fontSize: 14.5, fontWeight: '800' }, leadSub: { color: palette.body, fontSize: 13.5, lineHeight: 19 }, time: { color: '#8a9a92', fontSize: 11.5, fontWeight: '700', marginTop: 2 },
+  thumb: { width: 76, height: 76, borderRadius: 16, backgroundColor: palette.line }, thumbEmpty: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#eef3f0' },
+  statusRow: { flexDirection: 'row', alignItems: 'center' },
+  listingTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' }, listingInfo: { flex: 1, minWidth: 0, gap: 6 }, listingPrice: { color: palette.green, fontSize: 15.5, fontWeight: '800' },
+  visitRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 }, visitText: { color: palette.greenText, fontSize: 12.5, fontWeight: '700', flexShrink: 1 },
   notif: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: '#f1f5f3', borderRadius: 20 }, bell: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#0d4a38', alignItems: 'center', justifyContent: 'center' }, markRead: { color: palette.green, fontSize: 12.5, fontWeight: '800' },
 });
