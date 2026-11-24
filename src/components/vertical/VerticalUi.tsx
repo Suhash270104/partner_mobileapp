@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { Icon } from '../Icon';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, ScrollViewInstance, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { FONT_SCALE_LIMIT } from '../../theme/typeScale';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
@@ -17,18 +17,22 @@ const TAB_NAMES: Record<string, string> = { Overview: 'Home', Realty: 'More', En
 const tabGlyph = (tab: { key: string }) => TAB_GLYPHS[tab.key] || 'dashboard';
 const tabName = (tab: { label: string }) => TAB_NAMES[tab.label] || tab.label;
 
-export function VerticalFrame({ title, subtitle, children, tabs, activeTab, onTab, onBack, onAvatar, initials, refreshing, onRefresh, badges }: {
+export function VerticalFrame({ title, subtitle, children, tabs, activeTab, onTab, onBack, onAvatar, initials, refreshing, onRefresh, badges, scrollToTopKey }: {
   title: string; subtitle?: string; children: ReactNode; tabs: { key: string; label: string; icon: string }[];
   activeTab: string; onTab: (key: string) => void; onBack?: () => void;
   onAvatar?: () => void; initials?: string; refreshing?: boolean; onRefresh?: () => void; badges?: Record<string, number | undefined>;
+  /** Scrolls the page to the top whenever this number changes (and is not 0), e.g. so a failed submit shows its error message. */
+  scrollToTopKey?: number;
 }) {
+  const scroller = useRef<ScrollViewInstance>(null);
+  useEffect(() => { if (scrollToTopKey) scroller.current?.scrollTo({ y: 0, animated: true }); }, [scrollToTopKey]);
   return <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
     <View style={s.header}>
       {onBack ? <Pressable style={s.back} onPress={onBack}><Text style={s.backText}>‹</Text></Pressable> : <View style={s.brand}><PartnerBrand compact /></View>}
       <View style={s.headerTitle}><Text numberOfLines={1} style={s.headerName}>{title}</Text>{subtitle ? <Text numberOfLines={1} style={s.headerSub}>{subtitle}</Text> : null}</View>
       <Pressable disabled={!onAvatar} onPress={onAvatar} accessibilityRole="button" accessibilityLabel="Open workspace menu" style={s.avatar}><Text style={s.avatarText}>{initials || title.trim().charAt(0).toUpperCase()}</Text></Pressable>
     </View>
-    <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}>{children}</ScrollView>
+    <ScrollView ref={scroller} style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}>{children}</ScrollView>
     {tabs.length ? <View style={s.tabs}>{tabs.map(tab => {
       const on = activeTab === tab.key;
       return <Pressable key={tab.key} onPress={() => onTab(tab.key)} style={s.tab} accessibilityRole="tab" accessibilityLabel={tabName(tab)} accessibilityState={{ selected: on }}>

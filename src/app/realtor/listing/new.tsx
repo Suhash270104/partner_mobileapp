@@ -6,6 +6,7 @@ import { DataRow, Field, PageHeading, Panel, PrimaryButton, SecondaryButton, Sel
 import { ListingCreditsSheet } from '../../../components/realtor/ListingCreditsSheet';
 import { Text } from '../../../components/AppText';
 import { PartnerApiError } from '../../../lib/partnerApi';
+import { useFormError } from '../../../hooks/useFormError';
 import { realtorApi } from '../../../lib/partnerVerticalApi';
 
 const TABS = REALTOR_TABS;
@@ -27,7 +28,7 @@ export default function NewRealtorListingScreen() {
   const [contact, setContact] = useState({ name: '', phone: '', email: '' });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError, errorTick] = useFormError();
   const [creditsOpen, setCreditsOpen] = useState(false);
   const setContactField = (key: keyof typeof contact) => (value: string) => setContact(current => ({ ...current, [key]: value }));
 
@@ -42,7 +43,7 @@ export default function NewRealtorListingScreen() {
       setContact({ name: String(current.fullName || ''), phone: String(current.phone || ''), email: String(current.email || '') });
     } catch (cause) { setError(cause instanceof PartnerApiError ? cause.message : cause instanceof Error ? cause.message : 'Could not load listing data.'); }
     finally { setLoading(false); }
-  }, []);
+  }, [setError]);
   // Load listing source records on entry.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
@@ -75,7 +76,7 @@ export default function NewRealtorListingScreen() {
     finally { setBusy(false); }
   }
 
-  return <VerticalFrame title="Listings" subtitle="MARKETPLACE" tabs={TABS} activeTab="listings" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
+  return <VerticalFrame scrollToTopKey={errorTick} title="Listings" subtitle="MARKETPLACE" tabs={TABS} activeTab="listings" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="YOUR MARKETPLACE INVENTORY" title="Published listings" subtitle={loading ? 'Loading your listing data…' : `${listings.length} listings · ${String(profile?.listingQuota ?? '—')} credits`} />
     {error ? <StatePanel title="Listing request failed" message={error} retry={() => void load()} /> : null}
     <Panel>

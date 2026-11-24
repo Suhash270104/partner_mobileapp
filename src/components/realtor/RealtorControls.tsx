@@ -31,14 +31,15 @@ export function IconButton({ icon, onPress, label, tone = 'muted', disabled = fa
 }
 
 /** Modal sheet that slides up from the bottom with a grab handle, title and close button. */
-export function BottomSheet({ visible, title, onClose, children, tall = false }: { visible: boolean; title?: string; onClose: () => void; children: ReactNode; tall?: boolean }) {
+export function BottomSheet({ visible, title, onClose, children, footer, tall = false }: { visible: boolean; title?: string; onClose: () => void; children: ReactNode; footer?: ReactNode; tall?: boolean }) {
   return <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={s.sheetRoot}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.sheetRoot}>
       <Pressable style={s.sheetBackdrop} onPress={onClose} />
       <View style={[s.sheet, tall && { height: '92%' }]}>
         <View style={s.handle} />
         <View style={s.sheetHead}><Text style={s.sheetTitle} numberOfLines={1}>{title || ''}</Text><Pressable onPress={onClose} hitSlop={10} accessibilityLabel="Close"><Icon name="x" size={24} color="#4d5f57" /></Pressable></View>
-        <ScrollView contentContainerStyle={s.sheetBody} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>{children}</ScrollView>
+        <ScrollView style={tall || footer ? s.sheetScroll : undefined} contentContainerStyle={s.sheetBody} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>{children}</ScrollView>
+        {footer ? <View style={s.sheetFooter}>{footer}</View> : null}
       </View>
     </KeyboardAvoidingView>
   </Modal>;
@@ -110,7 +111,8 @@ const s = StyleSheet.create({
   sheet: { maxHeight: '92%', backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
   handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: '#cfd8e3', marginTop: 10 },
   sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: palette.line },
-  sheetTitle: { flex: 1, color: palette.ink, fontSize: 18, fontWeight: '800' }, sheetBody: { padding: 18, paddingBottom: 34, gap: 12 },
+  sheetTitle: { flex: 1, color: palette.ink, fontSize: 18, fontWeight: '800' }, sheetScroll: { flex: 1, minHeight: 0 }, sheetBody: { padding: 18, paddingBottom: 24, gap: 12 },
+  sheetFooter: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.line, backgroundColor: '#fff' },
   field: { gap: 6 }, label: { color: '#33463f', fontSize: 13.5, fontWeight: '800' },
   select: { minHeight: 52, borderRadius: 26, borderWidth: 1.5, borderColor: palette.line, backgroundColor: '#fff', paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', gap: 8 }, selectText: { flex: 1, color: palette.ink, fontSize: 14.5 },
   option: { minHeight: 52, borderRadius: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, optionOn: { backgroundColor: palette.greenSoft }, optionText: { color: palette.ink, fontSize: 14.5 },

@@ -14,7 +14,13 @@ import { getStudioSocket } from '../../lib/studioSocket';
 import { realtorApi } from '../../lib/partnerVerticalApi';
 
 type Tab = 'overview' | 'properties' | 'listings' | 'leads' | 'notifications';
+type LeadSort = 'newest' | 'oldest' | 'name';
 const TAB_KEYS = ['overview', 'properties', 'listings', 'leads', 'notifications'];
+const LEAD_SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'name', label: 'Buyer name A–Z' },
+];
 const asRows = (value: unknown): Data[] => Array.isArray(value) ? value.filter(item => item && typeof item === 'object') as Data[] : [];
 const idOf = (item: Data | null | undefined) => String(item?._id || item?.id || '');
 const first = (...values: unknown[]) => values.find(value => typeof value === 'string' && value.trim()) as string | undefined;
@@ -41,6 +47,7 @@ export default function RealtorDashboardScreen() {
   const [unread, setUnread] = useState(0);
   const [hasDeveloper, setHasDeveloper] = useState(false);
   const [leadFilter, setLeadFilter] = useState('');
+  const [leadSort, setLeadSort] = useState<LeadSort>('newest');
   const [lead, setLead] = useState<Data | null>(null);
   const [creditsOpen, setCreditsOpen] = useState(false);
   const [busyId, setBusyId] = useState('');
@@ -92,6 +99,21 @@ export default function RealtorDashboardScreen() {
     active: listings.filter(item => item.status === 'published').length,
     closed: listings.filter(item => item.status === 'sold' || item.status === 'rented').length,
   }), [listings]);
+  const sortedLeads = useMemo(() => leads.map((item, index) => ({ item, index })).sort((a, b) => {
+    if (leadSort === 'name') {
+      const nameA = first(a.item.customerName, a.item.buyerName) || 'Buyer enquiry';
+      const nameB = first(b.item.customerName, b.item.buyerName) || 'Buyer enquiry';
+      return nameA.localeCompare(nameB) || a.index - b.index;
+    }
+    const timeOf = (item: Data) => {
+      const time = new Date(String(item.unlockedAt || item.createdAt || '')).getTime();
+      return Number.isFinite(time) ? time : 0;
+    };
+    const timeA = timeOf(a.item), timeB = timeOf(b.item);
+    if (timeA === 0 || timeB === 0) return timeA === timeB ? a.index - b.index : timeA === 0 ? 1 : -1;
+    const difference = timeB - timeA;
+    return (leadSort === 'newest' ? difference : -difference) || a.index - b.index;
+  }).map(entry => entry.item), [leads, leadSort]);
 
   // ---- actions -------------------------------------------------------------------------------------------------
   async function run(id: string, action: () => Promise<unknown>, failure: string, after?: () => void) {
@@ -100,6 +122,14 @@ export default function RealtorDashboardScreen() {
     catch (cause) { Alert.alert(failure, cause instanceof Error ? cause.message : 'Please try again.'); }
     finally { setBusyId(''); }
   }
+  // The property or project a listing belongs to, matched from the lists already loaded (the id may also arrive populated).
+  function linkedResource(listing: Data): Data | undefined {
+    const link = listing.propertyId ?? listing.projectId;
+    if (!link) return undefined;
+    if (typeof link === 'object') return link as Data;
+    return (listing.propertyId ? properties : projects).find(row => idOf(row) === String(link));
+  }
+
   function submitListing(listing: Data | undefined, propertyId = '') {
     const id = idOf(listing);
     if (!id) { Alert.alert('No listing yet', 'This property has no draft listing to submit.'); return; }
@@ -217,7 +247,9 @@ export default function RealtorDashboardScreen() {
           actionLabel={credits != null && credits <= 0 ? 'Buy Listing Credits' : 'Post New Property'} actionIcon={credits != null && credits <= 0 ? 'coins' : 'plus'} onAction={credits != null && credits <= 0 ? openCredits : newProperty}
           note={credits != null && credits <= 0 ? '0 Listing Credits Available — buy a pack to post your next property.' : undefined} />
         {credits != null && credits > 0 ? <CreditsPill credits={credits} onTopUp={openCredits} /> : null}
-        {properties.length ? properties.map(item => <PropertyCard key={idOf(item)} item={item} busy={busyId === idOf(item)} onEdit={() => editProperty(item)} onDelete={() => deleteProperty(item)}
+        {properties.length ? properties.map(item => <PropertyCard key={idOf(item)} item={item} busy={busyId === idOf(item)}
+          onOpen={item.listing?.status === 'archived' ? () => router.push(`/realtor/property/${idOf(item)}?view=details` as never) : undefined}
+          onEdit={() => editProperty(item)} onDelete={() => deleteProperty(item)}
           onSubmit={() => submitListing(item.listing, idOf(item))} onViewLive={() => viewLive(idOf(item.listing))} />)
           : <EmptyState icon="home" title="No properties yet" message="Post your first property to start receiving buyer enquiries." actionLabel={credits != null && credits <= 0 ? 'Buy Listing Credits' : 'Post New Property'} onAction={credits != null && credits <= 0 ? openCredits : newProperty} />}
       </> : null}
@@ -238,7 +270,7 @@ export default function RealtorDashboardScreen() {
         <PageHeading title="Published listings" subtitle="What buyers see on the marketplace." />
         {verification}
         <SectionHeader title="Listings" actionLabel="New Listing" onAction={() => router.push('/realtor/listing/new' as never)} />
-        {listings.length ? listings.map(item => <ListingCard key={idOf(item)} item={item} busy={busyId === idOf(item)} onOpen={() => router.push(`/realtor/listing/${idOf(item)}` as never)}
+        {listings.length ? listings.map(item => <ListingCard key={idOf(item)} item={item} property={linkedResource(item)} busy={busyId === idOf(item)} onOpen={() => router.push(`/realtor/listing/${idOf(item)}` as never)}
           onSubmit={() => submitListing(item)} onDelete={() => deleteListing(item)} onViewLive={() => viewLive(idOf(item))} />)
           : <EmptyState icon="tag" title="No listings yet" message="Post a property or create a project, then submit its listing for review." />}
       </> : null}
@@ -246,7 +278,9 @@ export default function RealtorDashboardScreen() {
       {tab === 'leads' ? <>
         <PageHeading title="Buyer leads" subtitle="Enquiries from buyers who unlocked your details." />
         <SelectField label="Leads" value={leadFilter} options={[{ value: '', label: 'All statuses' }, ...toOptions(LEAD_STATUS_OPTIONS)]} onChange={setLeadFilter} placeholder="All statuses" />
-        {leads.length ? leads.map(item => <LeadCard key={idOf(item)} item={item} onOpen={() => setLead(item)} />)
+        <SelectField label="Sort by" value={leadSort} options={LEAD_SORT_OPTIONS} onChange={value => setLeadSort(value as LeadSort)} />
+        {leadsTotal > leads.length ? <Text style={s.sortHint}>Sort order applies to the {leads.length} leads returned by the server.</Text> : null}
+        {sortedLeads.length ? sortedLeads.map(item => <LeadCard key={idOf(item)} item={item} onOpen={() => setLead(item)} />)
           : <EmptyState icon="users" title={leadFilter ? 'No leads with this status' : 'No leads yet'} message={leadFilter ? 'Try another status or choose All statuses.' : 'Enquiries appear here as soon as buyers unlock one of your listings.'} />}
       </> : null}
 
@@ -268,5 +302,6 @@ export default function RealtorDashboardScreen() {
 
 const s = StyleSheet.create({
   gap: { gap: 14 }, error: { color: palette.red, fontSize: 12.5, lineHeight: 18 },
+  sortHint: { color: palette.muted, fontSize: 11.5, lineHeight: 16 },
   warn: { color: '#c26a00', fontSize: 14.5, fontWeight: '800', lineHeight: 21 }, dashed: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#d7dfdb', borderRadius: 24, backgroundColor: '#fff' },
 });

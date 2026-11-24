@@ -35,6 +35,13 @@ export function timeAgo(value: unknown) {
   return new Date(time).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/** "22 Nov 2026" for a date value, or '' when it is missing or not a valid date. */
+export function formatDate(value: unknown) {
+  if (!value) return '';
+  const time = new Date(String(value)).getTime();
+  return Number.isFinite(time) ? new Date(time).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+}
+
 export const EDITABLE_STATUSES = ['draft', 'changes_requested'];
 export const LIVE_STATUS = 'published';
 

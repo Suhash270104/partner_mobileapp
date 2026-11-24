@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { Alert, Image, Linking, Pressable, ScrollView, ScrollViewInstance, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Image, KeyboardAvoidingView, Linking, Pressable, ScrollView, ScrollViewInstance, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -13,7 +13,8 @@ import { ChipGroup, FormField, SectionLabel, StepTabs, ToggleRow } from './Realt
 import { MediaManager } from './RealtorShared';
 import { Data, MAX_PHOTOS, minPhotosFor } from './realtorFormat';
 import { PartnerApiError } from '../../lib/partnerApi';
-import { realtorApi } from '../../lib/partnerVerticalApi';
+import { realtorApi, uploadErrorMessage } from '../../lib/partnerVerticalApi';
+import { useFormError } from '../../hooks/useFormError';
 
 // One 5-step form for posting AND editing a property. Field names, enums and rules follow the hand-off doc (section 6 and 11).
 const PROPERTY_TYPES = ['apartment', 'villa', 'independent_house', 'plot', 'farmhouse', 'commercial', 'office', 'shop', 'warehouse', 'land', 'pg', 'other'];
@@ -125,12 +126,14 @@ export function PropertyWizard({ mode, propertyId, initial, onNeedCredits }: { m
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError, errorTick] = useFormError();
   const [saved, setSaved] = useState(false);
   const [pinBusy, setPinBusy] = useState(false);
   const [pinMessage, setPinMessage] = useState('');
   const dirty = useRef(false);
   const scroller = useRef<ScrollViewInstance>(null);
+  // Bring the error banner (at the top of the form) into view whenever a step fails.
+  useEffect(() => { if (errorTick) scroller.current?.scrollTo({ y: 0, animated: true }); }, [errorTick]);
   const fam = family(form.propertyType);
   const sale = form.listingPurpose === 'sale';
   const minPhotos = minPhotosFor(form.propertyType);
@@ -203,7 +206,9 @@ export function PropertyWizard({ mode, propertyId, initial, onNeedCredits }: { m
   async function choosePhotos() {
     const room = MAX_PHOTOS - photos.length;
     if (room <= 0) { setError(`You can attach up to ${MAX_PHOTOS} photos.`); return; }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: room, quality: 0.85 });
+    let result: ImagePicker.ImagePickerResult;
+    try { result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: room, quality: 0.85 }); }
+    catch (cause) { setError(`Could not open your photo library: ${cause instanceof Error ? cause.message : 'permission was denied.'}`); return; }
     if (result.canceled) return;
     dirty.current = true; setError('');
     setPhotos(current => [...current, ...result.assets.slice(0, room).map((asset, index) => ({ uri: asset.uri, name: asset.fileName || `property-${Date.now()}-${index}.jpg`, mimeType: asset.mimeType || 'image/jpeg' }))]);
@@ -254,6 +259,8 @@ export function PropertyWizard({ mode, propertyId, initial, onNeedCredits }: { m
       <Pressable onPress={close} hitSlop={10} accessibilityLabel="Close"><Icon name="x" size={26} color="#4d5f57" /></Pressable>
     </View>
     <View style={s.tabsPad}><StepTabs steps={STEPS} current={step} reached={reached} onSelect={go} /></View>
+    {/* Padding mode on both platforms: Android is edge-to-edge, so the system no longer resizes the window for the keyboard. */}
+    <KeyboardAvoidingView style={s.flex} behavior="padding">
     <ScrollView ref={scroller} contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
       {saved ? <AlertBanner tone="green" icon="check" title="Property changes saved" message="If this property has a live listing, buyers now see the updated details." /> : null}
       {error ? <AlertBanner tone="red" icon="shield" title="Please check this step" message={error} /> : null}
@@ -391,6 +398,7 @@ export function PropertyWizard({ mode, propertyId, initial, onNeedCredits }: { m
       </View>
       {step === 4 && mode === 'edit' ? null : step < 4 && mode === 'edit' ? <Pressable onPress={() => void submit()} disabled={busy}><Text style={s.saveNow}>Save changes now</Text></Pressable> : null}
     </View>
+    </KeyboardAvoidingView>
   </SafeAreaView>;
 }
 

@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { router } from 'expo-router';
 import { DataRow, Field, PageHeading, Panel, PrimaryButton, StatePanel, VerticalFrame } from '../../components/vertical/VerticalUi';
 import { Text } from '../../components/AppText';
+import { useFormError } from '../../hooks/useFormError';
 import { realtorApi } from '../../lib/partnerVerticalApi';
 
 const tabs = REALTOR_TABS;
@@ -18,7 +19,7 @@ export default function RealtorDeveloperScreen() {
   const [agentId, setAgentId] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError, errorTick] = useFormError();
   const set = (key: keyof typeof empty) => (value: string) => setForm(prev => ({ ...prev, [key]: value }));
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -29,7 +30,7 @@ export default function RealtorDeveloperScreen() {
       if (dev) setForm({ name: dev.name || '', description: dev.description || '', headquarters: dev.headquarters || '', website: dev.website || '', email: dev.email || '', phone: dev.phone || '', establishedYear: dev.establishedYear ? String(dev.establishedYear) : '', operatingCities: Array.isArray(dev.operatingCities) ? dev.operatingCities.join(', ') : '' });
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load developer profile.'); }
     finally { setLoading(false); }
-  }, []);
+  }, [setError]);
   // Load the server-owned developer profile on entry.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
@@ -52,7 +53,7 @@ export default function RealtorDeveloperScreen() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not update authorized agents.'); }
     finally { setBusy(false); }
   }
-  return <VerticalFrame title="Developer profile" subtitle="REALTY HUB" tabs={tabs} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
+  return <VerticalFrame scrollToTopKey={errorTick} title="Developer profile" subtitle="REALTY HUB" tabs={tabs} activeTab="more" onTab={key => router.replace(`/realtor/dashboard?tab=${key === 'dashboard' ? 'overview' : key}` as never)} onBack={() => router.back()}>
     <PageHeading eyebrow="COMPANY PROFILE" title={developer ? 'Developer profile' : 'Create developer profile'} subtitle="Buyers see these company details on your projects." />
     {error ? <StatePanel title="Developer profile could not be saved" message={error} retry={() => void load()} /> : null}
     {loading ? <Panel><Text>Loading developer profile…</Text></Panel> : <>
