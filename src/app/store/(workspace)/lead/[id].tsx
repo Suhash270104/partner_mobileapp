@@ -24,19 +24,20 @@ export default function LeadDetailScreen() {
   const note = noteDraft ?? lead?.merchantNote ?? '';
   const [quoting, setQuoting] = useState(false);
   const [notice, setNotice] = useState('');
+  const [quotesSent, setQuotesSent] = useState(0);
 
   // The server returns the updated lead for most writes; fall back to a reload when it does not.
   const apply = async (updated?: Lead) => { const next = updated ?? await merchantApi.findLead(String(id)); if (next) { setOverride(next); setNoteDraft(null); } };
 
   const changeStatus = (status: string) => void run('status', async () => { await apply(await merchantApi.updateLead(String(id), { status })); setNotice('Status updated.'); });
   const saveNote = () => void run('note', async () => { await apply(await merchantApi.updateLead(String(id), { merchantNote: note.trim() })); setNotice('Note saved.'); });
-  const sendQuote = async (payload: Json) => { await apply(await merchantApi.sendQuotation(String(id), payload)); setNotice('Quotation sent to the buyer.'); };
+  const sendQuote = async (payload: Json) => { await apply(await merchantApi.sendQuotation(String(id), payload)); setNotice('Quotation sent to the buyer.'); setQuotesSent(count => count + 1); };
 
   if (!lead) return <Screen title="Enquiry" onBack={() => router.back()} loading={loaded.loading} error={loaded.error || (!loaded.loading && !loaded.data ? 'This enquiry could not be found. It may have been removed.' : '')} onRetry={() => void loaded.reload()} />;
 
   const quotes = [...(lead.quotations ?? [])].reverse();
   const won = lead.status === 'won';
-  return <Screen title={lead.buyerName || 'Enquiry'} subtitle={lead.productId?.title || lead.requirementTitle} onBack={() => router.back()} action={<StatusBadge status={lead.status} />}
+  return <Screen scrollToTopKey={quotesSent} title={lead.buyerName || 'Enquiry'} subtitle={lead.productId?.title || lead.requirementTitle} onBack={() => router.back()} action={<StatusBadge status={lead.status} />}
     footer={won ? undefined : <StickyActionBar actions={[{ title: quotes.length ? 'Send revised quotation' : 'Send quotation', icon: 'send', onPress: () => setQuoting(true) }]} />}>
     {notice ? <AlertBanner tone="green" icon="check" title={notice} /> : null}
     {won ? <AlertBanner tone="green" icon="award" title="The buyer accepted your quotation" message="This enquiry is won. Follow up with the buyer to complete the supply." /> : null}

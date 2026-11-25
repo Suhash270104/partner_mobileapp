@@ -22,12 +22,17 @@ function dateToValue(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function DatePickerField({ label, value, onChange, placeholder = 'YYYY-MM-DD', helper }: {
+export function DatePickerField({ label, value, onChange, placeholder = 'YYYY-MM-DD', helper, minimumDate, required = false, error }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   helper?: string;
+  /** Earliest day the picker offers. */
+  minimumDate?: Date;
+  required?: boolean;
+  /** A validation message for this field. */
+  error?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(() => dateFromValue(value));
@@ -35,11 +40,13 @@ export function DatePickerField({ label, value, onChange, placeholder = 'YYYY-MM
 
   function showPicker() {
     setPickerError('');
-    const initial = dateFromValue(value);
+    const chosen = dateFromValue(value);
+    const initial = minimumDate && chosen < minimumDate ? minimumDate : chosen;
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({
         value: initial,
         mode: 'date',
+        minimumDate,
         onValueChange: (_event, selectedDate) => { setPickerError(''); onChange(dateToValue(selectedDate)); },
         onError: error => setPickerError(error.message || 'Could not open the date picker.'),
       });
@@ -50,11 +57,11 @@ export function DatePickerField({ label, value, onChange, placeholder = 'YYYY-MM
   }
 
   return <View style={s.field}>
-    <Text style={s.label}>{label}</Text>
+    <Text style={s.label}>{label}{required ? ' *' : ''}</Text>
     {Platform.OS === 'web' ? <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor="#9aa8a1" accessibilityLabel={label} style={s.input} /> : (
       <View style={s.inputRow}>
         <Pressable onPress={showPicker} style={s.inputButton} accessibilityRole="button" accessibilityLabel={`Choose ${label}`}>
-          <Text style={[s.value, !value && s.placeholder]}>{value || placeholder}</Text>
+          <Text style={[s.value, !value && s.placeholder]} numberOfLines={1}>{value || placeholder}</Text>
           <Icon name="calendar" size={19} color={palette.muted} />
         </Pressable>
         {value ? <Pressable onPress={() => { setPickerError(''); onChange(''); }} accessibilityRole="button" accessibilityLabel={`Clear ${label}`} style={s.clear}>
@@ -62,10 +69,10 @@ export function DatePickerField({ label, value, onChange, placeholder = 'YYYY-MM
         </Pressable> : null}
       </View>
     )}
-    {pickerError ? <Text style={s.error}>{pickerError}</Text> : null}
+    {pickerError || error ? <Text style={s.error}>{pickerError || error}</Text> : null}
     {helper ? <Text style={s.helper}>{helper}</Text> : null}
     {Platform.OS === 'ios' && open ? <View style={s.picker}>
-      <DateTimePicker mode="date" display="spinner" locale="en-IN" value={draft} onValueChange={(_event, date) => setDraft(date)} />
+      <DateTimePicker mode="date" minimumDate={minimumDate} display="spinner" locale="en-IN" value={draft} onValueChange={(_event, date) => setDraft(date)} />
       <View style={s.pickerActions}>
         <Pressable onPress={() => setOpen(false)} accessibilityRole="button"><Text style={s.cancel}>Cancel</Text></Pressable>
         <Pressable onPress={() => { onChange(dateToValue(draft)); setOpen(false); }} accessibilityRole="button"><Text style={s.done}>Done</Text></Pressable>

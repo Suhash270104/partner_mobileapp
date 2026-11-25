@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ReactNode, useEffect, useRef } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, ScrollViewInstance, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../Icon';
 import { Text } from '../AppText';
@@ -11,15 +11,19 @@ export interface ScreenProps {
   loading?: boolean; error?: string; onRetry?: () => void;
   refreshing?: boolean; onRefresh?: () => void;
   footer?: ReactNode; standalone?: boolean; children?: ReactNode;
+  /** Scrolls the page to the top whenever this number changes (and is not 0), e.g. to show a success message. */
+  scrollToTopKey?: number;
 }
 
 /**
  * Standard page: optional title row with back button and action, pull-to-refresh, keyboard avoidance,
  * and one consistent loading / error presentation. `standalone` adds its own safe-area for screens outside the workspace shell.
  */
-export function Screen({ title, subtitle, onBack, action, loading, error, onRetry, refreshing, onRefresh, footer, standalone, children }: ScreenProps) {
+export function Screen({ title, subtitle, onBack, action, loading, error, onRetry, refreshing, onRefresh, footer, standalone, children, scrollToTopKey }: ScreenProps) {
+  const scroller = useRef<ScrollViewInstance>(null);
+  useEffect(() => { if (scrollToTopKey) scroller.current?.scrollTo({ y: 0, animated: true }); }, [scrollToTopKey]);
   const body = <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-    <ScrollView style={s.flex} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
+    <ScrollView ref={scroller} style={s.flex} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}>
       {title || onBack ? <View style={s.head}>
         {onBack ? <Pressable onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="Go back" style={s.back}><Icon name="chevronLeft" size={26} color={palette.ink} /></Pressable> : null}

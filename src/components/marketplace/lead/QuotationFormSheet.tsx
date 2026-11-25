@@ -8,9 +8,15 @@ import { QuotationForm, quotationDefaults, quotationPayload, quotationTotal, val
 import { firstError } from '../../../lib/marketplace/validation';
 import type { Json, Lead } from '../../../lib/marketplace/types';
 import { BottomSheet, FormField, PillButton, Text, ToggleRow, palette } from '../../ui';
+import { DatePickerField } from '../../realtor/DatePickerField';
 
-function QuotationFormBody({ lead, onClose, onSend }: { lead: Lead; onClose: () => void; onSend: (payload: Json) => Promise<void> }) {
-  // Starts from the buyer's quantity and unit; the body remounts each time the sheet opens.
+// A quote dated today would already count as expired for the buyer, so the earliest choice is tomorrow.
+const tomorrow = () => { const day = new Date(); day.setDate(day.getDate() + 1); day.setHours(0, 0, 0, 0); return day; };
+
+type SheetProps = { visible: boolean; lead: Lead; revising: boolean; onClose: () => void; onSend: (payload: Json) => Promise<void> };
+
+function QuotationSheetSession({ visible, lead, revising, onClose, onSend }: SheetProps) {
+  // Starts from the buyer's quantity and unit; this remounts each time the sheet opens.
   const { form, setErrors, errors, set } = useFormState<QuotationForm>(() => quotationDefaults(lead));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -30,7 +36,12 @@ function QuotationFormBody({ lead, onClose, onSend }: { lead: Lead; onClose: () 
   };
 
   const money = (key: 'unitPrice' | 'deliveryCharges') => (v: string) => set(key, v.replace(/[^\d.]/g, ''));
-  return <View style={{ gap: 14 }}>
+  return <BottomSheet visible={visible} onClose={onClose} tall title={revising ? 'Send revised quotation' : 'Send quotation'}
+    footer={<View style={{ gap: 8 }}>
+      {error ? <Text style={{ color: palette.red, fontSize: 12.5, fontWeight: '700' }}>{error}</Text> : null}
+      <PillButton title="Send to buyer" icon="send" loading={busy} onPress={() => void send()} />
+    </View>}>
+    <View style={{ gap: 14 }}>
     <FormField label="Price per unit" required prefix="₹" value={form.unitPrice} onChangeText={money('unitPrice')} keyboardType="decimal-pad" error={errors.unitPrice} />
     <FormField label="Unit (e.g. sq ft, bag)" value={form.priceUnit} onChangeText={v => set('priceUnit', v)} />
     <FormField label="Quantity" value={form.quantity} onChangeText={v => set('quantity', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" error={errors.quantity} />
@@ -39,15 +50,18 @@ function QuotationFormBody({ lead, onClose, onSend }: { lead: Lead; onClose: () 
     <FormField label="GST %" value={form.gstPercentage} onChangeText={v => set('gstPercentage', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" error={errors.gstPercentage} />
     <FormField label="Delivery charges (optional)" prefix="₹" value={form.deliveryCharges} onChangeText={money('deliveryCharges')} keyboardType="decimal-pad" error={errors.deliveryCharges} />
     <FormField label="Delivery time (days)" value={form.deliveryDays} onChangeText={v => set('deliveryDays', v.replace(/\D/g, ''))} keyboardType="numeric" maxLength={3} error={errors.deliveryDays} />
-    <FormField label="Quote valid until" value={form.validUntil} onChangeText={v => set('validUntil', v)} placeholder="YYYY-MM-DD" keyboardType="default" error={errors.validUntil} />
+    <DatePickerField label="Quote valid until" value={form.validUntil} onChange={v => set('validUntil', v)} placeholder="Select a date" minimumDate={tomorrow()} error={errors.validUntil} />
     <FormField label="Payment terms" value={form.paymentTerms} onChangeText={v => set('paymentTerms', v)} maxLength={LIMITS.quotePaymentTerms} error={errors.paymentTerms} placeholder="e.g. 50% advance, 50% on delivery" />
     <FormField label="Notes to buyer" value={form.notes} onChangeText={v => set('notes', v)} multiline maxLength={LIMITS.quoteNotes} error={errors.notes} />
-    {error ? <Text style={{ color: palette.red, fontSize: 12.5, fontWeight: '700' }}>{error}</Text> : null}
-    <PillButton title="Send to buyer" icon="send" loading={busy} onPress={() => void send()} />
-  </View>;
+    </View>
+  </BottomSheet>;
 }
 
 /** Send (or revise) a quotation. The total is calculated from unit price × quantity as the server does. */
-export function QuotationFormSheet({ visible, lead, revising, onClose, onSend }: { visible: boolean; lead: Lead; revising: boolean; onClose: () => void; onSend: (payload: Json) => Promise<void> }) {
-  return <BottomSheet visible={visible} onClose={onClose} tall title={revising ? 'Send revised quotation' : 'Send quotation'}>{visible ? <QuotationFormBody lead={lead} onClose={onClose} onSend={onSend} /> : null}</BottomSheet>;
+export function QuotationFormSheet(props: SheetProps) {
+  // A new session each time the sheet opens clears the form; it stays mounted while closing so the sheet can slide away.
+  const [session, setSession] = useState(0);
+  const [wasVisible, setWasVisible] = useState(props.visible);
+  if (props.visible !== wasVisible) { setWasVisible(props.visible); if (props.visible) setSession(session + 1); }
+  return <QuotationSheetSession key={session} {...props} />;
 }

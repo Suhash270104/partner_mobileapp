@@ -1,11 +1,12 @@
-import { Image, Linking, StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
+import { RemoteImage } from '../../../components/marketplace/RemoteImage';
 import { Avatar, Badge, NavCard, PillButton, Screen, Text, palette } from '../../../components/ui';
 import { useAction, confirmAction } from '../../../hooks/useAction';
 import { useAsyncData } from '../../../hooks/useAsyncData';
 import { useStoreSession } from '../../../hooks/useStoreSession';
 import { merchantApi } from '../../../lib/marketplace/api';
-import { ROLE_LABELS, SUPPORT } from '../../../lib/marketplace/constants';
+import { FEATURES, ROLE_LABELS, SUPPORT } from '../../../lib/marketplace/constants';
 import type { Store } from '../../../lib/marketplace/types';
 
 interface MoreData { store: Store | null; legacyOrders: number }
@@ -21,7 +22,8 @@ export default function MoreScreen() {
   const store = data?.store;
   const city = [store?.address?.city, store?.address?.state].filter(Boolean).join(', ');
   // Checkout is retired, so Orders only appears for stores that still hold older orders (or for fulfilment staff).
-  const showOrders = can('orders') && (role === 'fulfillment' || (data?.legacyOrders ?? 0) > 0);
+  // While orders are hidden, fulfilment staff still see them: it is their main screen.
+  const showOrders = can('orders') && (role === 'fulfillment' || (FEATURES.orders && (data?.legacyOrders ?? 0) > 0));
   const marketplaceUrl = SUPPORT.siteUrl ? `${SUPPORT.siteUrl}/marketplace` : '';
 
   const confirmSignOut = async () => {
@@ -30,7 +32,7 @@ export default function MoreScreen() {
 
   return <Screen title="More" refreshing={refreshing} onRefresh={() => void refresh()}>
     <View style={s.card}>
-      {store?.logoUrl ? <Image source={{ uri: store.logoUrl }} style={s.logo} /> : <Avatar label={merchant?.storeName ?? 'Store'} size={60} />}
+      <RemoteImage uri={store?.logoUrl} style={s.logo} fallback={<Avatar label={merchant?.storeName ?? 'Store'} size={60} />} />
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={s.name} numberOfLines={2}>{merchant?.storeName}</Text>
         {city ? <Text style={s.city}>{city}</Text> : null}
@@ -39,7 +41,7 @@ export default function MoreScreen() {
     </View>
 
     <View style={{ gap: 10 }}>
-      {can('sales') ? <NavCard icon="barChart" tone="blue" title="Analytics & reports" detail="Sales, order volume and top products" onPress={() => router.push('/store/analytics' as never)} /> : null}
+      {FEATURES.analytics && can('sales') ? <NavCard icon="barChart" tone="blue" title="Analytics & reports" detail="Sales, order volume and top products" onPress={() => router.push('/store/analytics' as never)} /> : null}
       {can('sales') ? <NavCard icon="fileText" tone="violet" title="Enquiry form" detail="Questions buyers answer when they enquire" onPress={() => router.push('/store/questions' as never)} /> : null}
       {showOrders ? <NavCard icon="clipboard" tone="amber" title="Orders & fulfilment" detail="Earlier orders and returns" onPress={() => router.push('/store/orders' as never)} /> : null}
       <NavCard icon="edit" tone="green" title="Edit profile" detail={can('settingsEdit') ? 'Update your store details' : 'View your store details'} onPress={() => router.push('/store/settings' as never)} />

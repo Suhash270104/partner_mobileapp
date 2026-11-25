@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Icon } from '../Icon';
 import { Text } from '../AppText';
 import { palette } from '../vertical/VerticalUi';
@@ -33,7 +33,7 @@ export function IconButton({ icon, onPress, label, tone = 'muted', disabled = fa
 /** Modal sheet that slides up from the bottom with a grab handle, title and close button. */
 export function BottomSheet({ visible, title, onClose, children, footer, tall = false }: { visible: boolean; title?: string; onClose: () => void; children: ReactNode; footer?: ReactNode; tall?: boolean }) {
   return <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.sheetRoot}>
+    <KeyboardAvoidingView behavior="padding" style={s.sheetRoot}>
       <Pressable style={s.sheetBackdrop} onPress={onClose} />
       <View style={[s.sheet, tall && { height: '92%' }]}>
         <View style={s.handle} />

@@ -29,7 +29,7 @@ export function uploadErrorMessage(cause: unknown): string {
   if (status === 415 || status === 400 && /type|format|mime|image/i.test(message)) return `The server does not accept this image format${message ? ` (${message})` : ''}. Use a JPG or PNG photo.`;
   if (status === 401 || status === 403) return `Your session was not accepted for uploads${message ? ` (${message})` : ''}. Sign out and sign in again.`;
   if (status != null && status >= 500) return `The server had a problem saving the photo (error ${status})${message ? `: ${message}` : ''}. Try again shortly.`;
-  if (/network request failed|failed to fetch|could not reach/i.test(message)) return 'Could not reach the server to upload the photo. Check your internet connection and that the app is pointed at the right API address.';
+  if (/network request failed|failed to fetch|fetch failed|could not reach|timed out/i.test(message)) return 'The photo could not reach the server. Check your internet connection and try again.';
   if (cause instanceof PartnerApiError && cause.code === 'API_URL_MISSING') return message;
   return message || 'The photo could not be uploaded for an unknown reason.';
 }

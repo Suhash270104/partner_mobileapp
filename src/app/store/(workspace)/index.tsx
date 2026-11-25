@@ -30,7 +30,6 @@ export default function OverviewScreen() {
 
   const kpis = data?.metrics?.kpis;
   const open = isOpenNow(data?.store?.operatingHours);
-  const hasOrders = (data?.metrics?.orderTabs?.ALL ?? 0) > 0;
   const publicUrl = SUPPORT.siteUrl && (data?.store?.slug ?? merchant?.slug) ? `${SUPPORT.siteUrl}/store/${data?.store?.slug ?? merchant?.slug}` : '';
   const noLogo = !!data?.store && !data.store.logoUrl;
 
@@ -50,8 +49,8 @@ export default function OverviewScreen() {
     <StatGrid>
       <StatCard label="New enquiries" value={formatNumber(data?.newLeads ?? 0)} icon="users" tone="amber" caption="Waiting for your reply" onPress={() => router.push('/store/leads' as never)} />
       <StatCard label="Products listed" value={formatNumber(kpis?.totalListedProducts)} icon="layers" tone="green" caption={data?.metrics?.draftProducts ? `${data.metrics.draftProducts} drafts` : 'All published'} onPress={() => router.push('/store/products' as never)} />
-      <StatCard label="Low-stock alerts" value={formatNumber(kpis?.lowStockCount)} icon="zap" tone="red" caption={data?.metrics?.outOfStockCount ? `${data.metrics.outOfStockCount} out of stock` : 'Stock looks healthy'} />
-      {hasOrders ? <StatCard label="Total sales" value={formatCompactMoney(kpis?.totalRevenue)} icon="rupee" tone="blue" caption={`${formatNumber(kpis?.activeOrdersCount)} active orders`} onPress={() => router.push('/store/orders' as never)} /> : null}
+      <StatCard label="Low-stock alerts" value={formatNumber(kpis?.lowStockCount)} icon="zap" tone="red" caption={data?.metrics?.outOfStockCount ? `${data.metrics.outOfStockCount} out of stock` : 'Stock looks healthy'} onPress={() => router.push({ pathname: '/store/products', params: { filter: 'low' } } as never)} />
+      <StatCard label="Total sales" value={data?.metrics ? formatCompactMoney(kpis?.totalRevenue ?? 0) : '—'} icon="rupee" tone="blue" caption={data?.metrics ? `${formatNumber(kpis?.activeOrdersCount ?? 0)} active orders` : 'Sales figures could not be loaded'} />
     </StatGrid>
 
     <SectionCard title="Recent enquiries" actionLabel="View all" onAction={() => router.push('/store/leads' as never)}>

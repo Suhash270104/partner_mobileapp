@@ -51,7 +51,7 @@ const rowsOf = <T>(data: Json, ...keys: string[]): T[] => {
 };
 const listOf = <T>(data: Json, key: string): ListResponse<T> => ({ items: rowsOf<T>(data, key), pagination: data.pagination as Pagination | undefined, counts: data.counts as Record<string, number> | undefined });
 
-export type ProductQuery = { status?: string; category?: string; q?: string; sort?: string; page?: number; limit?: number };
+export type ProductQuery = { status?: string; category?: string; search?: string; sort?: string; page?: number; limit?: number };
 export type PageQuery = { status?: string; page?: number; limit?: number };
 
 export const merchantApi = {

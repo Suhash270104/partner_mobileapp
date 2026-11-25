@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { LIMITS } from './constants';
 import { merchantApi } from './api';
+import { uploadErrorMessage } from '../partnerVerticalApi';
 
 export type MediaPurpose = 'product' | 'logo' | 'banner';
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -29,7 +30,14 @@ export async function pickAndUploadImages(purpose: MediaPurpose, max = 1): Promi
   const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: max > 1, selectionLimit: Math.max(1, max), quality: 0.9 });
   if (result.canceled) return [];
   const urls: string[] = [];
-  for (const asset of result.assets.slice(0, max)) urls.push(await uploadAsset(asset, purpose));
+  const picked = result.assets.slice(0, max);
+  for (const [index, asset] of picked.entries()) {
+    try { urls.push(await uploadAsset(asset, purpose)); }
+    catch (cause) {
+      const label = asset.fileName || (picked.length > 1 ? `Photo ${index + 1} of ${picked.length}` : 'The selected image');
+      throw new Error(`${label}: ${uploadErrorMessage(cause)}`);
+    }
+  }
   return urls;
 }
 

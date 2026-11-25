@@ -75,6 +75,9 @@ export const ROLE_LABELS: Record<string, string> = { owner: 'Store owner', manag
 export const COURIER_OPTIONS: Option[] = COURIER_PARTNERS.map(value => ({ value, label: value }));
 
 // ── Server limits and defaults (hand-off §4, §8) ──────────────────────────────
+/** Hidden until there is data to show. The screens are still in the app: set to true to bring them back. */
+export const FEATURES = { analytics: false, orders: false };
+
 export const LIMITS = {
   storeName: { min: 2, max: 120 }, businessName: { min: 2, max: 200 }, description: 2000, address: { min: 3, max: 300 }, locality: 120,
   city: { min: 2, max: 80 }, serviceAreas: { items: 50, length: 80 }, certifications: { items: 20, length: 80 },

@@ -237,7 +237,7 @@ export function PropertyWizard({ mode, propertyId, initial, onNeedCredits }: { m
       for (const [index, photo] of photos.entries()) {
         setProgress(`Uploading photo ${index + 1} of ${photos.length}…`);
         try { await realtorApi.uploadMedia({ uri: photo.uri, name: photo.name, mimeType: photo.mimeType }, { resourceType: 'property', resourceId: id, type: 'gallery', isPrimary: index === 0, sortOrder: index }); }
-        catch (cause) { failed += 1; if (!uploadError && cause instanceof Error) uploadError = cause.message; }
+        catch (cause) { failed += 1; uploadError ||= uploadErrorMessage(cause); }
       }
       dirty.current = false;
       if (failed) Alert.alert('Property created, photos need attention', `${failed} of ${photos.length} photos could not be uploaded.${uploadError ? ` ${uploadError}` : ''} Add them from Edit before submitting for review.`);

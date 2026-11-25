@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { FONT_SCALE_LIMIT } from '../../theme/typeScale';
 import { Badge, IconButton, IconTile, Text, ToggleRow, palette } from '../ui';
+import { RemoteImage } from './RemoteImage';
 import { priceText } from '../../lib/marketplace/format';
 import type { Product } from '../../lib/marketplace/types';
 
@@ -26,12 +27,13 @@ export function ProductCard({ product, canEdit, busy, onOpen, onMore, onStock }:
   const discount = product.discountPercentage && product.priceType === 'fixed' ? `${product.discountPercentage}% off` : '';
   return <View style={[s.card, busy && { opacity: 0.6 }]}>
     <Pressable onPress={onOpen} style={s.top} accessibilityRole="button" accessibilityLabel={`Open ${product.title}`}>
-      {product.photos?.[0] ? <Image source={{ uri: product.photos[0] }} style={s.photo} /> : <IconTile icon="image" size={72} />}
+      <RemoteImage uri={product.photos?.[0]} style={s.photo} fallback={<IconTile icon="image" size={72} />} />
       <View style={s.info}>
         <Text style={s.title} numberOfLines={2}>{product.title}</Text>
         <Text style={s.sub} numberOfLines={1}>{[product.category, product.sku].filter(Boolean).join(' · ')}</Text>
         <Text style={s.price}>{priceText(product)}</Text>
         <View style={s.badges}>
+          {product.status === 'published' ? <Badge label="Published" tone="green" /> : null}
           {product.status === 'draft' ? <Badge label="Draft" tone="amber" /> : null}
           {product.status === 'archived' ? <Badge label="Archived" tone="slate" /> : null}
           {discount ? <Badge label={discount} tone="green" /> : null}

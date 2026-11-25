@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ProductCard } from '../../../components/marketplace/ProductCard';
 import { BottomSheet, EmptyState, FilterChips, LoadMoreButton, PillButton, Screen, SearchField, SelectField, Text, palette } from '../../../components/ui';
 import { useAction, confirmAction } from '../../../hooks/useAction';
@@ -22,13 +22,18 @@ export default function ProductsScreen() {
   const { can } = useStoreSession();
   const { categories } = useTaxonomy();
   const { run, isBusy } = useAction();
-  const [filter, setFilter] = useState<Filter>('all');
+  // Another screen can open this one on a chip, e.g. the Overview "Low-stock alerts" card passes filter=low.
+  const { filter: requested } = useLocalSearchParams<{ filter?: string }>();
+  const requestedFilter = FILTERS.find(option => option.value === requested)?.value;
+  const [filter, setFilter] = useState<Filter>(requestedFilter ?? 'all');
+  const [appliedRequest, setAppliedRequest] = useState(requestedFilter);
+  if (requestedFilter !== appliedRequest) { setAppliedRequest(requestedFilter); if (requestedFilter) setFilter(requestedFilter); }
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [menuFor, setMenuFor] = useState<Product | null>(null);
   const canEdit = can('catalog'), canArchive = can('catalogDelete');
 
-  const list = usePagedList<Product>(page => merchantApi.products({ status: SERVER_STATUS[filter], q: query || undefined, category: category || undefined, sort: 'newest', limit: LIMITS.listPageSize, page }),
+  const list = usePagedList<Product>(page => merchantApi.products({ status: SERVER_STATUS[filter], search: query.slice(0, 100) || undefined, category: category || undefined, sort: 'newest', limit: LIMITS.listPageSize, page }),
     product => product._id, [filter, query, category], { refetchOnFocus: true });
   const visible = useMemo(() => list.items.filter(p => filter === 'low' ? p.isLowStock : filter === 'out' ? (p.stockQuantity ?? 0) === 0 || p.inStock === false : true), [list.items, filter]);
 
