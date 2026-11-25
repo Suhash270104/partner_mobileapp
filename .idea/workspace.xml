@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="43dbcfda-944a-4288-ab5a-e63cada77c0e" name="Changes" comment="" />
+    <list default="true" id="43dbcfda-944a-4288-ab5a-e63cada77c0e" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/app/professional/(studio)/project-management.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/professional/(studio)/pm/classic.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib/partnerApi.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib/partnerApi.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib/partnerVerticalApi.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib/partnerVerticalApi.ts" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

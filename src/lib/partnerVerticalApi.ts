@@ -1,4 +1,4 @@
-import { partnerApi } from './partnerApi';
+import { partnerApi, PartnerApiError } from './partnerApi';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 const realtorPath = (path: string) => `/realestate/realtor${path}`;

@@ -552,8 +552,8 @@ export const partnerApi = {
   createStudioProject: (payload: Record<string, unknown>) => request<Record<string, unknown>>('/client-projects', { method: 'POST', body: JSON.stringify(payload) }),
   clientProjectFull: (projectId: string) => request<StudioProjectDetail>(`/client-projects/${projectId}`),
   // Thin typed pass-through for studio screens that call a handful of REST endpoints each.
-  call: <T = Record<string, unknown>>(path: string, method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET', body?: unknown) =>
-    request<T>(path, { method, ...(body !== undefined ? { body: typeof FormData !== 'undefined' && body instanceof FormData ? body : JSON.stringify(body) } : {}) }),
+  call: <T = Record<string, unknown>>(path: string, method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET', body?: unknown, headers?: Record<string, string>) =>
+    request<T>(path, { method, ...(headers ? { headers } : {}), ...(body !== undefined ? { body: typeof FormData !== 'undefined' && body instanceof FormData ? body : JSON.stringify(body) } : {}) }),
   studioChatRooms: () => request<unknown[] | { rooms?: unknown[] }>('/chat/rooms/professional/me'),
   sendChatMessage: (roomId: string, message: Record<string, unknown>) => request<{ message?: Record<string, unknown> }>('/chat/message', { method: 'POST', body: JSON.stringify({ roomId, message }) }),
   myProposals: () => request<unknown[]>('/proposals/my-proposals'),
