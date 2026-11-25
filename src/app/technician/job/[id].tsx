@@ -165,7 +165,8 @@ export default function TechnicianJobScreen() {
   const after = job?.jobDocumentation?.afterPhotos || [];
   const balanceDue = job?.pricing?.balanceDue ?? 0;
   const address = job?.customerDetails?.address;
-  const addressLine = [address?.street, address?.locality, address?.city, address?.pincode].filter(Boolean).join(', ');
+  // Everything the customer entered, flat or house number first, so the right door is easy to find.
+  const addressLine = [address?.flatNo, address?.street, address?.locality, address?.landmark ? `Near ${address.landmark}` : '', address?.city, address?.pincode].filter(Boolean).join(', ');
   const title = job?.serviceSnapshot?.title || label(job?.serviceCategory) || 'Service job';
 
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

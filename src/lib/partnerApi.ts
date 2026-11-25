@@ -140,6 +140,8 @@ export interface TechnicianBookingRecord {
     name?: string;
     phone?: string;
     address?: {
+      flatNo?: string;
+      landmark?: string;
       street?: string;
       locality?: string;
       city?: string;
