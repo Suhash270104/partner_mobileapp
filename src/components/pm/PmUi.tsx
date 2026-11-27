@@ -5,11 +5,11 @@ import { Text } from '../AppText';
 import { Icon } from '../Icon';
 
 // Shared look for the project-management screens, taken from docs/project-management/index.html:
-// cream canvas, deep-green header, terracotta primary action, soft pills and thin progress bars.
+// white canvas, white header, terracotta primary action, soft pills and thin progress bars.
 export const pm = {
-  green: '#0F382C', green2: '#14483a', cream: '#F6F4EF', line: '#E7E2D6', ink: '#14231D', muted: '#5B6B63', soft: '#8A9189',
+  green: '#0F382C', green2: '#14483a', canvas: '#FFFFFF', line: '#ECEFEE', track: '#DCEDE3', ink: '#14231D', muted: '#5B6B63', soft: '#8A9189',
   terra: '#C2703D', gold: '#A6822C', ok: '#4C7A5E', okBg: '#EAF1EC', warn: '#B45309', warnBg: '#FFFBEB', bad: '#C0392B', badBg: '#FDECEA',
-  blue: '#2F5D9E', blueBg: '#E8EFF8', grayBg: '#EFEDE6', onGreen: '#BFD6C9',
+  blue: '#2F5D9E', blueBg: '#E8EFF8', grayBg: '#EEF0F0', onGreen: '#BFD6C9',
 };
 
 export type Tone = 'ok' | 'warn' | 'bad' | 'blue' | 'gray';
@@ -96,7 +96,7 @@ export function PmScreen({ title, subtitle, onBack, right, hero, children, loadi
     <View style={s.screen}>
       <View style={s.header}>
         <Pressable onPress={onBack || (() => goBack())} hitSlop={12} style={s.back} accessibilityRole="button" accessibilityLabel="Back">
-          <Icon name="chevronLeft" size={22} color="#fff" />
+          <Icon name="chevronLeft" size={22} color={pm.ink} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={s.headerTitle} numberOfLines={1}>{title}</Text>
@@ -120,7 +120,7 @@ export function PmScreen({ title, subtitle, onBack, right, hero, children, loadi
 }
 
 export function HeaderAction({ icon, label, onPress }: { icon: 'plus' | 'edit'; label: string; onPress: () => void }) {
-  return <Pressable onPress={onPress} hitSlop={10} style={s.headerAction} accessibilityRole="button" accessibilityLabel={label}><Icon name={icon} size={20} color="#fff" /></Pressable>;
+  return <Pressable onPress={onPress} hitSlop={10} style={s.headerAction} accessibilityRole="button" accessibilityLabel={label}><Icon name={icon} size={20} color="#000" /></Pressable>;
 }
 
 export function Card({ children, onPress, style }: { children: ReactNode; onPress?: () => void; style?: object }) {
@@ -138,7 +138,7 @@ export function Pill({ text, tone = 'gray' }: { text: string; tone?: Tone }) {
 }
 
 export function Bar({ pct, tone = 'ok' }: { pct: number; tone?: 'ok' | 'terra' | 'warn' | 'bad' }) {
-  const color = tone === 'terra' ? pm.terra : tone === 'warn' ? '#D9A441' : tone === 'bad' ? pm.bad : pm.ok;
+  const color = tone === 'terra' ? pm.ok : tone === 'warn' ? '#D9A441' : tone === 'bad' ? pm.bad : pm.ok;
   return <View style={s.bar}><View style={[s.barFill, { width: `${Math.max(0, Math.min(100, pct || 0))}%`, backgroundColor: color }]} /></View>;
 }
 
@@ -178,7 +178,7 @@ export function Chips<T extends string>({ options, value, onChange }: { options:
 }
 
 export function VisibilityToggle({ value, onChange, disabled }: { value: boolean; onChange: (next: boolean) => void; disabled?: boolean }) {
-  return <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ false: '#CFC9B8', true: pm.ok }} thumbColor="#fff" accessibilityLabel="Visible to client" />;
+  return <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ false: '#C5CCC8', true: pm.ok }} thumbColor="#fff" accessibilityLabel="Visible to client" />;
 }
 
 export function Empty({ title, text }: { title: string; text?: string }) {
@@ -186,12 +186,12 @@ export function Empty({ title, text }: { title: string; text?: string }) {
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: pm.cream },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: pm.green, paddingHorizontal: 12, paddingVertical: 10 },
-  back: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  headerSub: { color: pm.onGreen, fontSize: 11.5, marginTop: 1 },
-  headerAction: { width: 36, height: 36, borderRadius: 18, backgroundColor: pm.terra, alignItems: 'center', justifyContent: 'center' },
+  screen: { flex: 1, backgroundColor: pm.canvas },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: pm.canvas, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: pm.line },
+  back: { width: 36, height: 36, borderRadius: 18, backgroundColor: pm.grayBg, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { color: pm.ink, fontSize: 16, fontWeight: '800' },
+  headerSub: { color: pm.muted, fontSize: 11.5, marginTop: 1 },
+  headerAction: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#7FD1A5', alignItems: 'center', justifyContent: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   body: { padding: 14, paddingBottom: 40, gap: 10 },
   card: { backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: pm.line, padding: 12, gap: 6 },
@@ -200,7 +200,7 @@ const s = StyleSheet.create({
   muted: { color: pm.muted, fontSize: 11.5, lineHeight: 16 },
   pill: { alignSelf: 'flex-start', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
   pillText: { fontSize: 10.5, fontWeight: '800' },
-  bar: { height: 6, borderRadius: 9, backgroundColor: '#EEE9DD', overflow: 'hidden' },
+  bar: { height: 6, borderRadius: 9, backgroundColor: pm.track, overflow: 'hidden' },
   barFill: { height: '100%' },
   alert: { borderRadius: 11, borderWidth: 1, padding: 10, gap: 4 },
   alertText: { color: pm.ink, fontSize: 12, lineHeight: 17 },

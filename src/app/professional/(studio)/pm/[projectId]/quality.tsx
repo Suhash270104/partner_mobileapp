@@ -95,7 +95,7 @@ function AddSheet({ visible, onClose, submit }: { visible: boolean; onClose: () 
 }
 
 const s = StyleSheet.create({
-  item: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, borderTopWidth: 1, borderTopColor: '#F1EEE4' },
+  item: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, borderTopWidth: 1, borderTopColor: pm.line },
   mark: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   markText: { fontSize: 14, fontWeight: '800' },
   share: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },

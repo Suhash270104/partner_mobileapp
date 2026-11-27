@@ -350,7 +350,7 @@ function SubmissionsPanel() {
   return (
     <View style={s.card}>
       <View style={s.head}>
-        <Text style={s.cardTitle}>Portfolio Project Submissions</Text>
+        <Text style={[s.cardTitle, s.headTitle]}>Portfolio Project Submissions</Text>
         <Pressable style={s.addSmall} onPress={() => { setError(''); setEditingId(''); setForm(emptyForm); setImages([]); setOpen(true); }}><Text style={s.addSmallText}>＋ Submit</Text></Pressable>
       </View>
       <Text style={s.hint}>Showcase projects go live on your public profile only after admin approval.</Text>
@@ -414,7 +414,8 @@ const s = StyleSheet.create({
   hint: { color: c.body, fontSize: 13.5, lineHeight: 19 },
   card: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: c.line, padding: 16, gap: 4 },
   cardTitle: { color: c.ink, fontSize: 17, fontWeight: '800', marginBottom: 6 },
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  head: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  headTitle: { flex: 1, minWidth: 170 },
   empty: { color: c.body, fontSize: 14, paddingVertical: 10 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
   thumb: { width: '31%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: '#eef1ef' },
@@ -435,7 +436,7 @@ const s = StyleSheet.create({
   doc: { width: '48.5%', borderRadius: 11, borderWidth: 1, borderColor: c.line, backgroundColor: '#f6f8f7', padding: 10 },
   docOn: { backgroundColor: c.greenSoft, borderColor: '#bfe0cf' },
   docText: { color: c.muted, fontSize: 14, lineHeight: 19, fontWeight: '700' },
-  addSmall: { backgroundColor: c.green, borderRadius: 12, paddingHorizontal: 14, minHeight: 40, justifyContent: 'center' },
+  addSmall: { flexShrink: 0, backgroundColor: c.green, borderRadius: 12, paddingHorizontal: 14, minHeight: 40, justifyContent: 'center' },
   addSmallText: { color: '#fff', fontSize: 13, fontWeight: '800' },
   link: { color: c.green, fontSize: 13.5, fontWeight: '800' },
   submission: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 13, padding: 12, marginTop: 6 },

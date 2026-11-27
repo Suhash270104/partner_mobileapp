@@ -185,7 +185,7 @@ export function ProcurementTab({ projectId }: { projectId: string }) {
           return (
             <View key={order._id} style={s.order}>
               <View style={s.head}>
-                <Text style={s.rowTitle}>{order.vendorId?.name || 'No vendor assigned'}</Text>
+                <Text style={[s.rowTitle, s.headTitle]}>{order.vendorId?.name || 'No vendor assigned'}</Text>
                 <View style={[s.pill, { backgroundColor: tone.bg }]}><Text style={[s.pillText, { color: tone.fg }]}>{order.status.toUpperCase()}</Text></View>
               </View>
               <Text style={s.grand}>{inr(order.totalAmount)}</Text>
@@ -227,7 +227,8 @@ const s = StyleSheet.create({
   rowTitle: { color: c.ink, fontSize: 13.5, fontWeight: '800' },
   delete: { color: c.red, fontSize: 11.5, fontWeight: '800' },
   order: { backgroundColor: '#f6f8f7', borderRadius: 14, padding: 12, gap: 6 },
-  pill: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
+  headTitle: { flex: 1, minWidth: 0 },
+  pill: { flexShrink: 0, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   pillText: { fontSize: 10.5, fontWeight: '800' },
   grand: { color: c.ink, fontSize: 18, fontWeight: '800' },
   photos: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

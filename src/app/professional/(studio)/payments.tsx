@@ -127,7 +127,7 @@ const s = StyleSheet.create({
   creditLink: { backgroundColor: c.greenSoft, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
   creditLinkText: { color: c.green, fontSize: 12.5, fontWeight: '800' },
   card: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: c.line, padding: 14 },
-  head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  head: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   cardTitle: { color: c.ink, fontSize: 14.5, fontWeight: '800' },
   meta: { color: c.muted, fontSize: 11.5 },
   error: { color: c.red, fontSize: 12.5, fontWeight: '700', textAlign: 'center' },

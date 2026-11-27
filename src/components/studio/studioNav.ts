@@ -1,5 +1,8 @@
 // Studio dashboard navigation. The bottom bar carries the four desktop bar items (dashboard, projects,
 // messages, clients) plus "Studio", which opens the hub listing every other desktop section.
+/** Height of the logo header that every studio screen sits under. The chat uses it to clear the keyboard. */
+export const STUDIO_HEADER_HEIGHT = 58;
+
 export const TAB_BAR = [
   { key: 'dashboard', label: 'Dashboard', path: '/professional/dashboard', glyph: 'dashboard' },
   { key: 'clients', label: 'Clients', path: '/professional/clients', glyph: 'users' },

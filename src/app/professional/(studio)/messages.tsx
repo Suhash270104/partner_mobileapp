@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Linking, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/AppText';
 import type { FlatListInstance } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { STUDIO_HEADER_HEIGHT } from '../../../components/studio/studioNav';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -105,6 +107,12 @@ export default function MessagesScreen() {
   const [proposal, setProposal] = useState<ProposalContext | null>(null);
   const [lightbox, setLightbox] = useState<{ url: string; title: string } | null>(null);
   const listRef = useRef<FlatListInstance>(null);
+  // How far down the screen the conversation starts: the status bar plus the studio header. KeyboardAvoidingView only
+  // knows its position inside its parent, while the keyboard is measured from the top of the screen. (measureInWindow
+  // is not used here: on Android it can leave out the status bar, which left the message box partly hidden.)
+  const chatTop = useSafeAreaInsets().top + STUDIO_HEADER_HEIGHT;
+  // True while the reader is at the latest message, so opening the keyboard does not pull them away from older ones.
+  const atLatestRef = useRef(true);
   // The conversation another screen asked for (?room=...). `handledRoom` makes sure it opens once, and
   // `refetchedRoom` that a room created a moment ago is looked for with one extra reload, not a loop.
   const [handledRoom, setHandledRoom] = useState('');
@@ -270,8 +278,8 @@ export default function MessagesScreen() {
     const awarded = active.isAwarded || active.proposalStatus === 'Awarded' || active.proposalStatus === 'Won';
     const waiting = active.hasSubmittedProposal || active.proposalStatus === 'Submitted' || active.proposalStatus === 'Under Review';
     return (
-      // 'padding' on both platforms: it lifts the message box only as far as the keyboard actually covers it.
-      <KeyboardAvoidingView style={s.flex} behavior="padding">
+      // The offset only counts while the keyboard is open; when it closes the extra space goes back to zero.
+      <KeyboardAvoidingView style={s.flex} behavior="padding" keyboardVerticalOffset={chatTop}>
         <View style={s.threadHead}>
           <Pressable onPress={() => { setThreads(previous => previous.map(thread => (thread.id === active.id ? { ...thread, unreadCount: 0 } : thread))); setOpenId(''); }} hitSlop={10}><Text style={s.back}>←</Text></Pressable>
           <View style={{ flex: 1 }}>
@@ -287,7 +295,13 @@ export default function MessagesScreen() {
           ref={listRef}
           data={active.messages}
           keyExtractor={(item, index) => item.id || String(index)}
+          style={s.flex}
           contentContainerStyle={s.messages}
+          keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={100}
+          onScroll={({ nativeEvent }) => { atLatestRef.current = nativeEvent.contentSize.height - nativeEvent.layoutMeasurement.height - nativeEvent.contentOffset.y < 80; }}
+          // The list gets shorter when the keyboard opens: keep the latest message in view.
+          onLayout={() => { if (atLatestRef.current) listRef.current?.scrollToEnd({ animated: false }); }}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={<Text style={s.emptyCopy}>No messages yet. Say hello to {active.clientName}.</Text>}
           renderItem={({ item }) => {

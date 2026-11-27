@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from '../../../../../components/AppText';
@@ -25,7 +25,10 @@ export default function PlanScreen() {
   }, [id]);
   const [editing, setEditing] = useState<PlanActivity | null>(null);
   const [adding, setAdding] = useState(false);
-  const [togglingId, setTogglingId] = useState('');
+  // What a tapped switch shows before the reloaded plan arrives. `plan` here is the data on screen when it was tapped:
+  // once a newer plan loads, the server's value takes over again.
+  const [switches, setSwitches] = useState<Record<string, { value: boolean; saving: boolean; loaded: unknown }>>({});
+  const savingSwitches = useRef(new Set<string>());
   const [toggleError, setToggleError] = useState('');
 
   const plan = data?.plan;
@@ -34,11 +37,29 @@ export default function PlanScreen() {
     scope, activities: (plan?.activities || []).filter(activity => activity.scopeId === scope._id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   })), [plan]);
 
+  const isVisible = (activity: PlanActivity) => {
+    const tapped = switches[activity._id];
+    return tapped && (tapped.saving || tapped.loaded === data) ? tapped.value : activity.clientVisible !== false;
+  };
+
+  // The switch moves as soon as it is tapped, and moves back only if the change could not be saved.
   async function toggleVisible(activity: PlanActivity, next: boolean) {
-    setTogglingId(activity._id); setToggleError('');
-    try { await pmApi.setVisibility(id, 'activity', activity._id, next); await silentReload(); }
-    catch (e) { setToggleError(errorText(e, 'Could not change what the client sees.')); }
-    finally { setTogglingId(''); }
+    const key = activity._id;
+    if (savingSwitches.current.has(key)) return; // one save at a time for each switch
+    savingSwitches.current.add(key);
+    setToggleError('');
+    setSwitches(current => ({ ...current, [key]: { value: next, saving: true, loaded: data } }));
+    try {
+      await pmApi.setVisibility(id, 'activity', key, next);
+    } catch (e) {
+      setSwitches(current => { const rest = { ...current }; delete rest[key]; return rest; });
+      setToggleError(errorText(e, 'Could not change what the client sees.'));
+      return;
+    } finally {
+      savingSwitches.current.delete(key);
+    }
+    setSwitches(current => ({ ...current, [key]: { value: next, saving: false, loaded: data } }));
+    await silentReload();
   }
 
   return (
@@ -65,7 +86,7 @@ export default function PlanScreen() {
                   <Muted>{[activity.ownerName, activity.plannedEnd ? `due ${shortDate(activity.plannedEnd)}` : '', activity.isOverdue && activity.status !== 'done' ? 'overdue' : ''].filter(Boolean).join(' · ') || STATUS[activity.status]?.label}</Muted>
                   <Bar pct={activity.progressPct} tone={activity.isOverdue && activity.status !== 'done' ? 'bad' : activity.status === 'blocked' ? 'warn' : 'ok'} />
                 </Pressable>
-                {canEdit && <VisibilityToggle value={activity.clientVisible !== false} disabled={togglingId === activity._id} onChange={next => void toggleVisible(activity, next)} />}
+                {canEdit && <VisibilityToggle value={isVisible(activity)} onChange={next => void toggleVisible(activity, next)} />}
               </View>
             ))}
           </Card>
@@ -179,7 +200,7 @@ function AddSheet({ id, visible, scopes, onClose, onSaved }: { id: string; visib
 const s = StyleSheet.create({
   scopeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   scope: { flex: 1, color: pm.ink, fontSize: 13.5, fontWeight: '800' },
-  activity: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1EEE4' },
+  activity: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: pm.line },
   name: { color: pm.ink, fontSize: 12.5, fontWeight: '700', flexShrink: 1 },
   label: { color: pm.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.4 },
   stepperRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

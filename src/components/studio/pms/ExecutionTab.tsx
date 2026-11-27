@@ -207,7 +207,7 @@ export function ExecutionTab({ projectId }: { projectId: string }) {
 
       <View style={s.card}>
         <View style={s.head}>
-          <Text style={s.section}>Task & Execution Board</Text>
+          <Text style={[s.section, s.headTitle]}>Task & Execution Board</Text>
           <Pressable style={s.addBtn} onPress={() => setSheet('task')}><Text style={s.addBtnText}>＋ Task</Text></Pressable>
         </View>
         <View style={s.segments}>
@@ -237,7 +237,7 @@ export function ExecutionTab({ projectId }: { projectId: string }) {
 
       <View style={s.card}>
         <View style={s.head}>
-          <Text style={s.section}>Site Visits & Audits</Text>
+          <Text style={[s.section, s.headTitle]}>Site Visits & Audits</Text>
           <Pressable style={s.addBtn} onPress={() => setSheet('visit')}><Text style={s.addBtnText}>＋ Schedule</Text></Pressable>
         </View>
         {visits.length === 0 ? <Text style={s.empty}>No site visits scheduled yet</Text> : visits.map(visit => {
@@ -269,7 +269,7 @@ export function ExecutionTab({ projectId }: { projectId: string }) {
 
       <View style={s.card}>
         <View style={s.head}>
-          <Text style={s.section}>Site Progress Feed</Text>
+          <Text style={[s.section, s.headTitle]}>Site Progress Feed</Text>
           <Pressable style={s.addBtn} onPress={() => setSheet('progress')}><Text style={s.addBtnText}>＋ Update</Text></Pressable>
         </View>
         {entries.length === 0 ? <Text style={s.empty}>No site progress photos logged yet</Text> : entries.map(entry => (
@@ -283,7 +283,7 @@ export function ExecutionTab({ projectId }: { projectId: string }) {
 
       <View style={s.card}>
         <View style={s.head}>
-          <Text style={s.section}>Design Documents & Blueprints</Text>
+          <Text style={[s.section, s.headTitle]}>Design Documents & Blueprints</Text>
           <Pressable style={s.addBtn} onPress={() => setSheet('doc')}><Text style={s.addBtnText}>＋ Document</Text></Pressable>
         </View>
         {documents.length === 0 ? <Text style={s.empty}>No design documents submitted yet</Text> : documents.map(doc => {
@@ -508,8 +508,9 @@ function DocSheet({ visible, projectId, onClose, onCreated }: { visible: boolean
 const s = StyleSheet.create({
   section: { color: c.ink, fontSize: 14.5, fontWeight: '800' },
   card: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: c.line, padding: 14, gap: 12 },
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  addBtn: { backgroundColor: c.green, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  head: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  headTitle: { flex: 1, minWidth: 150 },
+  addBtn: { flexShrink: 0, backgroundColor: c.green, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   addBtnText: { color: '#fff', fontSize: 12, fontWeight: '800' },
   empty: { color: c.body, fontSize: 12.5, textAlign: 'center', paddingVertical: 12 },
   action: { borderRadius: 14, borderWidth: 1, borderColor: c.line, borderLeftWidth: 4, padding: 12, gap: 3 },

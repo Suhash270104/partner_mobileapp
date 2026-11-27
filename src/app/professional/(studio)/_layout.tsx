@@ -7,7 +7,7 @@ import { Icon } from '../../../components/Icon';
 import { partnerApi, PartnerApiError } from '../../../lib/partnerApi';import { isProfileComplete } from '../../../lib/professionalOnboarding';
 import { c } from '../../../components/professional/onboardingUi';
 import { StudioContext, StudioProfile } from '../../../components/studio/StudioContext';
-import { activeTabKey, TAB_BAR } from '../../../components/studio/studioNav';
+import { activeTabKey, STUDIO_HEADER_HEIGHT, TAB_BAR } from '../../../components/studio/studioNav';
 
 type Phase = 'loading' | 'ready' | 'error';
 
@@ -129,7 +129,7 @@ const s = StyleSheet.create({
   errorCopy: { color: c.body, fontSize: 13.5, textAlign: 'center' },
   retry: { marginTop: 8, height: 46, paddingHorizontal: 26, borderRadius: 13, backgroundColor: c.green, alignItems: 'center', justifyContent: 'center' },
   retryText: { color: '#fff', fontSize: 13.5, fontWeight: '800' },
-  header: { height: 58, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line },
+  header: { height: STUDIO_HEADER_HEIGHT, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   logo: { width: 92, height: 27 },
   pill: { backgroundColor: c.amberSoft, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },

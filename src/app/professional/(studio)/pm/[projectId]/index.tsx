@@ -247,7 +247,7 @@ const s = StyleSheet.create({
   heroSub: { color: pm.onGreen, fontSize: 11.5 },
   stepper: { flexDirection: 'row', gap: 4 },
   step: { flex: 1, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.2)' },
-  stepOn: { backgroundColor: '#E8A66E' },
+  stepOn: { backgroundColor: '#7FD1A5' },
   big: { color: pm.ink, fontSize: 26, fontWeight: '800' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   value: { color: pm.ink, fontSize: 15, fontWeight: '800' },
